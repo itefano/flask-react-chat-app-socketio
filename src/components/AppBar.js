@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { styled, alpha } from "@mui/material/styles";
 import {
-    FormControlLabel,
     Switch,
     Menu,
     MenuItem,
@@ -19,7 +18,8 @@ import AccountCircle from "@mui/icons-material/AccountCircle";
 import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import MoreIcon from "@mui/icons-material/MoreVert";
-import Theme from "../context/Theme";
+import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
 
 const Search = styled("div")(({ theme }) => ({
     position: "relative",
@@ -62,11 +62,12 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 export default function PrimarySearchAppBar(props) {
+    let navigate = useNavigate();
     const [checked, setChecked] = useState(true);
     const handleTheme = () => {
-        setChecked(!checked)
+        setChecked(!checked);
         props.handleTheme();
-    }
+    };
     const MaterialUISwitch = styled(Switch)(({ theme }) => ({
         width: 62,
         height: 34,
@@ -121,6 +122,28 @@ export default function PrimarySearchAppBar(props) {
 
     const isMenuOpen = Boolean(anchorEl);
     const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
+    const logout = () => {
+        axios({
+            method: "POST",
+            url: "/api/logout",
+        })
+            .then((response) => {
+                props.removeToken();
+                navigate("/");
+            })
+            .catch((error) => {
+                if (error.response) {
+                    console.log(error.response);
+                    console.log(error.response.status);
+                    console.log(error.response.headers);
+                }
+            });
+    };
+
+    const signIn = () => 
+    {
+        navigate('/')
+    }
 
     const handleProfileMenuOpen = (event) => {
         setAnchorEl(event.currentTarget);
@@ -156,8 +179,15 @@ export default function PrimarySearchAppBar(props) {
             open={isMenuOpen}
             onClose={handleMenuClose}
         >
-            <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-            <MenuItem onClick={handleMenuClose}>My account</MenuItem>
+            {props.token !== null && props.token !== undefined ? (
+                <>
+                    <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
+                    <MenuItem onClick={handleMenuClose}>My account</MenuItem>
+                    <MenuItem onClick={logout}>Logout</MenuItem>
+                </>
+            ) : (
+                <MenuItem onClick={signIn}>Sign In</MenuItem>
+            )}
         </Menu>
     );
 
@@ -236,7 +266,7 @@ export default function PrimarySearchAppBar(props) {
                         component="div"
                         sx={{ display: { xs: "none", sm: "block" } }}
                     >
-                        MUI
+                        Blablapp
                     </Typography>
                     <Search>
                         <SearchIconWrapper>
@@ -247,17 +277,12 @@ export default function PrimarySearchAppBar(props) {
                             inputProps={{ "aria-label": "search" }}
                         />
                     </Search>
-                        <Box sx={{ flexGrow: 1 }} />
-                        <FormControlLabel
-                            control={
-                            <MaterialUISwitch
-                                sx={{ m: 1 }}
-                                checked={checked}
-                                inputProps={{ 'aria-label': 'controlled' }}
-                                onChange={handleTheme}
-                            />
-                        }
-                        label="MUI switch"
+                    <Box sx={{ flexGrow: 1 }} />
+                    <MaterialUISwitch
+                        sx={{ m: 1 }}
+                        checked={checked}
+                        inputProps={{ "aria-label": "controlled" }}
+                        onChange={handleTheme}
                     />
                     <Box sx={{ display: { xs: "none", md: "flex" } }}>
                         <IconButton

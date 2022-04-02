@@ -1,7 +1,7 @@
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./components/Login";
-import Header from "./components/Header";
+import Homepage from "./components/Homepage";
 import AppBar from "./components/AppBar";
 import Profile from "./components/Profile";
 import UseToken from "./components/UseToken";
@@ -39,6 +39,11 @@ function App() {
                             </Routes>
                         ) : (
                             <Routes>
+                                <Route
+                                    exact
+                                    path="/"
+                                    element={<Homepage/>}
+                                ></Route>
                                 <Route
                                     exact
                                     path="/profile"
