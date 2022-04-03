@@ -14,9 +14,6 @@ initdb()
 
 
 def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█', printEnd="\n"):
-    """
-    Making this work in powershell was stupidly and needlessly convoluted...
-    """
     percent = ("{0:." + str(decimals) + "f}").format(100 *
                                                      (iteration / float(total)))
     filledLength = int(length * iteration // total)
@@ -147,7 +144,6 @@ def generate_messages(s, amount=10):
 
 
 def seed_db(amount):
-    # I have to commit after generating each separate table data because otherwise I can't seem to be able to create groups. Also, groups seem to be able to insert themselves without having to use bulk_save_objects ...?
     s = db_session()
     s.bulk_save_objects(generate_users(1000))
     s.commit()
