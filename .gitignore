@@ -18,7 +18,7 @@
 .env.test.local
 .env.production.local
 __pycache__
-
+query_tester.py
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

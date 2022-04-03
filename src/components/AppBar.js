@@ -11,6 +11,11 @@ import {
     Toolbar,
     Box,
     AppBar,
+    SwipeableDrawer,
+    List,
+    ListItem,
+    Divider,
+    ListItemText,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
@@ -64,6 +69,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 export default function PrimarySearchAppBar(props) {
     let navigate = useNavigate();
     const [checked, setChecked] = useState(true);
+    const [openDrawer, setOpenDrawer] = useState(false);
     const handleTheme = () => {
         setChecked(!checked);
         props.handleTheme();
@@ -119,7 +125,9 @@ export default function PrimarySearchAppBar(props) {
     }));
     const [anchorEl, setAnchorEl] = useState(null);
     const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = useState(null);
-
+    const toggleDrawer = (newOpen) => {
+        setOpenDrawer(newOpen);
+    };
     const isMenuOpen = Boolean(anchorEl);
     const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
     const logout = () => {
@@ -140,10 +148,44 @@ export default function PrimarySearchAppBar(props) {
             });
     };
 
-    const signIn = () => 
-    {
-        navigate('/')
-    }
+    // drawer contents :
+
+    const drawerContents = () => (
+        <Box
+            role="presentation"
+            onKeyDown={() => {
+                toggleDrawer(false);
+            }}
+        >
+            <List>
+                {[
+                    { name: "Homepage", link: "/" },
+                    { name: "Contacts", link: "/contacts" },
+                    { name: "Groups", link: "groups" },
+                ].map((e, index) => (
+                    <Link
+                        to={e.link}
+                        style={{ textDecoration: "none", color: "inherit" }}
+                    >
+                        <ListItem button key={e.name}>
+                            <ListItemText>{e.name}</ListItemText>
+                        </ListItem>
+                    </Link>
+                ))}
+            </List>
+            <Divider />
+            <List>
+                {["Legal", "About", "Report a bug"].map((text, index) => (
+                    <ListItem button key={text}>
+                        <ListItemText primary={text} />
+                    </ListItem>
+                ))}
+            </List>
+        </Box>
+    );
+    const signIn = () => {
+        navigate("/");
+    };
 
     const handleProfileMenuOpen = (event) => {
         setAnchorEl(event.currentTarget);
@@ -180,11 +222,11 @@ export default function PrimarySearchAppBar(props) {
             onClose={handleMenuClose}
         >
             {props.token !== null && props.token !== undefined ? (
-                <>
+                <Box>
                     <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
                     <MenuItem onClick={handleMenuClose}>My account</MenuItem>
                     <MenuItem onClick={logout}>Logout</MenuItem>
-                </>
+                </Box>
             ) : (
                 <MenuItem onClick={signIn}>Sign In</MenuItem>
             )}
@@ -257,17 +299,34 @@ export default function PrimarySearchAppBar(props) {
                         color="inherit"
                         aria-label="open drawer"
                         sx={{ mr: 2 }}
+                        onClick={() => {
+                            toggleDrawer(!openDrawer); //doesn't seem to be working if I hard set it to false ???
+                        }}
                     >
                         <MenuIcon />
+                        <SwipeableDrawer
+                            open={openDrawer}
+                            onClose={() => {
+                                toggleDrawer(false);
+                            }}
+                            onOpen={() => {
+                                toggleDrawer(true);
+                            }}
+                        >
+                            {drawerContents()}
+                        </SwipeableDrawer>
                     </IconButton>
-                    <Typography
-                        variant="h6"
-                        noWrap
-                        component="div"
-                        sx={{ display: { xs: "none", sm: "block" } }}
-                    >
-                        Blablapp
-                    </Typography>
+                    <Link to="/" 
+                        style={{ textDecoration: "none", color: "inherit" }}>
+                        <Typography
+                            variant="h6"
+                            noWrap
+                            component="div"
+                            sx={{ display: { xs: "none", sm: "block" } }}
+                        >
+                            Blablapp
+                        </Typography>
+                    </Link>
                     <Search>
                         <SearchIconWrapper>
                             <SearchIcon />

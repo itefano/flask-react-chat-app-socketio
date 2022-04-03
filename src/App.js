@@ -8,7 +8,9 @@ import UseToken from "./components/UseToken";
 import { ThemeProvider } from "@mui/material/styles";
 import Theme, { lightTheme, darkTheme } from "./context/Theme";
 import { useContext, useState, useEffect } from "react";
-
+import Contacts from "./components/Contacts";
+import Groups from "./components/Groups";
+import Chat from "./components/Chat"
 function App() {
     const [theme, setTheme] = useState(useContext(Theme));
     const handleTheme = () => {
@@ -39,11 +41,21 @@ function App() {
                             </Routes>
                         ) : (
                             <Routes>
+                                <Route exact path="/" element={<Homepage />} />
                                 <Route
                                     exact
-                                    path="/"
-                                    element={<Homepage/>}
-                                ></Route>
+                                    path="/contacts"
+                                    element={<Contacts token={token} />}
+                                />
+                                <Route
+                                    exact
+                                    path="/groups"
+                                    element={<Groups token={token} />}
+                                />
+                                <Route
+                                    path="/chat/:chatRoomId"
+                                    element={<Chat theme={theme} token={token} />}
+                                />
                                 <Route
                                     exact
                                     path="/profile"
@@ -53,7 +65,7 @@ function App() {
                                             setToken={setToken}
                                         />
                                     }
-                                ></Route>
+                                />
                             </Routes>
                         )}
                     </div>

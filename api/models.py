@@ -32,7 +32,7 @@ class Group(Base):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
     def getusers(self):
-        return Group.query.filter(User.groups.any(id=self.id)).all()
+        return User.query.with_parent(self).all()
 
 
 class Friend(Base):
