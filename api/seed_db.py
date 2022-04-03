@@ -21,7 +21,6 @@ def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=
                                                      (iteration / float(total)))
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '-' * (length - filledLength)
-    # Print New Line on Complete
     if sys.platform == "win32" or sys.platform == "win64":
         sys.stdout.write(f'{prefix} |{bar}| {percent}% {suffix}')
         sys.stdout.flush()
@@ -45,7 +44,7 @@ def generate_emails(amt=10):
 def generate_users(amt=10):
     users = []
     emails = generate_emails(amt)
-    printProgressBar(0, amt, prefix='Progress:', suffix='Complete', length=50)
+    printProgressBar(0, amt, prefix='Generating users...', suffix='Done!', length=50)
     for i in range(amt):
         isAdmin = False
         if randrange(100) == 0:
@@ -58,8 +57,8 @@ def generate_users(amt=10):
             isAdmin=isAdmin,
             profilePicturePath=fake.image_url(),
         ))
-        printProgressBar(i + 1, amt, prefix='Progress:',
-                         suffix='Complete', length=50)
+        printProgressBar(i + 1, amt, prefix='Generating users...',
+                         suffix='Done!', length=50)
     return users
 
 
@@ -67,7 +66,7 @@ def generate_groups(s, amt=10):
     groups = []
     userGroups = []
     insertedId = []
-    printProgressBar(0, amt, prefix='Progress:', suffix='Complete', length=50)
+    printProgressBar(0, amt, prefix='Generating groups...', suffix='Done!', length=50)
     for i in range(amt):
         adminId = randrange(amt)+1
         participants = []
@@ -95,14 +94,14 @@ def generate_groups(s, amt=10):
             groupAdmin=adminId,
             users=finalParticipants
         ))
-        printProgressBar(i + 1, amt, prefix='Progress:',
-                         suffix='Complete', length=50)
+        printProgressBar(i + 1, amt, prefix='Generating groups...',
+                         suffix='Done!', length=50)
     return groups
 
 
 def generate_friends(s, amt=10):
     friends = []
-    printProgressBar(0, amt, prefix='Progress:', suffix='Complete', length=50)
+    printProgressBar(0, amt, prefix='Generating friends...', suffix='Done!', length=50)
     for i in range(amt):
         randomFriends = []
         for j in range(10):
@@ -114,14 +113,14 @@ def generate_friends(s, amt=10):
                 userId=i+1,
                 friendId=randomFriends[j]
             ))
-        printProgressBar(i + 1, amt, prefix='Progress:',
-                         suffix='Complete', length=50)
+        printProgressBar(i + 1, amt, prefix='Generating friends...',
+                         suffix='Done!', length=50)
     return friends
 
 
 def generate_messages(s, amt=10):
     messages = []
-    printProgressBar(0, amt, prefix='Progress:', suffix='Complete', length=50)
+    printProgressBar(0, amt, prefix='Generating messages (this might take a while)...', suffix='Done!', length=50)
     for i in range(amt):
         ppath = None
         group = s.query(models.Group).get(i+1)
@@ -137,26 +136,20 @@ def generate_messages(s, amt=10):
                     picturePath=ppath,
                     author=author,
                     groupId=group.id))
-            printProgressBar(i + 1, amt, prefix='Progress:',
-                             suffix='Complete', length=50)
+            printProgressBar(i + 1, amt, prefix='Generating messages (this might take a while)...',
+                             suffix='Done!', length=50)
     return messages
 
 
 def seed_db():
-    # I have to commit after generating each separate table data because otherwise I can't seem to be able to create groups
+    # I have to commit after generating each separate table data because otherwise I can't seem to be able to create groups. Also, groups seem to be able to insert themselves without having to use bulk_save_objects ...?
     s = db_session()
-    print('generating users...')
     s.bulk_save_objects(generate_users(1000))
     s.commit()
-    print('generating friendships...')
     s.bulk_save_objects(generate_friends(s, 1000))
     s.commit()
-    print('generating groups...')
-    # HOW IS THIS GETTING INSERTED INTO THE DB ???????????????
     groups = generate_groups(s, 1000)
-    # s.bulk_save_objects(groups)
     s.commit()
-    print('generating messages (this one may take a while)...')
     s.bulk_save_objects(generate_messages(s, 1000))
     s.commit()
 
