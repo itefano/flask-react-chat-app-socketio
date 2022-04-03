@@ -29,23 +29,25 @@ def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=
     else:
         print(f'\r{prefix} |{bar}| {percent}% {suffix}', end=printEnd)
     if iteration == total:
-        print()
+        print("\nDone!", end="")
+        print("")
 
 
-def generate_emails(amt=10):
+def generate_emails(amount=10):
     emails = []
-    while len(set(emails)) < amt:
+    while len(set(emails)) < amount:
         email = fake.email()
         if email not in emails:
             emails.append(email)
     return list(set(emails))
 
 
-def generate_users(amt=10):
+def generate_users(amount=10):
     users = []
-    emails = generate_emails(amt)
-    printProgressBar(0, amt, prefix='Generating users...', suffix='Done!', length=50)
-    for i in range(amt):
+    emails = generate_emails(amount)
+    printProgressBar(0, amount, prefix='Generating users...',
+                     suffix='', length=50)
+    for i in range(amount):
         isAdmin = False
         if randrange(100) == 0:
             isAdmin = True
@@ -57,18 +59,19 @@ def generate_users(amt=10):
             isAdmin=isAdmin,
             profilePicturePath=fake.image_url(),
         ))
-        printProgressBar(i + 1, amt, prefix='Generating users...',
-                         suffix='Done!', length=50)
+        printProgressBar(i + 1, amount, prefix='Generating users...',
+                         suffix='', length=50)
     return users
 
 
-def generate_groups(s, amt=10):
+def generate_groups(s, amount=10):
     groups = []
     userGroups = []
     insertedId = []
-    printProgressBar(0, amt, prefix='Generating groups...', suffix='Done!', length=50)
-    for i in range(amt):
-        adminId = randrange(amt)+1
+    printProgressBar(0, amount, prefix='Generating groups...',
+                     suffix='', length=50)
+    for i in range(amount):
+        adminId = randrange(amount)+1
         participants = []
         randParticipant = adminId
         participantsId = [adminId]
@@ -77,7 +80,7 @@ def generate_groups(s, amt=10):
             if randParticipant not in participantsId:
                 participants.append(randParticipant)
             participantsId.append(randParticipant)
-            randParticipant = randrange(amt)+1
+            randParticipant = randrange(amount)+1
         if groupSize == 1:
             if len(participants) > 0 and participants[0] != None:
                 tempParticipant = s.query(models.User).get(participants[0])
@@ -94,40 +97,42 @@ def generate_groups(s, amt=10):
             groupAdmin=adminId,
             users=finalParticipants
         ))
-        printProgressBar(i + 1, amt, prefix='Generating groups...',
-                         suffix='Done!', length=50)
+        printProgressBar(i + 1, amount, prefix='Generating groups...',
+                         suffix='', length=50)
     return groups
 
 
-def generate_friends(s, amt=10):
+def generate_friends(s, amount=10):
     friends = []
-    printProgressBar(0, amt, prefix='Generating friends...', suffix='Done!', length=50)
-    for i in range(amt):
+    printProgressBar(0, amount, prefix='Generating friends...',
+                     suffix='', length=50)
+    for i in range(amount):
         randomFriends = []
         for j in range(10):
-            randomFriend = randrange(amt)+1
+            randomFriend = randrange(amount)+1
             while randomFriend != i+1 and randomFriend in randomFriends:
-                randomFriend = randrange(amt)+1
+                randomFriend = randrange(amount)+1
             randomFriends.append(randomFriend)
             friends.append(models.Friend(
                 userId=i+1,
                 friendId=randomFriends[j]
             ))
-        printProgressBar(i + 1, amt, prefix='Generating friends...',
-                         suffix='Done!', length=50)
+        printProgressBar(i + 1, amount, prefix='Generating friends...',
+                         suffix='', length=50)
     return friends
 
 
-def generate_messages(s, amt=10):
+def generate_messages(s, amount=10):
     messages = []
-    printProgressBar(0, amt, prefix='Generating messages (this might take a while)...', suffix='Done!', length=50)
-    for i in range(amt):
+    printProgressBar(0, amount, prefix='Generating messages...',
+                     suffix='', length=50)
+    for i in range(amount):
         ppath = None
         group = s.query(models.Group).get(i+1)
         if group:
-            for j in range(randrange(int(amt/10))+1):
+            for j in range(randrange(int(amount/10))+1):
                 author = group.getusers()[randrange(len(group.getusers()))].id
-                if randrange(amt) == 0:
+                if randrange(amount) == 0:
                     ppath = fake.image_url(),
                 messages.append(models.Message(
                     title=" ".join(fake.words(randrange(6)+1)),
@@ -136,12 +141,12 @@ def generate_messages(s, amt=10):
                     picturePath=ppath,
                     author=author,
                     groupId=group.id))
-            printProgressBar(i + 1, amt, prefix='Generating messages (this might take a while)...',
-                             suffix='Done!', length=50)
+            printProgressBar(i + 1, amount, prefix='Generating messages...',
+                             suffix='', length=50)
     return messages
 
 
-def seed_db():
+def seed_db(amount):
     # I have to commit after generating each separate table data because otherwise I can't seem to be able to create groups. Also, groups seem to be able to insert themselves without having to use bulk_save_objects ...?
     s = db_session()
     s.bulk_save_objects(generate_users(1000))
@@ -154,4 +159,13 @@ def seed_db():
     s.commit()
 
 
-seed_db()
+amount = 1000
+try:
+    amount = int(sys.argv[1])
+    if amount < 1:
+        raise ValueError("Value is too low!")
+except ValueError as e:
+    raise e
+except IndexError:
+    print('No value provided, 1000 will be used by default')
+seed_db(amount)
