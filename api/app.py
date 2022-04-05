@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from flask_jwt_extended import create_access_token, get_jwt, get_jwt_identity, \
     unset_jwt_cookies, jwt_required, JWTManager
 
+from flask_socketio import SocketIO
 from dotenv import load_dotenv
 import models
 load_dotenv()
