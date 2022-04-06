@@ -163,11 +163,11 @@ export default function PrimarySearchAppBar(props) {
                     { name: "Contacts", link: "/contacts" },
                     { name: "Groups", link: "groups" },
                 ].map((e, index) => (
-                    <Link
+                    <Link key={e.name}
                         to={e.link}
                         style={{ textDecoration: "none", color: "inherit" }}
                     >
-                        <ListItem button key={e.name}>
+                        <ListItem button>
                             <ListItemText>{e.name}</ListItemText>
                         </ListItem>
                     </Link>

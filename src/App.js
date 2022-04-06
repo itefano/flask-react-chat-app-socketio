@@ -53,7 +53,7 @@ function App() {
                                     element={<Groups token={token} />}
                                 />
                                 <Route
-                                    path="/chat/:chatRoomId"
+                                    path="/chat/:groupId"
                                     element={<Chat theme={theme} token={token} />}
                                 />
                                 <Route

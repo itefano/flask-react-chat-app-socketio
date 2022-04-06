@@ -52,9 +52,6 @@ class Group(Base):
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
-    def getusers(self):
-        return User.query.with_parent(self).all()
-
 
 class User(Base):
     __tablename__ = 'users'

@@ -21,7 +21,9 @@ def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=
     sys.stdout.write(f'{prefix} |{bar}| {percent}% {suffix}')
     if iteration != total:
         sys.stdout.flush()
+        sys.stdout.write('\033[?25l')
         sys.stdout.write('\r')
+        sys.stdout.write('\033[?25l')
         sys.stdout.flush()
     else:
         print(" Done!")
@@ -43,7 +45,7 @@ def generate_users(amount):
                      suffix='', length=50)
     for i in range(amount):
         isAdmin = False
-        if randrange(100) == 0:
+        if randrange(int(amount/100)+1) == 0:
             isAdmin = True
         users.append(models.User(
             firstName=fake.first_name(),
@@ -119,12 +121,13 @@ def generate_messages(s, amount):
     messages = []
     printProgressBar(0, amount, prefix='Generating approx '+str(5*10*amount)+' messages...', suffix='', length=50)
     for i in range(amount):
-        ppath = None
         for j in range(randrange(int(amount/10))+1):
+            ppath = None
             group = s.query(models.Group).get(i+1)
             # hacky, but saves time
-            author = group.getusers()[randrange(len(group.getusers()))]
-            if randrange(amount) == 0:
+            users = s.query(models.Group).get(i+1).users
+            author = users[randrange(len(users))]
+            if randrange(10) == 0:
                 ppath = fake.image_url()
             messages.append(models.Message(
                 title=" ".join(fake.words(randrange(6)+1)),
