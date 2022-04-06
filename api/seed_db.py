@@ -19,15 +19,15 @@ def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '-' * (length - filledLength)
     sys.stdout.write(f'{prefix} |{bar}| {percent}% {suffix}')
-    sys.stdout.flush()
-    sys.stdout.write('\r')
-    sys.stdout.flush()
-    if iteration == total:
-        print("\nDone!", end="")
-        print("")
+    if iteration != total:
+        sys.stdout.flush()
+        sys.stdout.write('\r')
+        sys.stdout.flush()
+    else:
+        print(" Done!")
 
 
-def generate_emails(amount=10):
+def generate_emails(amount):
     emails = []
     while len(set(emails)) < amount:
         email = fake.email()
@@ -36,10 +36,10 @@ def generate_emails(amount=10):
     return list(set(emails))
 
 
-def generate_users(amount=10):
+def generate_users(amount):
     users = []
     emails = generate_emails(amount)
-    printProgressBar(0, amount, prefix='Generating users...',
+    printProgressBar(0, amount, prefix='Generating '+str(amount)+' users...',
                      suffix='', length=50)
     for i in range(amount):
         isAdmin = False
@@ -53,56 +53,51 @@ def generate_users(amount=10):
             isAdmin=isAdmin,
             profilePicturePath=fake.image_url(),
         ))
-        printProgressBar(i + 1, amount, prefix='Generating users...',
+        printProgressBar(i + 1, amount, prefix='Generating '+str(amount)+' users...',
                          suffix='', length=50)
     return users
 
 
-def generate_groups(s, amount=10):
+def generate_groups(s, amount):
     groups = []
-    userGroups = []
-    insertedId = []
-    printProgressBar(0, amount, prefix='Generating groups...',
+    printProgressBar(0, amount, prefix='Generating '+str(amount)+' groups...',
                      suffix='', length=50)
     for i in range(amount):
-        adminId = randrange(amount)+1
-        participants = [s.query(models.User).get(adminId)]
-        randParticipant = adminId
-        participantsId = [adminId]
+        admin = s.query(models.User).get(randrange(amount)+1)
+        participants = [admin.id]
         groupSize = randrange(10)+1
+        randParticipant = randrange(amount)+1
         for j in range(groupSize+1):
-            if randParticipant not in participantsId:
-                participants.append(s.query(models.User).get(randParticipant))
-            participantsId.append(randParticipant)
-            randParticipant = randrange(amount)+1
+            participants.append(randParticipant)
+            while randParticipant in participants:
+                randParticipant = randrange(amount)+1
         if groupSize == 2:
-            if len(participants) > 0 and participants[0] != None:
-                groupName = None
+            groupName = None
         else:
             groupName = " ".join(fake.words(randrange(6)+1))
-        admins = [s.query(models.User).get(adminId)]
-        for n in participants:
+        users = [s.query(models.User).get(id) for id in participants]
+        admins = [admin]
+        addedAdmin = [admin.id]
+        for n in users:
             r = randrange(5)
-            if r==0:
+            if r == 0 and n.id not in addedAdmin:
                 admins.append(n)
-        insertedId.append(i+1)
-        name = groupName
-        picturePath = fake.image_url()
+                addedAdmin.append(n.id)
         groups.append(models.Group(
-            name=name,
-            picturePath=picturePath,
-            creator=adminId,
-            admins=admins,
-            users=participants
+            name=groupName,
+            picturePath=fake.image_url(),
+            creator=admin.id,
+            admins=admins, 
+            users=users
         ))
-        printProgressBar(i + 1, amount, prefix='Generating groups...',
+        printProgressBar(i + 1, amount, prefix='Generating '+str(amount)+' groups...',
                          suffix='', length=50)
     return groups
 
 
-def generate_friends(s, amount=10):
+def generate_friends(amount):
     friends = []
-    printProgressBar(0, amount, prefix='Generating friends...',
+    printProgressBar(0, amount, prefix='Generating '+str(amount)+' friends...',
                      suffix='', length=50)
     for i in range(amount):
         randomFriends = []
@@ -111,81 +106,79 @@ def generate_friends(s, amount=10):
             while randomFriend != i+1 and randomFriend in randomFriends:
                 randomFriend = randrange(amount)+1
             randomFriends.append(randomFriend)
-            f = s.query(models.User).get(randomFriends[j])
-            u = s.query(models.User).get(i+1)
             friends.append(models.Friend(
-                userId=u.id,
-                friendId=f.id
+                userId=i+1,
+                friendId=randomFriend
             ))
-        printProgressBar(i + 1, amount, prefix='Generating friends...',
+        printProgressBar(i + 1, amount, prefix='Generating '+str(amount)+' friends...',
                          suffix='', length=50)
     return friends
 
 
-def generate_messages(s, amount=10):
+def generate_messages(s, amount):
     messages = []
-    printProgressBar(0, amount, prefix='Generating messages...',
-                     suffix='', length=50)
+    printProgressBar(0, amount, prefix='Generating approx '+str(5*10*amount)+' messages...', suffix='', length=50)
     for i in range(amount):
         ppath = None
-        group = s.query(models.Group).get(i+1)
-        if group:
-            for j in range(randrange(int(amount/10))+1):
-                author = group.getusers()[randrange(len(group.getusers()))]
-                if randrange(amount) == 0:
-                    ppath = fake.image_url(),
-                title = " ".join(fake.words(randrange(6)+1))
-                content = fake.text(max_nb_chars=randrange(250) +
-                                      5)
-                messages.append(models.Message(
-                    title=title,
-                    content=content,  # very arbitrary, I know
-                    picturePath=ppath,
-                    author=author.id,
-                    groupId=group.id))
-            printProgressBar(i + 1, amount, prefix='Generating messages...',
-                             suffix='', length=50)
+        for j in range(randrange(int(amount/10))+1):
+            group = s.query(models.Group).get(i+1)
+            # hacky, but saves time
+            author = group.getusers()[randrange(len(group.getusers()))]
+            if randrange(amount) == 0:
+                ppath = fake.image_url()
+            messages.append(models.Message(
+                title=" ".join(fake.words(randrange(6)+1)),
+                content=fake.text(max_nb_chars=randrange(250) + 5),
+                picturePath=ppath,
+                author=author.id,
+                groupId=group.id))
+        printProgressBar(i + 1, amount, prefix='Generating approx '+str(5*10*amount)+' messages...',
+                         suffix='', length=50)
     return messages
 
-def generate_stories(s, amount):
+
+def generate_stories(amount):
     stories = []
-    printProgressBar(0, amount, prefix='Generating stories...',
+    printProgressBar(0, amount, prefix='Generating '+str(amount)+' stories...',
                      suffix='', length=50)
     for i in range(amount):
-        author = s.query(models.User).get(randrange(amount)+1)
+        authorId = randrange(amount)+1
         stories.append(models.Story(
             title=" ".join(fake.words(randrange(6)+1)),
             description=fake.text(max_nb_chars=randrange(250) +
-                              5),
+                                  5),
             picturePath=fake.image_url(),
-            author=author.id
+            author=authorId
         ))
-        printProgressBar(i + 1, amount, prefix='Generating stories...',
+        printProgressBar(i + 1, amount, prefix='Generating '+str(amount)+' stories...',
                          suffix='', length=50)
     return stories
+
 
 def seed_db(amount):
     s = db_session()
     s.add_all(generate_users(amount))
     s.commit()
-    friends = generate_friends(s, amount)
+    friends = generate_friends(amount)
     s.add_all(friends)
     s.commit()
     groups = generate_groups(s, amount)
     s.add_all(groups)
     s.commit()
-    stories = generate_stories(s, amount)
+    stories = generate_stories(amount)
     s.add_all(stories)
     s.commit()
     messages = (generate_messages(s, amount))
     s.add_all(messages)
     s.commit()
 
+
 amount = 1000
 try:
     amount = int(sys.argv[1])
-    if amount < 1:
-        raise ValueError("Value is too low!")
+    if amount < 4:
+        raise ValueError(
+            "Value is too low! Please provide a number greater than 4")
 except ValueError as e:
     raise e
 except IndexError:

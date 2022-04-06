@@ -145,8 +145,9 @@ export default function Groups(props) {
                                               style={{
                                                   display: "inline",
                                                   float: "left",
-                                                  color: "grey",
+                                                //   color: "grey",
                                                   fontSize: "0.7rem",
+                                                  marginTop:'0px'
                                               }}
                                               color="primary.disabled"
                                           >

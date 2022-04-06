@@ -108,10 +108,13 @@ def list_groups():
 @api.route('/api/messagelist', methods=['POST'])
 @jwt_required()
 def list_messages():
+    print('messages...')
     groupId = request.json.get("groupId", None)
     s = db_session()
     group = s.query(models.Group).get(groupId)
     # vérifie que l'user est bien dans un groupe
+    print('groupid', groupId, 'group:', group, group.getusers())
+    print('userdata:', get_user(get_jwt_identity()), 'users:', group.getusers())
     if (get_user(get_jwt_identity()) not in group.getusers()):
         return {"errorMessage": "User does not have access to this group. How the hell did you get here?"}, 404
     q = s.query(models.Group).filter(models.Group.users.any()).all()
@@ -131,6 +134,7 @@ def list_messages():
             "timestamp": m.time_created})
     groupInfo = {"name": group.name, "picturePath": group.picturePath}
     res = {"messages": messageList, "groupInfo": groupInfo, "currentUser":get_jwt_identity()}
+    print('res:', res)
     return jsonify(res)
 
 
