@@ -18,7 +18,6 @@ const ENDPOINT = "http://localhost:5000/chat";
 
 export default function Groups(props) {
     const socket = useRef(null); //l'utilisation d'une ref permet de garder la connexion ouverte lors d'un re-render de composants
-    const [response, setResponse] = useState("");
     const [groupInfo, setGroupInfo] = useState(null);
     const [messages, setMessages] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
@@ -29,12 +28,12 @@ export default function Groups(props) {
     };
     const sendMessage = () => {
         if (value !== "") {
-            console.log(socket.current);
             socket.current.emit("message sent", {
                 message: value,
                 groupId: groupId,
             });
         }
+        setValue("");
     };
     const mapMessages = (messageList) => {
         let newMessageMapping = [];
@@ -73,15 +72,19 @@ export default function Groups(props) {
         (lowerRest ? rest.join("").toLowerCase() : rest.join(""));
 
     useEffect(() => {
-        socket.current = io.connect(ENDPOINT, {
+        socket.current = io(ENDPOINT, {
             extraHeaders: {
                 Authorization: "Bearer " + props.token,
             },
         });
+        socket.current.on("connect", () => {
+            socket.current.on("disconnect", () => {
+                console.log("disconnocting poopie");
+            });
+        });
         socket.current.emit("join", { groupId: groupId });
-        socket.current.on("message recieved", (message) => {
-            console.log("recieved msg", message);
-            setResponse(message.msg);
+        socket.current.on("message", (data) => {
+            setMessages((messages) => [...messages, data]);
         });
     }, [ENDPOINT, props.token]);
 
@@ -111,16 +114,12 @@ export default function Groups(props) {
             });
 
         return () => {
-            socket.current.off("message recieved");
             socket.current.disconnect();
         };
     }, []);
 
     return (
         <>
-            {response !== null && response !== undefined && response !== ""
-                ? response
-                : ""}
             <h1>
                 {groupInfo !== null && groupInfo !== undefined ? (
                     <Box sx={{ display: "flex", justifyContent: "center" }}>

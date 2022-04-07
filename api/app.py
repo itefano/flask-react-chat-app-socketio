@@ -6,11 +6,11 @@ from datetime import datetime, timedelta, timezone
 from flask_jwt_extended import create_access_token, get_jwt, get_jwt_identity, \
     unset_jwt_cookies, jwt_required, JWTManager
 
-from flask_socketio import SocketIO, join_room, leave_room
+from flask_socketio import SocketIO, join_room, leave_room, emit, send
 from dotenv import load_dotenv
 import models
 load_dotenv()
-from sqlalchemy import asc, desc
+from sqlalchemy import desc
 
 
 api = Flask(__name__)
@@ -163,7 +163,7 @@ def join_group(jsonresponse):
             return {"errorMessage": "User does not have access to this group. How the hell did you get here?"}, 404
         join_room(groupId)
         print('joined room')
-        socketio.send("joined group", {"groupId": groupId}, namespace="/chat", room=groupId, broadcast=True)
+        emit("joined group", {"groupId": groupId}, namespace="/chat", room=groupId, broadcast=True)
         return {"success": True}
     return {"success":False}
 
@@ -173,13 +173,12 @@ def leave_group(jsonresponse):
     groupId = jsonresponse.get("groupId")
     if groupId:
         s = db_session()
-        group = s.query(models.Group).get(groupId)
         # vérifie que l'user est bien dans un groupe
         users = [e.id for e in models.Group.query.get(jsonresponse['groupId']).users]
         if (get_user(get_jwt_identity()) in users):
             return {"errorMessage": "User does not have access to this group. How the hell did you get here?"}, 404
         leave_room(groupId)
-        socketio.send("left group", {"groupId": groupId}, namespace="/chat", room=groupId, broadcast=True)
+        send("left group", {"groupId": groupId}, namespace="/chat", room=groupId, broadcast=True)
         return {"success": True}
     return {"success":False}
 
@@ -201,20 +200,17 @@ def message_sent(jsonresponse):
             try:
                 s.add(message)
                 s.commit()
-                print(json.dumps({
-                            'message': jsonresponse['message'],
+                user = get_user(get_jwt_identity())
+                send({
+                            'content': jsonresponse['message'],
                             'title': jsonresponse.get('title'),
-                            'author': get_user(get_jwt_identity()).firstName,
-                            'picturePath': get_user(get_jwt_identity()).profilePicturePath,
+                            'sender': {
+                                "firstName": user.firstName,
+                                "profilePicturePath": user.profilePicturePath,
+                                "email": user.email},
+                            'profilePicturePath': get_user(get_jwt_identity()).profilePicturePath,
                             'timestamp': json.dumps(message.time_created, indent=4, sort_keys=True, default=str)
-                            }))
-                socketio.emit("message recieved", json.dumps({
-                            'message': jsonresponse['message'],
-                            'title': jsonresponse.get('title'),
-                            'author': get_user(get_jwt_identity()).firstName,
-                            'picturePath': get_user(get_jwt_identity()).profilePicturePath,
-                            'timestamp': json.dumps(message.time_created, indent=4, sort_keys=True, default=str)
-                            }) , room=jsonresponse['groupId'], broadcast=True)
+                            }, namespace="/chat", room=jsonresponse['groupId'], broadcast=True)
             except Exception as e:
                 print("something went wrong during db insertion :'(")
                 raise(e)
