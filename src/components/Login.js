@@ -23,7 +23,6 @@ function Login(props) {
         })
             .then((response) => {
                 props.setToken(response.data.access_token);
-                console.log('addName', response.data.firstName)
                 addName(response.data.firstName);
             })
             .catch((error) => {

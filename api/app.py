@@ -126,20 +126,29 @@ def list_messages():
     users = [e.id for e in models.Group.query.get(groupId).users]
     if (get_user(get_jwt_identity()) in users):
         return {"errorMessage": "User does not have access to this group. How the hell did you get here?"}, 404
-    messages = s.query(models.Message).filter_by(groupId=groupId).order_by(desc(models.Message.time_created)).all()
+    group_messages = s.query(models.Message).filter_by(groupId=groupId).order_by(desc(models.Message.time_created)).all()
     messageList = []
-    for m in messages:
+    mId = [m.id for m in group_messages]
+    usr = s.query(models.User).get(get_jwt_identity())
+    for m in group_messages:
         sender = s.query(models.User).get(m.author)
-        messageList.insert(0, {
-            "title": m.title,
-            "content": m.content,
-            "picturePath": m.picturePath,
-            "sender": {
-                "firstName": sender.firstName,
-                "profilePicturePath": sender.profilePicturePath,
-                "email": sender.email
-            },
-            "timestamp": m.time_created})
+        try:
+            if (m.id not in mId):
+                usr.messages.append(m)
+            s.commit()
+        except Exception as e:
+            raise(e)
+        finally:
+            messageList.insert(0, {
+                "title": m.title,
+                "content": m.content,
+                "picturePath": m.picturePath,
+                "sender": {
+                    "firstName": sender.firstName,
+                    "profilePicturePath": sender.profilePicturePath,
+                    "email": sender.email
+                },
+                "timestamp": m.time_created})
     groupInfo = {"name": group.name, "picturePath": group.picturePath}
     res = {"messages": messageList, "groupInfo": groupInfo,
            "currentUser": get_email()}
@@ -167,6 +176,7 @@ def join_group(jsonresponse):
         return {"success": True}
     return {"success":False}
 
+
 @socketio.on("leave", namespace="/chat")
 @jwt_required()
 def leave_group(jsonresponse):
@@ -185,8 +195,16 @@ def leave_group(jsonresponse):
 @socketio.on('message sent', namespace="/chat")
 @jwt_required()
 def message_sent(jsonresponse):
-    if 'message' in jsonresponse.keys() and jsonresponse['message'] != "" and jsonresponse['groupId'] and jsonresponse['groupId']:
-        users = [e.id for e in models.Group.query.get(jsonresponse['groupId']).users] # gets all users, takes their ID and puts them into a list
+    if jsonresponse.get('message') and\
+                    jsonresponse.get('message') != "" and\
+                    jsonresponse.get('groupId') and\
+                    jsonresponse.get('message').isprintable() and not\
+                    jsonresponse.get('message').isspace() and not\
+                    jsonresponse.get('message').startswith('<script>'): # checks : if there is a message, that the message isn't somehow empty, that the message isn't a script, and that the message isn't a bunch of white spacesspace
+        try:
+            users = [e.id for e in models.Group.query.get(jsonresponse['groupId']).users] # gets all users, takes their ID and puts them into a list
+        except Exception as e:
+            return {"error", "Aint supposed to be here, my dude"}, 403
         if get_jwt_identity() in users: # checks if the user is in the group
             s = db_session()
             title = None
@@ -194,7 +212,7 @@ def message_sent(jsonresponse):
                 title = jsonresponse.get('title')
             message = models.Message(
                 title=title,
-                content=jsonresponse['message'],
+                content=jsonresponse['message'].strip(), # makes sure the user hasn't added extra spaces
                 author=get_jwt_identity(),
                 groupId=jsonresponse['groupId'])
             try:

@@ -1,5 +1,3 @@
-import time
-import os
 import sys
 from init_db import initdb
 from drop_all import dropdb

@@ -23,17 +23,23 @@ export default function Groups(props) {
     const [currentUser, setCurrentUser] = useState(null);
     const { groupId } = useParams();
     const [value, setValue] = useState("");
+    const [msgError, setMsgError] = useState(false);
     const handleChange = (event) => {
         setValue(event.target.value);
     };
-    const sendMessage = () => {
-        if (value !== "") {
+    const sendMessage = (e) => {
+        console.log(value.trim().length)
+        if (value !== null && value !== undefined && value !=='' && value.trim().length !== 0) {
+            setMsgError(false);
             socket.current.emit("message sent", {
                 message: value,
                 groupId: groupId,
             });
+        } else {
+            setMsgError(true);
         }
         setValue("");
+        e.preventDefault();
     };
     const mapMessages = (messageList) => {
         let newMessageMapping = [];
@@ -171,10 +177,11 @@ export default function Groups(props) {
                                                       display: "inline",
                                                       float: "right",
                                                       color: "grey",
+                                                      marginTop:'0px',
                                                       fontSize: "0.7rem",
                                                   }}
                                               >
-                                                  Sent.
+                                                  Sent
                                               </p>
                                           </>
                                       ) : (
@@ -208,32 +215,35 @@ export default function Groups(props) {
                     </Paper>
                 </Container>
                 <Box pt={2} sx={{ width: "50%", margin: "auto" }}>
-                    <Paper
-                        sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            width: "auto",
-                            textAlign: "center",
-                        }}
-                    >
-                        <TextField
+                    <form onSubmit={sendMessage}>
+                        <Paper
                             sx={{
-                                color: "primary.main",
                                 display: "flex",
-                                width: "100%",
+                                justifyContent: "center",
+                                width: "auto",
+                                textAlign: "center",
                             }}
-                            inputProps={{ margin: "auto" }}
-                            id="filled-multiline-flexible"
-                            label="Enter your message here"
-                            multiline
-                            value={value}
-                            onChange={handleChange}
-                            variant="filled"
-                        />
-                        <Button variant="contained" onClick={sendMessage}>
-                            Send
-                        </Button>
-                    </Paper>
+                        >
+                            <TextField
+                                sx={{
+                                    color: "primary.main",
+                                    display: "flex",
+                                    width: "100%",
+                                }}
+                                error={msgError}
+                                inputProps={{ margin: "auto", pattern: "+" }}
+                                id="filled-multiline-flexible"
+                                label="Enter your message here"
+                                multiline
+                                value={value}
+                                onChange={handleChange}
+                                variant="filled"
+                            />
+                            <Button variant="contained" type="submit">
+                                Send
+                            </Button>
+                        </Paper>
+                    </form>
                 </Box>
             </Box>
         </>
