@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { styled, alpha } from "@mui/material/styles";
 import {
     Switch,
@@ -70,10 +70,28 @@ export default function PrimarySearchAppBar(props) {
     let navigate = useNavigate();
     const [checked, setChecked] = useState(true);
     const [openDrawer, setOpenDrawer] = useState(false);
+    const [notifications, setNotifications] = useState(0);
+    const [seeNotifications, setSeeNotifications] = useState(false);
     const handleTheme = () => {
         setChecked(!checked);
         props.handleTheme();
     };
+
+    useEffect(() => {
+        if ((
+            localStorage.getItem("notifications") !== null &&
+            localStorage.getItem("notifications") !== undefined)//move this somewhere else in the future
+        ) {
+            setNotifications(localStorage.getItem("notifications"
+            ));
+        }
+        else{
+            if (props.info.notifications !== null && props.info.notifications !== undefined) {
+                localStorage.setItem("notifications", props.info.notifications);
+                setNotifications(props.info.notifications);
+            }
+        }
+    }, [props.info]);
     const MaterialUISwitch = styled(Switch)(({ theme }) => ({
         width: 62,
         height: 34,
@@ -163,7 +181,8 @@ export default function PrimarySearchAppBar(props) {
                     { name: "Contacts", link: "/contacts" },
                     { name: "Groups", link: "groups" },
                 ].map((e, index) => (
-                    <Link key={e.name}
+                    <Link
+                        key={e.name}
                         to={e.link}
                         style={{ textDecoration: "none", color: "inherit" }}
                     >
@@ -253,22 +272,11 @@ export default function PrimarySearchAppBar(props) {
             <MenuItem>
                 <IconButton
                     size="large"
-                    aria-label="show 4 new mails"
+                    aria-label={"show " + notifications + " new notifications"}
                     color="inherit"
+                    onClick={()=>{setSeeNotifications(true)}}
                 >
-                    <Badge badgeContent={4} color="error">
-                        <MailIcon />
-                    </Badge>
-                </IconButton>
-                <p>Messages</p>
-            </MenuItem>
-            <MenuItem>
-                <IconButton
-                    size="large"
-                    aria-label="show 17 new notifications"
-                    color="inherit"
-                >
-                    <Badge badgeContent={17} color="error">
+                    <Badge badgeContent={notifications} color="error">
                         <NotificationsIcon />
                     </Badge>
                 </IconButton>
@@ -316,8 +324,10 @@ export default function PrimarySearchAppBar(props) {
                             {drawerContents()}
                         </SwipeableDrawer>
                     </IconButton>
-                    <Link to="/" 
-                        style={{ textDecoration: "none", color: "inherit" }}>
+                    <Link
+                        to="/"
+                        style={{ textDecoration: "none", color: "inherit" }}
+                    >
                         <Typography
                             variant="h6"
                             noWrap
@@ -346,19 +356,11 @@ export default function PrimarySearchAppBar(props) {
                     <Box sx={{ display: { xs: "none", md: "flex" } }}>
                         <IconButton
                             size="large"
-                            aria-label="show 4 new mails"
+                            aria-label={"show " + notifications + " new notifications"}
                             color="inherit"
+                            onClick={()=>{setSeeNotifications(true)}}
                         >
-                            <Badge badgeContent={4} color="error">
-                                <MailIcon />
-                            </Badge>
-                        </IconButton>
-                        <IconButton
-                            size="large"
-                            aria-label="show 17 new notifications"
-                            color="inherit"
-                        >
-                            <Badge badgeContent={17} color="error">
+                            <Badge badgeContent={notifications} color="error">
                                 <NotificationsIcon />
                             </Badge>
                         </IconButton>

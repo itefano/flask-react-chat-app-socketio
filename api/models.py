@@ -12,14 +12,6 @@ user_group = Table('users_groups', Base.metadata,
                        timezone=True), onupdate=func.now())
                    )
 
-message_seen = Table('message_seen', Base.metadata,
-                     Column('userId', Integer, ForeignKey('users.id')),
-                     Column('messageId', Integer, ForeignKey('messages.id')),
-                     Column('seen', Boolean, default=False),
-                     Column('time_created', DateTime(
-                         timezone=True), default=func.now())
-                     )
-
 admins = Table('admins', Base.metadata,
                Column('userId', Integer, ForeignKey('users.id')),
                Column('groupId', Integer, ForeignKey('groups.id')),
@@ -53,6 +45,8 @@ class Group(Base):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
+
+
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
@@ -64,7 +58,8 @@ class User(Base):
     isAdmin = Column(Boolean, unique=False, default=False)
     # 260 = max path size on windows
     profilePicturePath = Column(String(260), unique=False)
-    messages = relationship('Message')
+    writtenmessages = relationship('Message')
+    seen = relationship('Message_Seen')
     stories = relationship('Story')
     groups = relationship('Group')
     friends = relationship('Friend', secondary='friends',
@@ -117,7 +112,7 @@ class Message(Base):
     author = Column(Integer, ForeignKey('users.id'))
     time_created = Column(DateTime(timezone=True), default=func.now())
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
-    seenBy = relationship('User', secondary=message_seen)
+    seenBy = relationship('Message_Seen')
     groupId = Column(Integer, ForeignKey('groups.id'), default=None)
     parentMessage = Column(Integer, ForeignKey('messages.id'))
 
@@ -126,3 +121,20 @@ class Message(Base):
 
     def __repr__(self):
         return f'<Message {self.title!r} : {self.content!r}>'
+
+class Message_Seen(Base): 
+    __tablename__ = 'messages_seen'
+    id = Column(Integer, primary_key=True)
+    userId = Column(Integer, ForeignKey('users.id'))
+    messageId = Column(Integer, ForeignKey('messages.id'))
+    seen = Column(Boolean, default=False)
+    time_created = Column(DateTime(
+        timezone=True), default=func.now())
+
+    def __init__(self, **kwargs):
+        super(Message_Seen, self).__init__(**kwargs)
+
+    def __repr__(self):  # for debugging purposes only, yeet it later
+        return f'<Notification {self.userId!r} saw {self.messageId!r}>'
+
+    

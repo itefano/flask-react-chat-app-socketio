@@ -1,7 +1,6 @@
 import sys
 from init_db import initdb
 from drop_all import dropdb
-from time import sleep
 from random import randrange
 from database import db_session, Base, engine
 from faker import Faker
@@ -27,27 +26,28 @@ def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=
         print(" Done!")
 
 
-def generate_emails(amount):
-    emails = []
-    while len(set(emails)) < amount:
-        email = fake.email()
-        if email not in emails:
-            emails.append(email)
-    return list(set(emails))
-
-
 def generate_users(amount):
     users = []
-    emails = generate_emails(amount)
+    names = []
+    emails = []
+    while len(names)<amount:
+        firstName = fake.first_name()
+        lastName = fake.last_name()
+        if ((firstName, lastName) not in names):
+            names.append((firstName, lastName))
+    
+    for i in range(len(names)):
+        email = names[i][0].lower()+names[i][1].lower()+"@"+fake.safe_domain_name()
+        emails.append(email)
     printProgressBar(0, amount, prefix='Generating '+str(amount)+' users...',
                      suffix='', length=50)
     for i in range(amount):
         isAdmin = False
-        if randrange(int(amount/100)+1) == 0:
+        if randrange(10)+1 == 0:#roughly 10% of user base will be admins
             isAdmin = True
         users.append(models.User(
-            firstName=fake.first_name(),
-            lastName=fake.last_name(),
+            firstName=names[i][0],
+            lastName=names[i][1],
             email=emails[i],
             password=fake.password(),
             isAdmin=isAdmin,
@@ -137,6 +137,27 @@ def generate_messages(s, amount):
                          suffix='', length=50)
     return messages
 
+def generate_notifications(s, amount):
+    messages_seen = []
+    printProgressBar(0, amount, prefix='Generating approx '+str(int(3.5*amount*amount))+' notifications...', suffix='', length=50)
+    groups = s.query(models.Group).all()
+    for i in range(len(groups)):
+        for j in range(len(groups[i].messages)):
+            m = groups[i].messages[j]
+            r = randrange(2)
+            seen = True
+            if r==0:
+                seen = False
+            for u in groups[i].users:
+                messages_seen.append(models.Message_Seen(
+                    userId=u.id,
+                    messageId=m.id,
+                    seen=seen
+                ))
+        printProgressBar(i + 1, amount, prefix='Generating approx '+str(int(3.5*amount*amount))+' notifications...',
+                         suffix='', length=50)
+    return messages_seen
+
 
 def generate_stories(amount):
     stories = []
@@ -171,6 +192,9 @@ def seed_db(amount):
     s.commit()
     messages = (generate_messages(s, amount))
     s.add_all(messages)
+    s.commit()
+    notifications = generate_notifications(s, amount)
+    s.add_all(notifications)
     s.commit()
 
 

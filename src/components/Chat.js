@@ -9,7 +9,7 @@ import {
     Paper,
     Button,
 } from "@mui/material";
-import { Link, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "./Chat.css";
 import ChatMsg from "@mui-treasury/components/chatMsg/ChatMsg";
 
@@ -21,19 +21,19 @@ export default function Groups(props) {
     const [groupInfo, setGroupInfo] = useState(null);
     const [messages, setMessages] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
-    const { groupId } = useParams();
     const [value, setValue] = useState("");
     const [msgError, setMsgError] = useState(false);
     const handleChange = (event) => {
         setValue(event.target.value);
     };
+    const navigate = useNavigate();
     const sendMessage = (e) => {
         console.log(value.trim().length)
         if (value !== null && value !== undefined && value !=='' && value.trim().length !== 0) {
             setMsgError(false);
             socket.current.emit("message sent", {
                 message: value,
-                groupId: groupId,
+                groupId: props.room,
             });
         } else {
             setMsgError(true);
@@ -77,7 +77,7 @@ export default function Groups(props) {
         first.toUpperCase() +
         (lowerRest ? rest.join("").toLowerCase() : rest.join(""));
 
-    useEffect(() => {
+    useEffect(() => {//connexion à la socket
         socket.current = io(ENDPOINT, {
             extraHeaders: {
                 Authorization: "Bearer " + props.token,
@@ -88,7 +88,7 @@ export default function Groups(props) {
                 console.log("disconnocting poopie");
             });
         });
-        socket.current.emit("join", { groupId: groupId });
+        socket.current.emit("join", { groupId: props.room });
         socket.current.on("message", (data) => {
             setMessages((messages) => [...messages, data]);
         });
@@ -97,10 +97,13 @@ export default function Groups(props) {
     useEffect(() => {
         //réceptions de messages par la socket
         //récupération des messages déjà existants
+        if (props.room === null || props.room === undefined) {
+            navigate('/');
+        }
         axios({
             method: "POST",
             url: "/api/messagelist",
-            data: { groupId: groupId },
+            data: { groupId: props.room },
             headers: {
                 Authorization: "Bearer " + props.token,
             },
@@ -121,6 +124,7 @@ export default function Groups(props) {
 
         return () => {
             socket.current.disconnect();
+            props.setRoom(null);
         };
     }, []);
 

@@ -1,11 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { Alert, Box } from "@mui/material";
 
 function Login(props) {
-    const addName = (name) => {
-        localStorage.setItem("firstName", name);
-    };
 
     const [loginForm, setloginForm] = useState({
         email: "",
@@ -23,7 +20,10 @@ function Login(props) {
         })
             .then((response) => {
                 props.setToken(response.data.access_token);
-                addName(response.data.firstName);
+                let info = {...response.data};
+                delete info.access_token
+                console.log('sending to App:', info)
+                props.addInfo(info);
             })
             .catch((error) => {
                 if (error.response) {
