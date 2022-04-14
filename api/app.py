@@ -38,7 +38,7 @@ def refresh_expiring_jwts(response):
     except (RuntimeError, KeyError):
         return response
 
-api.register_blueprint(routes)
+api.register_blueprint(routes, url_prefix='/api')
 
 
 

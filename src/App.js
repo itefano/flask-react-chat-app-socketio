@@ -6,33 +6,37 @@ import AppBar from "./components/AppBar";
 import Profile from "./components/Profile";
 import UseToken from "./components/UseToken";
 import { ThemeProvider } from "@mui/material/styles";
+import { Box } from "@mui/material";
 import Theme, { lightTheme, darkTheme } from "./context/Theme";
 import { useContext, useState, useEffect } from "react";
 import Contacts from "./components/Contacts";
 import Groups from "./components/Groups";
-import Chat from "./components/Chat"
-import { InfoSharp } from "@mui/icons-material";
+import Chat from "./components/Chat";
 function App() {
     const [theme, setTheme] = useState(useContext(Theme));
     const [info, setInfo] = useState({});
     const [room, setRoom] = useState(null);
     const addInfo = (infos) => {
-        let key = Object.keys(infos);
-        let newInfo = { ...info };
-        for (let i = 0; i < key.length; i++) {
-            console.log('key:', key[i])
-            newInfo[key[i]]= infos[key[i]];
-        }
-        setInfo(newInfo);
+        setInfo({ ...infos });
     };
 
-    useEffect(()=>{
-        let key = Object.keys(info);
-        for (let i = 0; i < key.length; i++) {
-            localStorage.setItem(String(key), info[key]);
+    useEffect(() => {
+        if (info && info !== null && info !== undefined && Object.keys(info).length > 0) {
+            localStorage.setItem("info", JSON.stringify({ ...info }));
         }
-    }, [info])
-    
+    }, [info]);
+
+    useEffect(() => {
+        if (
+            !info ||
+            Object.keys(info).length === 0 ||
+            info === null ||
+            info === undefined
+        ) {
+            setInfo(JSON.parse(localStorage.getItem("info")));
+        }
+    }, []);
+
     const handleTheme = () => {
         if (theme.palette.mode === "light") {
             setTheme(darkTheme);
@@ -43,7 +47,15 @@ function App() {
     const { token, removeToken, setToken } = UseToken();
     return (
         <ThemeProvider theme={theme}>
-            <div className="App">
+            <Box
+                className="App"
+                sx={{
+                    bgcolor: "background.default",
+                    height: "100vh",
+                    display: "flex",
+                    flexDirection: "column",
+                }}
+            >
                 <BrowserRouter>
                     <div className="App">
                         <AppBar
@@ -57,12 +69,21 @@ function App() {
                                 <Route
                                     exact
                                     path="/"
-                                    element={<Login setToken={setToken} addInfo={addInfo} />}
+                                    element={
+                                        <Login
+                                            setToken={setToken}
+                                            addInfo={addInfo}
+                                        />
+                                    }
                                 ></Route>
                             </Routes>
                         ) : (
                             <Routes>
-                                <Route exact path="/" element={<Homepage />} />
+                                <Route
+                                    exact
+                                    path="/"
+                                    element={<Homepage info={info} />}
+                                />
                                 <Route
                                     exact
                                     path="/contacts"
@@ -71,11 +92,24 @@ function App() {
                                 <Route
                                     exact
                                     path="/groups"
-                                    element={<Groups token={token} room={room} setRoom={setRoom}/>}
+                                    element={
+                                        <Groups
+                                            token={token}
+                                            room={room}
+                                            setRoom={setRoom}
+                                        />
+                                    }
                                 />
                                 <Route
                                     path="/chat"
-                                    element={<Chat theme={theme} token={token} room={room} setRoom={setRoom}/>}
+                                    element={
+                                        <Chat
+                                            theme={theme}
+                                            token={token}
+                                            room={room}
+                                            setRoom={setRoom}
+                                        />
+                                    }
                                 />
                                 <Route
                                     exact
@@ -91,7 +125,7 @@ function App() {
                         )}
                     </div>
                 </BrowserRouter>
-            </div>
+            </Box>
         </ThemeProvider>
     );
 }

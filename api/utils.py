@@ -18,11 +18,10 @@ def get_email():
         if q.email:
             return q.email
     return None  # not needed but pretty
-
-def get_notifications():
+    
+def get_notifications(id):
     s = db_session()
-    q = s.query(models.User).join(models.Message_Seen).where(
-        models.Message_Seen.seen == False).count()
+    q = s.query(models.User).filter_by(id=id).join(models.Message_Seen).filter_by(seen=False).count()
     if not q:
         q = 0
     return q

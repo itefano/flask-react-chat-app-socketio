@@ -28,8 +28,13 @@ export default function Groups(props) {
     };
     const navigate = useNavigate();
     const sendMessage = (e) => {
-        console.log(value.trim().length)
-        if (value !== null && value !== undefined && value !=='' && value.trim().length !== 0) {
+        console.log(value.trim().length);
+        if (
+            value !== null &&
+            value !== undefined &&
+            value !== "" &&
+            value.trim().length !== 0
+        ) {
             setMsgError(false);
             socket.current.emit("message sent", {
                 message: value,
@@ -77,7 +82,8 @@ export default function Groups(props) {
         first.toUpperCase() +
         (lowerRest ? rest.join("").toLowerCase() : rest.join(""));
 
-    useEffect(() => {//connexion à la socket
+    useEffect(() => {
+        //connexion à la socket
         socket.current = io(ENDPOINT, {
             extraHeaders: {
                 Authorization: "Bearer " + props.token,
@@ -98,7 +104,7 @@ export default function Groups(props) {
         //réceptions de messages par la socket
         //récupération des messages déjà existants
         if (props.room === null || props.room === undefined) {
-            navigate('/');
+            navigate("/");
         }
         axios({
             method: "POST",
@@ -130,26 +136,28 @@ export default function Groups(props) {
 
     return (
         <>
-            <h1>
+            <Typography variant="h4" color="text.primary">
                 {groupInfo !== null && groupInfo !== undefined ? (
-                    <Box sx={{ display: "flex", justifyContent: "center" }}>
-                        <Avatar
-                            src={groupInfo.picturePath}
-                            alt={groupInfo.name + " group picture"}
-                        />
-                        <Typography variant="h5" pl={2}>
-                            {capitalize(groupInfo.name, true)}
-                        </Typography>
+                    <Box
+                        sx={{ display: "flex", justifyContent: "center" }}
+                        m={2}
+                    >
+                        <Box mx={2}>
+                            <Avatar
+                                src={groupInfo.picturePath}
+                                alt={groupInfo.name + " group picture"}
+                            />
+                        </Box>
+                        {capitalize(groupInfo.name, true)}
                     </Box>
                 ) : (
                     ""
                 )}
-            </h1>
+            </Typography>
             <Box>
                 <Container>
                     <Paper
                         sx={{
-                            color: "text.primary",
                             maxHeight: "50vh",
                             overflowY: "auto",
                             padding: "2vw",
@@ -160,7 +168,9 @@ export default function Groups(props) {
                         {messages !== null &&
                         messages !== undefined &&
                         messages.length > 0
-                            ? mapMessages(messages).map((message, index) => (
+                            ? mapMessages(messages).map((message, index) => {
+                                console.log(message);
+                                return(
                                   <span key={message.sender + index}>
                                       {message.sender.email === currentUser ? (
                                           <>
@@ -181,7 +191,7 @@ export default function Groups(props) {
                                                       display: "inline",
                                                       float: "right",
                                                       color: "grey",
-                                                      marginTop:'0px',
+                                                      marginTop: "0px",
                                                       fontSize: "0.7rem",
                                                   }}
                                               >
@@ -214,7 +224,7 @@ export default function Groups(props) {
                                       )}
                                       <AlwaysScrollToBottom />
                                   </span>
-                              ))
+                            )})
                             : ""}
                     </Paper>
                 </Container>

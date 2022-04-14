@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Avatar, List, ListItem, Typography, Link } from "@mui/material";
+import {
+    Avatar,
+    Stack,
+    Paper,
+    Typography,
+    Link,
+    Container,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 export default function Groups(props) {
@@ -40,7 +47,7 @@ export default function Groups(props) {
 
     useEffect(() => {
         //récupération de la liste des groupes
-        props.setRoom(null)
+        props.setRoom(null);
         axios({
             method: "GET",
             url: "/api/grouplist",
@@ -61,16 +68,25 @@ export default function Groups(props) {
             });
     }, []);
     return (
-        <>
-            <h1>Conversations</h1>
-            <List>
+        <Container maxWidth="sm" sx={{ textAlign: "center" }}>
+            <Typography variant="h4" color="text.primary" py={2}>
+                Conversations
+            </Typography>
+            <Stack spacing={2}>
                 {groups !== null && groups !== undefined && groups.length > 0
                     ? groups.map((group, index) => {
                           return (
-                              <ListItem key={index}>
-                                  <Link  href="#"
+                              <Paper key={index}>
+                                  <Link
+                                      href="#"
+                                      p={2}
                                       onClick={() => {
                                           updateGroupId(group.id);
+                                      }}
+                                      sx={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          textDecoration: "none",
                                       }}
                                   >
                                       <Avatar
@@ -81,11 +97,11 @@ export default function Groups(props) {
                                           {group.name}
                                       </Typography>
                                   </Link>
-                              </ListItem>
+                              </Paper>
                           );
                       })
                     : ""}
-            </List>
-        </>
+            </Stack>
+        </Container>
     );
 }

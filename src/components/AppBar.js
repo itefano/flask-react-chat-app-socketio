@@ -5,8 +5,10 @@ import {
     Menu,
     MenuItem,
     Badge,
+    Stack,
     InputBase,
     Typography,
+    Paper,
     IconButton,
     Toolbar,
     Box,
@@ -16,13 +18,15 @@ import {
     ListItem,
     Divider,
     ListItemText,
+    Popper,
+    Fade,
+    Avatar,
+    Button,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircle from "@mui/icons-material/AccountCircle";
-import MailIcon from "@mui/icons-material/Mail";
 import NotificationsIcon from "@mui/icons-material/Notifications";
-import MoreIcon from "@mui/icons-material/MoreVert";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 
@@ -71,27 +75,82 @@ export default function PrimarySearchAppBar(props) {
     const [checked, setChecked] = useState(true);
     const [openDrawer, setOpenDrawer] = useState(false);
     const [notifications, setNotifications] = useState(0);
-    const [seeNotifications, setSeeNotifications] = useState(false);
+    const [unreadMessages, setUnreadMessages] = useState([]);
+    const [popperAnchorEl, setPopperAnchorEl] = useState(null);
     const handleTheme = () => {
         setChecked(!checked);
         props.handleTheme();
     };
+    const [openPopper, setOpenPopper] = useState(false);
+
+    const getNotifications = () => {
+        axios({
+            method: "POST",
+            url: "/api/notifications",
+            headers: {
+                Authorization: "Bearer " + props.token,
+            },
+        })
+            .then((response) => {
+                setUnreadMessages(response.data.messages);
+            })
+            .catch((error) => {
+                if (error.response) {
+                    console.log(error.response);
+                    console.log(error.response.status);
+                    console.log(error.response.headers);
+                }
+            });
+    };
+
+    const seeNotifications = (e) => {
+        setPopperAnchorEl(e.currentTarget);
+        setOpenPopper((previousOpen) => !previousOpen);
+    };
+    const canBeOpen = openPopper && Boolean(popperAnchorEl);
+    const id = canBeOpen ? "transition-popper" : undefined;
 
     useEffect(() => {
-        if ((
+        getNotifications();
+    }, []);
+
+    useEffect(() => {
+        if (
             localStorage.getItem("notifications") !== null &&
-            localStorage.getItem("notifications") !== undefined)//move this somewhere else in the future
+            localStorage.getItem("notifications") !== undefined //move this somewhere else in the future
         ) {
-            setNotifications(localStorage.getItem("notifications"
-            ));
-        }
-        else{
-            if (props.info.notifications !== null && props.info.notifications !== undefined) {
+            setNotifications(localStorage.getItem("notifications"));
+        } else {
+            if (
+                props.info.notifications !== null &&
+                props.info.notifications !== undefined
+            ) {
                 localStorage.setItem("notifications", props.info.notifications);
                 setNotifications(props.info.notifications);
             }
         }
     }, [props.info]);
+
+    const markAllAsRead = () => {
+        axios({
+            method: "POST",
+            url: "/api/markallasread",
+            headers: {
+                Authorization: "Bearer " + props.token,
+            },
+        })
+            .then((response) => {
+                console.log(response.data)
+            })
+            .catch((error) => {
+                if (error.response) {
+                    console.log(error.response);
+                    console.log(error.response.status);
+                    console.log(error.response.headers);
+                }
+            });
+    }
+
     const MaterialUISwitch = styled(Switch)(({ theme }) => ({
         width: 62,
         height: 34,
@@ -142,12 +201,10 @@ export default function PrimarySearchAppBar(props) {
         },
     }));
     const [anchorEl, setAnchorEl] = useState(null);
-    const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = useState(null);
     const toggleDrawer = (newOpen) => {
         setOpenDrawer(newOpen);
     };
     const isMenuOpen = Boolean(anchorEl);
-    const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
     const logout = () => {
         axios({
             method: "POST",
@@ -155,6 +212,7 @@ export default function PrimarySearchAppBar(props) {
         })
             .then((response) => {
                 props.removeToken();
+                localStorage.clear();
                 navigate("/");
             })
             .catch((error) => {
@@ -210,17 +268,8 @@ export default function PrimarySearchAppBar(props) {
         setAnchorEl(event.currentTarget);
     };
 
-    const handleMobileMenuClose = () => {
-        setMobileMoreAnchorEl(null);
-    };
-
     const handleMenuClose = () => {
         setAnchorEl(null);
-        handleMobileMenuClose();
-    };
-
-    const handleMobileMenuOpen = (event) => {
-        setMobileMoreAnchorEl(event.currentTarget);
     };
 
     const menuId = "primary-search-account-menu";
@@ -249,51 +298,6 @@ export default function PrimarySearchAppBar(props) {
             ) : (
                 <MenuItem onClick={signIn}>Sign In</MenuItem>
             )}
-        </Menu>
-    );
-
-    const mobileMenuId = "primary-search-account-menu-mobile";
-    const renderMobileMenu = (
-        <Menu
-            anchorEl={mobileMoreAnchorEl}
-            anchorOrigin={{
-                vertical: "top",
-                horizontal: "right",
-            }}
-            id={mobileMenuId}
-            keepMounted
-            transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-            }}
-            open={isMobileMenuOpen}
-            onClose={handleMobileMenuClose}
-        >
-            <MenuItem>
-                <IconButton
-                    size="large"
-                    aria-label={"show " + notifications + " new notifications"}
-                    color="inherit"
-                    onClick={()=>{setSeeNotifications(true)}}
-                >
-                    <Badge badgeContent={notifications} color="error">
-                        <NotificationsIcon />
-                    </Badge>
-                </IconButton>
-                <p>Notifications</p>
-            </MenuItem>
-            <MenuItem onClick={handleProfileMenuOpen}>
-                <IconButton
-                    size="large"
-                    aria-label="account of current user"
-                    aria-controls="primary-search-account-menu"
-                    aria-haspopup="true"
-                    color="inherit"
-                >
-                    <AccountCircle />
-                </IconButton>
-                <p>Profile</p>
-            </MenuItem>
         </Menu>
     );
 
@@ -353,17 +357,20 @@ export default function PrimarySearchAppBar(props) {
                         inputProps={{ "aria-label": "controlled" }}
                         onChange={handleTheme}
                     />
-                    <Box sx={{ display: { xs: "none", md: "flex" } }}>
-                        <IconButton
-                            size="large"
-                            aria-label={"show " + notifications + " new notifications"}
-                            color="inherit"
-                            onClick={()=>{setSeeNotifications(true)}}
-                        >
-                            <Badge badgeContent={notifications} color="error">
-                                <NotificationsIcon />
-                            </Badge>
-                        </IconButton>
+                    <IconButton
+                        size="large"
+                        aria-describedby={id}
+                        aria-label={
+                            "show " + notifications + " new notifications"
+                        }
+                        color="inherit"
+                        onClick={seeNotifications}
+                    >
+                        <Badge badgeContent={notifications} color="error">
+                            <NotificationsIcon />
+                        </Badge>
+                    </IconButton>
+                    <Box>
                         <IconButton
                             size="large"
                             edge="end"
@@ -376,21 +383,94 @@ export default function PrimarySearchAppBar(props) {
                             <AccountCircle />
                         </IconButton>
                     </Box>
-                    <Box sx={{ display: { xs: "flex", md: "none" } }}>
-                        <IconButton
-                            size="large"
-                            aria-label="show more"
-                            aria-controls={mobileMenuId}
-                            aria-haspopup="true"
-                            onClick={handleMobileMenuOpen}
-                            color="inherit"
-                        >
-                            <MoreIcon />
-                        </IconButton>
-                    </Box>
                 </Toolbar>
             </AppBar>
-            {renderMobileMenu}
+            <Popper
+                open={openPopper}
+                anchorEl={popperAnchorEl}
+                placement="bottom"
+                transition
+            >
+                {({ TransitionProps }) => (
+                    <Fade {...TransitionProps} timeout={350}>
+                        <Box m={2}>
+                            <Paper>
+                                <Box
+                                    p={2}
+                                    sx={{
+                                        height: "50vh",
+                                        width: "400px",
+                                        overflow: "auto",
+                                    }}
+                                >
+                                    <Box mb={2} sx={{textAlign:'right'}}>
+                                    <Button variant='text' onClick={markAllAsRead}>Mark all as read</Button>
+                                    </Box>
+                                    <Stack spacing={2}>
+                                        {unreadMessages.map((e, index) => (
+                                            <Paper key={index} elevation={4}>
+                                                <Box p={2}>
+                                                    <Box
+                                                        sx={{
+                                                            display: "flex",
+                                                            flexDirection:
+                                                                "row",
+                                                            alignItems:
+                                                                "center",
+                                                        }}
+                                                    >
+                                                        <Avatar
+                                                            alt={
+                                                                e.authorFirstName +
+                                                                "'s Picture"
+                                                            }
+                                                            src={
+                                                                e.authorProfilePicturePath
+                                                            }
+                                                        />
+                                                        <Box
+                                                            sx={{
+                                                                display: "flex",
+                                                                flexDirection:
+                                                                    "row",
+                                                                alignItems:
+                                                                    "baseline",
+                                                            }}
+                                                        >
+                                                            <Typography
+                                                                variant="h5"
+                                                                pl={2}
+                                                            >
+                                                                {
+                                                                    e.authorFirstName
+                                                                }
+                                                            </Typography>
+                                                            <Typography
+                                                                variant="p"
+                                                                px={1}
+                                                            >
+                                                                in
+                                                            </Typography>
+                                                            <Typography variant="body1">
+                                                                {e.groupName}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+                                                    <Box pt={2}>
+                                                        <Typography variant="p">
+                                                            {e.content}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Paper>
+                                        ))}
+                                    </Stack>
+                                </Box>
+                            </Paper>
+                        </Box>
+                    </Fade>
+                )}
+            </Popper>
             {renderMenu}
         </Box>
     );
