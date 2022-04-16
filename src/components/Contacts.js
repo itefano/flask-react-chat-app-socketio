@@ -7,9 +7,37 @@ import {
     Paper,
     Container,
     Box,
+    Link,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 export default function Contacts(props) {
     const [contacts, setContacts] = useState(null);
+
+    const loadChat = (email) => {
+        console.log("loading:", email);
+        axios({
+            method: "POST",
+            url: "/api/contactgroup",
+            headers: {
+                Authorization: "Bearer " + props.token,
+            },
+            data: { email: email },
+        })
+            .then((response) => {
+                console.log("got:", response.data.groupId);
+                if (!isNaN(response.data.groupId)) {
+                    //don't trust myself on that one, so I check if I get a number
+                    props.setRoom(response.data.groupId);
+                }
+            })
+            .catch((error) => {
+                if (error.response) {
+                    console.log(error.response);
+                    console.log(error.response.status);
+                    console.log(error.response.headers);
+                }
+            });
+    };
     useEffect(() => {
         axios({
             method: "GET",
@@ -20,7 +48,6 @@ export default function Contacts(props) {
         })
             .then((response) => {
                 const res = response.data;
-                console.log("results:", res);
                 setContacts(res);
             })
             .catch((error) => {
@@ -44,25 +71,39 @@ export default function Contacts(props) {
                         ? contacts.map((contact, index) => {
                               return (
                                   <Paper key={index}>
-                                      <Box
+                                      <Link
+                                          href="#"
+                                          onClick={() => {
+                                              loadChat(contact.email);
+                                          }}
                                           sx={{
                                               display: "flex",
                                               alignItems: "center",
                                               textDecoration: "none",
                                           }}
-                                          p={2}
                                       >
-                                          <Avatar
-                                              src={contact.profilePicturePath}
-                                              alt={
-                                                  "Profile Picture of " +
-                                                  contact.firstName
-                                              }
-                                          />
-                                          <Typography pl={2}>
-                                              {contact.email}
-                                          </Typography>
-                                      </Box>
+                                          <Box
+                                              sx={{
+                                                  display: "flex",
+                                                  alignItems: "center",
+                                                  textDecoration: "none",
+                                              }}
+                                              p={2}
+                                          >
+                                              <Avatar
+                                                  src={
+                                                      contact.profilePicturePath
+                                                  }
+                                                  alt={
+                                                      "Profile Picture of " +
+                                                      contact.firstName
+                                                  }
+                                              />
+                                              <Typography pl={2}>
+                                                  {contact.email}
+                                              </Typography>
+                                          </Box>
+                                      </Link>
                                   </Paper>
                               );
                           })

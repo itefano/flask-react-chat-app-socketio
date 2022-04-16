@@ -112,6 +112,14 @@ export default function PrimarySearchAppBar(props) {
 
     useEffect(() => {
         getNotifications();
+
+        if (
+            props.info.notifications !== null &&
+            props.info.notifications !== undefined
+        ) {
+            localStorage.setItem("notifications", props.info.notifications);
+            setNotifications(props.info.notifications);
+        }
     }, []);
 
     useEffect(() => {
@@ -120,14 +128,6 @@ export default function PrimarySearchAppBar(props) {
             localStorage.getItem("notifications") !== undefined //move this somewhere else in the future
         ) {
             setNotifications(localStorage.getItem("notifications"));
-        } else {
-            if (
-                props.info.notifications !== null &&
-                props.info.notifications !== undefined
-            ) {
-                localStorage.setItem("notifications", props.info.notifications);
-                setNotifications(props.info.notifications);
-            }
         }
     }, [props.info]);
 
@@ -140,7 +140,7 @@ export default function PrimarySearchAppBar(props) {
             },
         })
             .then((response) => {
-                console.log(response.data)
+                console.log(response.data);
             })
             .catch((error) => {
                 if (error.response) {
@@ -149,7 +149,7 @@ export default function PrimarySearchAppBar(props) {
                     console.log(error.response.headers);
                 }
             });
-    }
+    };
 
     const MaterialUISwitch = styled(Switch)(({ theme }) => ({
         width: 62,
@@ -289,15 +289,11 @@ export default function PrimarySearchAppBar(props) {
             open={isMenuOpen}
             onClose={handleMenuClose}
         >
-            {props.token !== null && props.token !== undefined ? (
-                <Box>
-                    <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-                    <MenuItem onClick={handleMenuClose}>My account</MenuItem>
-                    <MenuItem onClick={logout}>Logout</MenuItem>
-                </Box>
-            ) : (
-                <MenuItem onClick={signIn}>Sign In</MenuItem>
-            )}
+            <Box>
+                <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
+                <MenuItem onClick={handleMenuClose}>My account</MenuItem>
+                <MenuItem onClick={logout}>Logout</MenuItem>
+            </Box>
         </Menu>
     );
 
@@ -305,29 +301,35 @@ export default function PrimarySearchAppBar(props) {
         <Box sx={{ flexGrow: 1 }}>
             <AppBar position="static">
                 <Toolbar>
-                    <IconButton
-                        size="large"
-                        edge="start"
-                        color="inherit"
-                        aria-label="open drawer"
-                        sx={{ mr: 2 }}
-                        onClick={() => {
-                            toggleDrawer(!openDrawer); //doesn't seem to be working if I hard set it to false ???
-                        }}
-                    >
-                        <MenuIcon />
-                        <SwipeableDrawer
-                            open={openDrawer}
-                            onClose={() => {
-                                toggleDrawer(false);
-                            }}
-                            onOpen={() => {
-                                toggleDrawer(true);
+                    {!props.token ||
+                    props.token === "" ||
+                    props.token === undefined ? (
+                        ""
+                    ) : (
+                        <IconButton
+                            size="large"
+                            edge="start"
+                            color="inherit"
+                            aria-label="open drawer"
+                            sx={{ mr: 2 }}
+                            onClick={() => {
+                                toggleDrawer(!openDrawer); //doesn't seem to be working if I hard set it to false ???
                             }}
                         >
-                            {drawerContents()}
-                        </SwipeableDrawer>
-                    </IconButton>
+                            <MenuIcon />
+                            <SwipeableDrawer
+                                open={openDrawer}
+                                onClose={() => {
+                                    toggleDrawer(false);
+                                }}
+                                onOpen={() => {
+                                    toggleDrawer(true);
+                                }}
+                            >
+                                {drawerContents()}
+                            </SwipeableDrawer>
+                        </IconButton>
+                    )}
                     <Link
                         to="/"
                         style={{ textDecoration: "none", color: "inherit" }}
@@ -357,32 +359,52 @@ export default function PrimarySearchAppBar(props) {
                         inputProps={{ "aria-label": "controlled" }}
                         onChange={handleTheme}
                     />
-                    <IconButton
-                        size="large"
-                        aria-describedby={id}
-                        aria-label={
-                            "show " + notifications + " new notifications"
-                        }
-                        color="inherit"
-                        onClick={seeNotifications}
-                    >
-                        <Badge badgeContent={notifications} color="error">
-                            <NotificationsIcon />
-                        </Badge>
-                    </IconButton>
-                    <Box>
-                        <IconButton
-                            size="large"
-                            edge="end"
-                            aria-label="account of current user"
-                            aria-controls={menuId}
-                            aria-haspopup="true"
-                            onClick={handleProfileMenuOpen}
-                            color="inherit"
-                        >
-                            <AccountCircle />
-                        </IconButton>
-                    </Box>
+
+                    {props.token &&
+                    props.token !== null &&
+                    props.token !== undefined ? (
+                        <>
+                            <IconButton
+                                size="large"
+                                aria-describedby={id}
+                                aria-label={
+                                    "show " +
+                                    notifications +
+                                    " new notifications"
+                                }
+                                color="inherit"
+                                onClick={seeNotifications}
+                            >
+                                {notifications > 0 ? (
+                                    <Badge
+                                        badgeContent={notifications}
+                                        color="error"
+                                    >
+                                        <NotificationsIcon />
+                                    </Badge>
+                                ) : (
+                                    <Badge color="error">
+                                        <NotificationsIcon />
+                                    </Badge>
+                                )}
+                            </IconButton>
+                            <Box>
+                                <IconButton
+                                    size="large"
+                                    edge="end"
+                                    aria-label="account of current user"
+                                    aria-controls={menuId}
+                                    aria-haspopup="true"
+                                    onClick={handleProfileMenuOpen}
+                                    color="inherit"
+                                >
+                                    <AccountCircle />
+                                </IconButton>
+                            </Box>
+                        </>
+                    ) : (
+                        <MenuItem onClick={signIn}>Sign In</MenuItem>
+                    )}
                 </Toolbar>
             </AppBar>
             <Popper
@@ -403,74 +425,111 @@ export default function PrimarySearchAppBar(props) {
                                         overflow: "auto",
                                     }}
                                 >
-                                    <Box mb={2} sx={{textAlign:'right'}}>
-                                    <Button variant='text' onClick={markAllAsRead}>Mark all as read</Button>
-                                    </Box>
-                                    <Stack spacing={2}>
-                                        {unreadMessages.map((e, index) => (
-                                            <Paper key={index} elevation={4}>
-                                                <Box p={2}>
-                                                    <Box
-                                                        sx={{
-                                                            display: "flex",
-                                                            flexDirection:
-                                                                "row",
-                                                            alignItems:
-                                                                "center",
-                                                        }}
-                                                    >
-                                                        <Avatar
-                                                            alt={
-                                                                e.authorFirstName +
-                                                                "'s Picture"
-                                                            }
-                                                            src={
-                                                                e.authorProfilePicturePath
-                                                            }
-                                                        />
-                                                        <Box
-                                                            sx={{
-                                                                display: "flex",
-                                                                flexDirection:
-                                                                    "row",
-                                                                alignItems:
-                                                                    "baseline",
-                                                            }}
+                                    {!unreadMessages ||
+                                    unreadMessages === undefined ||
+                                    unreadMessages === null ||
+                                    unreadMessages.length === 0 ? (
+                                        <Box sx={{ textAlign: "center" }}>
+                                            <Typography variant="h5">
+                                                No new notifications
+                                            </Typography>
+                                        </Box>
+                                    ) : (
+                                        <>
+                                            <Box
+                                                mb={2}
+                                                sx={{ textAlign: "right" }}
+                                            >
+                                                <Button
+                                                    variant="text"
+                                                    onClick={markAllAsRead}
+                                                >
+                                                    Mark all as read
+                                                </Button>
+                                            </Box>
+                                            <Stack spacing={2}>
+                                                {unreadMessages.map(
+                                                    (e, index) => (
+                                                        <Paper
+                                                            key={index}
+                                                            elevation={4}
                                                         >
-                                                            <Typography
-                                                                variant="h5"
-                                                                pl={2}
-                                                            >
-                                                                {
-                                                                    e.authorFirstName
-                                                                }
-                                                            </Typography>
-                                                            <Typography
-                                                                variant="p"
-                                                                px={1}
-                                                            >
-                                                                in
-                                                            </Typography>
-                                                            <Typography variant="body1">
-                                                                {e.groupName}
-                                                            </Typography>
-                                                        </Box>
-                                                    </Box>
-                                                    <Box pt={2}>
-                                                        <Typography variant="p">
-                                                            {e.content}
-                                                        </Typography>
-                                                    </Box>
-                                                </Box>
-                                            </Paper>
-                                        ))}
-                                    </Stack>
+                                                            <Box p={2}>
+                                                                <Box
+                                                                    sx={{
+                                                                        display:
+                                                                            "flex",
+                                                                        flexDirection:
+                                                                            "row",
+                                                                        alignItems:
+                                                                            "center",
+                                                                    }}
+                                                                >
+                                                                    <Avatar
+                                                                        alt={
+                                                                            e.authorFirstName +
+                                                                            "'s Picture"
+                                                                        }
+                                                                        src={
+                                                                            e.authorProfilePicturePath
+                                                                        }
+                                                                    />
+                                                                    <Box
+                                                                        sx={{
+                                                                            display:
+                                                                                "flex",
+                                                                            flexDirection:
+                                                                                "row",
+                                                                            alignItems:
+                                                                                "baseline",
+                                                                        }}
+                                                                    >
+                                                                        <Typography
+                                                                            variant="h5"
+                                                                            pl={
+                                                                                2
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                e.authorFirstName
+                                                                            }
+                                                                        </Typography>
+                                                                        <Typography
+                                                                            variant="p"
+                                                                            px={
+                                                                                1
+                                                                            }
+                                                                        >
+                                                                            in
+                                                                        </Typography>
+                                                                        <Typography variant="body1">
+                                                                            {
+                                                                                e.groupName
+                                                                            }
+                                                                        </Typography>
+                                                                    </Box>
+                                                                </Box>
+                                                                <Box pt={2}>
+                                                                    <Typography variant="p">
+                                                                        {
+                                                                            e.content
+                                                                        }
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Box>
+                                                        </Paper>
+                                                    )
+                                                )}
+                                            </Stack>
+                                        </>
+                                    )}
                                 </Box>
                             </Paper>
                         </Box>
                     </Fade>
                 )}
             </Popper>
+
             {renderMenu}
         </Box>
     );

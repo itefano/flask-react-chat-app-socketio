@@ -28,7 +28,6 @@ export default function Groups(props) {
     };
     const navigate = useNavigate();
     const sendMessage = (e) => {
-        console.log(value.trim().length);
         if (
             value !== null &&
             value !== undefined &&
@@ -78,10 +77,6 @@ export default function Groups(props) {
         return <div ref={elementRef} />;
     };
 
-    const capitalize = ([first, ...rest], lowerRest = false) =>
-        first.toUpperCase() +
-        (lowerRest ? rest.join("").toLowerCase() : rest.join(""));
-
     useEffect(() => {
         //connexion à la socket
         socket.current = io(ENDPOINT, {
@@ -91,7 +86,7 @@ export default function Groups(props) {
         });
         socket.current.on("connect", () => {
             socket.current.on("disconnect", () => {
-                console.log("disconnocting poopie");
+                console.log("disconnecting");
             });
         });
         socket.current.emit("join", { groupId: props.room });
@@ -105,33 +100,34 @@ export default function Groups(props) {
         //récupération des messages déjà existants
         if (props.room === null || props.room === undefined) {
             navigate("/");
-        }
-        axios({
-            method: "POST",
-            url: "/api/messagelist",
-            data: { groupId: props.room },
-            headers: {
-                Authorization: "Bearer " + props.token,
-            },
-        })
-            .then((response) => {
-                const res = response.data;
-                setGroupInfo(res.groupInfo);
-                setMessages(res.messages);
-                setCurrentUser(res.currentUser);
+        } else {
+            axios({
+                method: "POST",
+                url: "/api/messagelist",
+                data: { groupId: props.room },
+                headers: {
+                    Authorization: "Bearer " + props.token,
+                },
             })
-            .catch((error) => {
-                if (error.response) {
-                    console.log(error.response);
-                    console.log(error.response.status);
-                    console.log(error.response.headers);
-                }
-            });
+                .then((response) => {
+                    const res = response.data;
+                    setGroupInfo(res.groupInfo);
+                    setMessages(res.messages);
+                    setCurrentUser(res.currentUser);
+                })
+                .catch((error) => {
+                    if (error.response) {
+                        console.log(error.response);
+                        console.log(error.response.status);
+                        console.log(error.response.headers);
+                    }
+                });
 
-        return () => {
-            socket.current.disconnect();
-            props.setRoom(null);
-        };
+            return () => {
+                socket.current.disconnect();
+                props.setRoom(null);
+            };
+        }
     }, []);
 
     return (
@@ -148,7 +144,7 @@ export default function Groups(props) {
                                 alt={groupInfo.name + " group picture"}
                             />
                         </Box>
-                        {capitalize(groupInfo.name, true)}
+                        {groupInfo.name.replace(/\b\w/, (c) => c.toUpperCase())}
                     </Box>
                 ) : (
                     ""
@@ -169,62 +165,67 @@ export default function Groups(props) {
                         messages !== undefined &&
                         messages.length > 0
                             ? mapMessages(messages).map((message, index) => {
-                                console.log(message);
-                                return(
-                                  <span key={message.sender + index}>
-                                      {message.sender.email === currentUser ? (
-                                          <>
-                                              <ChatMsg
-                                                  side={"right"}
-                                                  avatar={
-                                                      message.sender
-                                                          .profilePicturePath
-                                                  }
-                                                  useStules={{
-                                                      backgroundColor:
-                                                          "primary.main",
-                                                  }}
-                                                  messages={message.messageList}
-                                              />
-                                              <p
-                                                  style={{
-                                                      display: "inline",
-                                                      float: "right",
-                                                      color: "grey",
-                                                      marginTop: "0px",
-                                                      fontSize: "0.7rem",
-                                                  }}
-                                              >
-                                                  Sent
-                                              </p>
-                                          </>
-                                      ) : (
-                                          <>
-                                              <ChatMsg
-                                                  avatar={
-                                                      message.sender
-                                                          .profilePicturePath
-                                                  }
-                                                  messages={message.messageList}
-                                              />
-                                              <p
-                                                  style={{
-                                                      display: "inline",
-                                                      float: "left",
-                                                      //   color: "grey",
-                                                      fontSize: "0.7rem",
-                                                      marginTop: "0px",
-                                                  }}
-                                                  color="primary.disabled"
-                                              >
-                                                  Sent by :{" "}
-                                                  {message.sender.firstName}
-                                              </p>
-                                          </>
-                                      )}
-                                      <AlwaysScrollToBottom />
-                                  </span>
-                            )})
+                                  return (
+                                      <span key={message.sender + index}>
+                                          {message.sender.email ===
+                                          currentUser ? (
+                                              <>
+                                                  <ChatMsg
+                                                      side={"right"}
+                                                      avatar={
+                                                          message.sender
+                                                              .profilePicturePath
+                                                      }
+                                                      useStules={{
+                                                          backgroundColor:
+                                                              "primary.main",
+                                                      }}
+                                                      messages={
+                                                          message.messageList
+                                                      }
+                                                  />
+                                                  <p
+                                                      style={{
+                                                          display: "inline",
+                                                          float: "right",
+                                                          color: "grey",
+                                                          marginTop: "0px",
+                                                          fontSize: "0.7rem",
+                                                      }}
+                                                  >
+                                                      Sent
+                                                  </p>
+                                              </>
+                                          ) : (
+                                              <>
+                                                  <ChatMsg
+                                                      avatar={
+                                                          message.sender
+                                                              .profilePicturePath
+                                                      }
+                                                      messages={
+                                                          message.messageList
+                                                      }
+                                                  />
+                                                  <p
+                                                      style={{
+                                                          display: "inline",
+                                                          float: "left",
+                                                          //   color: "grey",
+                                                          fontSize: "0.7rem",
+                                                          marginTop: "0px",
+                                                      }}
+                                                      color="primary.disabled"
+                                                  >
+                                                      Sent by :{" "}
+                                                      {message.sender.firstName}
+                                                  </p>
+                                              </>
+                                          )}
+                                          <AlwaysScrollToBottom />
+                                      </span>
+                                  );
+                              })
                             : ""}
                     </Paper>
                 </Container>

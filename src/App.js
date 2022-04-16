@@ -12,6 +12,8 @@ import { useContext, useState, useEffect } from "react";
 import Contacts from "./components/Contacts";
 import Groups from "./components/Groups";
 import Chat from "./components/Chat";
+import axios from "axios";
+
 function App() {
     const [theme, setTheme] = useState(useContext(Theme));
     const [info, setInfo] = useState({});
@@ -21,8 +23,46 @@ function App() {
     };
 
     useEffect(() => {
-        if (info && info !== null && info !== undefined && Object.keys(info).length > 0) {
+        if (
+            info &&
+            info !== null &&
+            info !== undefined &&
+            Object.keys(info).length > 0
+        ) {
             localStorage.setItem("info", JSON.stringify({ ...info }));
+        } else {
+            axios({
+                method: "POST",
+                url: "/api/get_info",
+                headers: {
+                    Authorization: "Bearer " + token,
+                },
+            })
+                .then((response) => {
+                    setInfo(response.data);
+                })
+                .catch((error) => {//disconnects user for safety in case something goes wrong
+                        axios({
+                            method: "POST",
+                            url: "/api/logout",
+                        })
+                            .then((response) => {
+                                removeToken();
+                                localStorage.clear();
+                            })
+                            .catch((error) => {
+                                if (error.response) {//at this point I don't even know what to do
+                                    console.log(error.response);
+                                    console.log(error.response.status);
+                                    console.log(error.response.headers);
+                                }
+                            });
+                    if (error.response) {
+                        console.log(error.response);
+                        console.log(error.response.status);
+                        console.log(error.response.headers);
+                    }
+                });
         }
     }, [info]);
 
@@ -64,11 +104,10 @@ function App() {
                             handleTheme={handleTheme}
                             info={info}
                         />
-                        {!token && token !== "" && token !== undefined ? (
+                        {!token || token === "" || token === undefined ? (
                             <Routes>
                                 <Route
-                                    exact
-                                    path="/"
+                                    path="*"
                                     element={
                                         <Login
                                             setToken={setToken}
@@ -88,6 +127,7 @@ function App() {
                                     exact
                                     path="/contacts"
                                     element={<Contacts token={token} />}
+                                    setRoom={setRoom}
                                 />
                                 <Route
                                     exact
@@ -96,6 +136,7 @@ function App() {
                                         <Groups
                                             token={token}
                                             room={room}
+                                            info={info}
                                             setRoom={setRoom}
                                         />
                                     }

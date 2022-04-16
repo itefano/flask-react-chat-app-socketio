@@ -1,4 +1,4 @@
-from utils import get_email, get_notifications
+from utils import get_email, get_notifications, get_user
 from flask import Blueprint
 from database import db_session
 from flask import request, jsonify
@@ -76,6 +76,22 @@ def my_profile():  # to be completed later
     return response_body
 
 
+@routes.route('/get_info', methods=["POST"])
+@jwt_required()
+def get_info():
+    try:
+        user = get_user(get_jwt_identity())
+    except Exception as e:
+        print(e)
+        return {"error": "Something went wrong"}, 500
+    if not user:
+        return {"error": "User not found"}, 404
+    response = {"firstName": user.firstName,
+                "lastName": user.lastName,
+                "email": user.email}
+    return response
+
+
 @routes.route('/token', methods=["POST"])
 def create_token():
     email = request.json.get("email", None)
@@ -110,8 +126,21 @@ def list_groups():
             models.Group.users.any(id=get_jwt_identity())).all()
         res = []
         for e in q:
+            users = [u for u in e.users]
+            name = None
+            curr_user = get_user(get_jwt_identity())
+            if not e.name or e.name=="":
+                if len(users) < 2:#s'il n'y a que 2 utilisateurs et que la conversation n'a pas de nom, la conversation prend le nom de l'autre utilisateur
+                    if curr_user.id == users[0].id:
+                        name = users[1].firstName+" "+users[1].lastName
+                    else:
+                        name = users[0].firstName+" "+users[0].lastName
+                else: # si il y a plus de 2 utilisateurs, on ajoute le nom de tout les autres utilisateurs (en ignorant l'utilisateur courant)
+                    name = ", ".join([u.firstName+" "+u.lastName for u in users if curr_user.id != u.id])
+            else:
+                name = e.name
             res.append(
-                {"name": e.name, "id": e.id, "picturePath": e.picturePath})
+                {"name": name, "id": e.id, "picturePath": e.picturePath, "users_names": [u.firstName for u in users]})
         s.close()
     except Exception as e:
         s.close()
@@ -128,15 +157,25 @@ def list_messages():
         s = db_session()
         group = s.query(models.Group).get(groupId)
         # vérifie que l'user est bien dans un groupe
-        users = [e.id for e in models.Group.query.get(groupId).users]
-        if (get_jwt_identity() not in users):
-            print('WHAT')
-            return {"error": "User does not have access to this group. How the hell did you get here?"}, 404
+        users = [e for e in s.query(models.Group).get(groupId).users]
+        if (get_jwt_identity() not in [e.id for e in users]):
+            return {"error": "User does not have access to this group"}, 403
         group_messages = s.query(models.Message).filter_by(
             groupId=groupId).order_by(desc(models.Message.time_created)).all()
         messageList = []
         mId = [m.id for m in group_messages]
         usr = s.query(models.User).get(get_jwt_identity())
+        curr_user = get_user(get_jwt_identity())
+        if not group.name or group.name=="":
+            if len(users) < 2:#s'il n'y a que 2 utilisateurs et que la conversation n'a pas de nom, la conversation prend le nom de l'autre utilisateur
+                if curr_user.id == users[0].id:
+                    name = users[1].firstName+" "+users[1].lastName
+                else:
+                    name = users[0].firstName+" "+users[0].lastName
+            else: # si il y a plus de 2 utilisateurs, on ajoute le nom de tout les autres utilisateurs (en ignorant l'utilisateur courant)
+                name = ", ".join([u.firstName+" "+u.lastName for u in users if curr_user.id != u.id])
+        else:
+            name = group.name
         for m in group_messages:
             sender = s.query(models.User).get(m.author)
             try:
@@ -156,13 +195,13 @@ def list_messages():
                     "email": sender.email
                 },
                 "timestamp": m.time_created})
-        groupInfo = {"name": group.name, "picturePath": group.picturePath}
+        groupInfo = {"name": name, "picturePath": group.picturePath}
         res = {"messages": messageList, "groupInfo": groupInfo,
                "currentUser": get_email()}
         s.close()
     except Exception as e:
         s.close()
-        print(e)
+        raise(e)
         return {"error": "Something went wrong"}, 500
     return jsonify(res)
 
@@ -215,3 +254,29 @@ def mark_all_as_read():
         return {"error": "Something went wrong"}, 500
     s.close()
     return {"success": True}
+
+
+@routes.route('/contactgroup', methods=['POST']) # looks for a contact group convo, or creates one if it doesn't exist
+@jwt_required()
+def contact_group():
+    try:
+        s = db_session()
+        user = get_user(get_jwt_identity())
+        email = request.json.get("email", None)
+        contact = s.query(models.User).filter_by(email=email)
+        if not contact:
+            return {"error": "Contact does not exist"}, 404
+        contact = contact.first()
+        contact_groups = s.query(models.Group).filter(models.Group.users.any(id=contact.id)).all()
+        if not contact_groups:
+            contact_group.users.append(contact)
+            contact_group = models.Group(name=None, picturePath="", users=[user, ])
+            s.add(contact_group)
+            s.commit()
+        s.close()
+    except Exception as e:
+        s.close()
+        print(e)
+        return {"error": "Something went wrong"}, 500
+    res = [{"name":e.name, "id":e.id, "picturePath":e.picturePath, "users_names":[u.firstName for u in e.users]} for e in contact_groups]#🤮
+    return {"groups": res}

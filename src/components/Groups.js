@@ -20,7 +20,6 @@ export default function Groups(props) {
     };
 
     useEffect(() => {
-        console.log("props.room:", props.room);
         if (props.room !== null && props.room !== undefined) {
             navigate("/chat/");
         }
@@ -94,7 +93,7 @@ export default function Groups(props) {
                                           alt={group.name + " group picture"}
                                       />
                                       <Typography pl={2}>
-                                          {group.name}
+                                          {group.name.replace(/\b\w/, (c) => c.toUpperCase())}
                                       </Typography>
                                   </Link>
                               </Paper>
