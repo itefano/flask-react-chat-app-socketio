@@ -70,18 +70,16 @@ export default function Contacts(props) {
                     contacts.length > 0
                         ? contacts.map((contact, index) => {
                               return (
+                                <Accordion expanded={expanded === 'panel1'} onChange={handleChange('panel1')}>
+                                  <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon />}
+                                    aria-controls="panel1bh-content"
+                                    id="panel1bh-header"
+                                    onClick={() => {
+                                        loadChat(contact.email);
+                                    }}
+                                  >
                                   <Paper key={index}>
-                                      <Link
-                                          href="#"
-                                          onClick={() => {
-                                              loadChat(contact.email);
-                                          }}
-                                          sx={{
-                                              display: "flex",
-                                              alignItems: "center",
-                                              textDecoration: "none",
-                                          }}
-                                      >
                                           <Box
                                               sx={{
                                                   display: "flex",
@@ -103,8 +101,15 @@ export default function Contacts(props) {
                                                   {contact.email}
                                               </Typography>
                                           </Box>
-                                      </Link>
                                   </Paper>
+                                  </AccordionSummary>
+                                  <AccordionDetails>
+                                      <Paper elevation={4}>
+                                    <Typography>
+                                        content
+                                    </Typography>
+                                  </AccordionDetails></Paper>
+                                </Accordion>
                               );
                           })
                         : ""}
