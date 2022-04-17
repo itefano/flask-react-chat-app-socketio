@@ -122,8 +122,8 @@ def generate_friends(amount):
 
 def generate_messages(s, amount):
     messages = []
-    printProgressBar(0, amount, prefix='Generating approx '+str(5*10*amount)+' messages...', suffix='', length=50)
-    for i in range(amount):
+    printProgressBar(0, amount*10, prefix='Generating approx '+str(5*10*amount)+' messages...', suffix='', length=50)
+    for i in range(amount*10):
         for j in range(randrange(int(amount/10))+1):
             ppath = None
             group = s.query(models.Group).get(i+1)
@@ -138,7 +138,7 @@ def generate_messages(s, amount):
                 picturePath=ppath,
                 author=author.id,
                 groupId=group.id))
-        printProgressBar(i + 1, amount, prefix='Generating approx '+str(5*10*amount)+' messages...',
+        printProgressBar(i + 1, amount*10, prefix='Generating approx '+str(5*10*amount)+' messages...',
                          suffix='', length=50)
     return messages
 
