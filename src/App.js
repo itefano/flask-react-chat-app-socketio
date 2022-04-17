@@ -41,22 +41,24 @@ function App() {
                 .then((response) => {
                     setInfo(response.data);
                 })
-                .catch((error) => {//disconnects user for safety in case something goes wrong
-                        axios({
-                            method: "POST",
-                            url: "/api/logout",
+                .catch((error) => {
+                    //disconnects user for safety in case something goes wrong
+                    axios({
+                        method: "POST",
+                        url: "/api/logout",
+                    })
+                        .then((response) => {
+                            removeToken();
+                            localStorage.clear();
                         })
-                            .then((response) => {
-                                removeToken();
-                                localStorage.clear();
-                            })
-                            .catch((error) => {
-                                if (error.response) {//at this point I don't even know what to do
-                                    console.log(error.response);
-                                    console.log(error.response.status);
-                                    console.log(error.response.headers);
-                                }
-                            });
+                        .catch((error) => {
+                            if (error.response) {
+                                //at this point I don't even know what to do
+                                console.log(error.response);
+                                console.log(error.response.status);
+                                console.log(error.response.headers);
+                            }
+                        });
                     if (error.response) {
                         console.log(error.response);
                         console.log(error.response.status);
@@ -126,7 +128,13 @@ function App() {
                                 <Route
                                     exact
                                     path="/contacts"
-                                    element={<Contacts token={token} />}
+                                    element={
+                                        <Contacts
+                                            token={token}
+                                            setRoom={setRoom}
+                                            room={room}
+                                        />
+                                    }
                                     setRoom={setRoom}
                                 />
                                 <Route
@@ -136,7 +144,6 @@ function App() {
                                         <Groups
                                             token={token}
                                             room={room}
-                                            info={info}
                                             setRoom={setRoom}
                                         />
                                     }

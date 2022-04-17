@@ -7,37 +7,50 @@ import {
     Paper,
     Container,
     Box,
+    AccordionSummary,
+    AccordionDetails,
+    Accordion,
     Link,
 } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useNavigate } from "react-router-dom";
 export default function Contacts(props) {
+    const [expanded, setExpanded] = useState("");
     const [contacts, setContacts] = useState(null);
+    const [groups, setGroups] = useState(null);
+    const navigate = useNavigate();
 
-    const loadChat = (email) => {
-        console.log("loading:", email);
-        axios({
-            method: "POST",
-            url: "/api/contactgroup",
-            headers: {
-                Authorization: "Bearer " + props.token,
-            },
-            data: { email: email },
-        })
-            .then((response) => {
-                console.log("got:", response.data.groupId);
-                if (!isNaN(response.data.groupId)) {
-                    //don't trust myself on that one, so I check if I get a number
-                    props.setRoom(response.data.groupId);
-                }
+    const handleChange = (panel, email) => {
+        if (expanded !== panel) {
+            axios({
+                method: "POST",
+                url: "/api/contactgroup",
+                headers: {
+                    Authorization: "Bearer " + props.token,
+                },
+                data: { email: email },
             })
-            .catch((error) => {
-                if (error.response) {
-                    console.log(error.response);
-                    console.log(error.response.status);
-                    console.log(error.response.headers);
-                }
-            });
+                .then((response) => {
+                    setGroups(response.data.groups);
+                    setExpanded(panel);
+                })
+                .catch((error) => {
+                    if (error.response) {
+                        console.log(error.response);
+                        console.log(error.response.status);
+                        console.log(error.response.headers);
+                    }
+                });
+        } else {
+            setExpanded("");
+        }
     };
+    useEffect(() => {
+        if (props.room !== null && props.room !== undefined) {
+            navigate("/chat/");
+        }
+    }, [props.room]);
+
     useEffect(() => {
         axios({
             method: "GET",
@@ -70,17 +83,23 @@ export default function Contacts(props) {
                     contacts.length > 0
                         ? contacts.map((contact, index) => {
                               return (
-                                <Accordion expanded={expanded === 'panel1'} onChange={handleChange('panel1')}>
-                                  <AccordionSummary
-                                    expandIcon={<ExpandMoreIcon />}
-                                    aria-controls="panel1bh-content"
-                                    id="panel1bh-header"
-                                    onClick={() => {
-                                        loadChat(contact.email);
-                                    }}
+                                  <Accordion
+                                      expanded={expanded === "panel" + index}
+                                      onChange={() => {
+                                          handleChange(
+                                              "panel" + index,
+                                              contact.email
+                                          );
+                                      }}
+                                      key={index}
                                   >
-                                  <Paper key={index}>
+                                      <AccordionSummary
+                                          expandIcon={<ExpandMoreIcon />}
+                                          aria-controls="panel1bh-content"
+                                          id="panel1bh-header"
+                                      >
                                           <Box
+                                              key={index}
                                               sx={{
                                                   display: "flex",
                                                   alignItems: "center",
@@ -97,19 +116,53 @@ export default function Contacts(props) {
                                                       contact.firstName
                                                   }
                                               />
-                                              <Typography pl={2}>
+                                              <Typography variant="h5" pl={2}>
                                                   {contact.email}
                                               </Typography>
                                           </Box>
-                                  </Paper>
-                                  </AccordionSummary>
-                                  <AccordionDetails>
-                                      <Paper elevation={4}>
-                                    <Typography>
-                                        content
-                                    </Typography>
-                                  </AccordionDetails></Paper>
-                                </Accordion>
+                                      </AccordionSummary>
+                                      <AccordionDetails key={index}>
+                                          <Stack spacing={1}>
+                                              {groups !== null
+                                                  ? groups.map(
+                                                        (group, index) => {
+                                                            return (
+                                                                <Link
+                                                                    key={index}
+                                                                    href="#"
+                                                                    underline="none"
+                                                                    onClick={() => {
+                                                                        console.log(
+                                                                            "setting",
+                                                                            group.id
+                                                                        );
+                                                                        props.setRoom(
+                                                                            group.id
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Paper
+                                                                        elevation={
+                                                                            4
+                                                                        }
+                                                                        sx={{
+                                                                            padding: 2,
+                                                                        }}
+                                                                    >
+                                                                        <Typography variant="h6">
+                                                                            {
+                                                                                group.name
+                                                                            }
+                                                                        </Typography>
+                                                                    </Paper>
+                                                                </Link>
+                                                            );
+                                                        }
+                                                    )
+                                                  : ""}
+                                          </Stack>
+                                      </AccordionDetails>
+                                  </Accordion>
                               );
                           })
                         : ""}

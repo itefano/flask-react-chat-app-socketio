@@ -60,12 +60,13 @@ def generate_users(amount):
 
 def generate_groups(s, amount):
     groups = []
-    printProgressBar(0, amount, prefix='Generating '+str(amount)+' groups...',
+    printProgressBar(0, amount, prefix='Generating '+str(amount*10)+' groups...',
                      suffix='', length=50)
-    for i in range(amount):
+    for i in range(amount*10):
         admin = s.query(models.User).get(randrange(amount)+1)
         participants = [admin.id]
-        groupSize = randrange(10)+1
+        friends = s.query(models.Friend).filter_by(userId=admin.id).all()
+        groupSize = randrange(len(friends)-1)+1
         randParticipant = randrange(amount)+1
         for j in range(groupSize+1):
             participants.append(randParticipant)
@@ -75,7 +76,11 @@ def generate_groups(s, amount):
             groupName = None
         else:
             groupName = " ".join(fake.words(randrange(6)+1))
-        users = [s.query(models.User).get(id) for id in participants]
+        users = [admin]
+        for i in range(len(friends)):
+            if i in participants:
+                u = s.query(models.User).filter_by(id=friends[i].friendId).first()
+                users.append(u)
         admins = [admin]
         addedAdmin = [admin.id]
         for n in users:
@@ -90,7 +95,7 @@ def generate_groups(s, amount):
             admins=admins, 
             users=users
         ))
-        printProgressBar(i + 1, amount, prefix='Generating '+str(amount)+' groups...',
+        printProgressBar(i + 1, amount, prefix='Generating '+str(amount*10)+' groups...',
                          suffix='', length=50)
     return groups
 
@@ -139,7 +144,7 @@ def generate_messages(s, amount):
 
 def generate_notifications(s, amount):
     messages_seen = []
-    printProgressBar(0, amount, prefix='Generating approx '+str(int(3.5*amount*amount))+' notifications...', suffix='', length=50)
+    printProgressBar(0, amount*10, prefix='Generating approx '+str(int(3.5*amount*amount*10))+' notifications...', suffix='', length=50)
     groups = s.query(models.Group).all()
     for i in range(len(groups)):
         for j in range(len(groups[i].messages)):
@@ -154,7 +159,7 @@ def generate_notifications(s, amount):
                     messageId=m.id,
                     seen=seen
                 ))
-        printProgressBar(i + 1, amount, prefix='Generating approx '+str(int(3.5*amount*amount))+' notifications...',
+        printProgressBar(i + 1, amount*10, prefix='Generating approx '+str(int(3.5*amount*amount*10))+' notifications...',
                          suffix='', length=50)
     return messages_seen
 

@@ -47,6 +47,7 @@ def check_room():
         s = db_session()
         groupId = request.json.get("groupId", None)
         if not groupId:
+            s.close()
             return {"error": "No group provided"}, 401
         q = s.query(models.Group).filter(
             models.Group.users.any(id=get_jwt_identity())).all()
@@ -263,20 +264,28 @@ def contact_group():
         s = db_session()
         user = get_user(get_jwt_identity())
         email = request.json.get("email", None)
-        contact = s.query(models.User).filter_by(email=email)
+        contact = s.query(models.User).filter_by(email=email).first()
         if not contact:
+            s.close()
             return {"error": "Contact does not exist"}, 404
-        contact = contact.first()
-        contact_groups = s.query(models.Group).filter(models.Group.users.any(id=contact.id)).all()
+        contact = contact
+        contact_groups = s.query(models.Group).filter(models.Group.users.any(id=contact.id)).filter(models.Group.users.any(id=get_jwt_identity())).all()
         if not contact_groups:
-            contact_group.users.append(contact)
-            contact_group = models.Group(name=None, picturePath="", users=[user, ])
+            contact_group = models.Group(name=None, picturePath="", users=[user, contact])
             s.add(contact_group)
             s.commit()
-        s.close()
+            contact_groups = s.query(models.Group).filter(models.Group.users.any(id=contact.id)).filter(models.Group.users.any(id=get_jwt_identity())).all()
     except Exception as e:
         s.close()
         print(e)
         return {"error": "Something went wrong"}, 500
-    res = [{"name":e.name, "id":e.id, "picturePath":e.picturePath, "users_names":[u.firstName for u in e.users]} for e in contact_groups]#🤮
+    res = []#🤮
+    for e in contact_groups:
+        name = None
+        if e.name:
+            name = e.name
+        else:
+            name = contact.firstName+" "+contact.lastName
+        res.append ({"name":name, "id":e.id, "picturePath":e.picturePath, "users_names":[u.firstName for u in e.users]})
+    s.close()
     return {"groups": res}
