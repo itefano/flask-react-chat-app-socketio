@@ -122,7 +122,7 @@ def generate_friends(amount):
 
 def generate_messages(s, amount):
     messages = []
-    printProgressBar(0, amount*10, prefix='Generating approx '+str(5*10*amount)+' messages...', suffix='', length=50)
+    printProgressBar(0, amount*10, prefix='Generating approx '+str(5*100*amount)+' messages...', suffix='', length=50)
     for i in range(amount*10):
         for j in range(randrange(int(amount/10))+1):
             ppath = None
@@ -138,13 +138,13 @@ def generate_messages(s, amount):
                 picturePath=ppath,
                 author=author.id,
                 groupId=group.id))
-        printProgressBar(i + 1, amount*10, prefix='Generating approx '+str(5*10*amount)+' messages...',
+        printProgressBar(i + 1, amount*10, prefix='Generating approx '+str(5*100*amount)+' messages...',
                          suffix='', length=50)
     return messages
 
 def generate_notifications(s, amount):
     messages_seen = []
-    printProgressBar(0, amount*10, prefix='Generating approx '+str(int(3.5*amount*amount*10))+' notifications...', suffix='', length=50)
+    printProgressBar(0, amount*10*10, prefix='Generating approx '+str(int(3.5*amount*amount*10*10))+' notifications...', suffix='', length=50)
     groups = s.query(models.Group).all()
     for i in range(len(groups)):
         for j in range(len(groups[i].messages)):
@@ -159,7 +159,7 @@ def generate_notifications(s, amount):
                     messageId=m.id,
                     seen=seen
                 ))
-        printProgressBar(i + 1, amount*10, prefix='Generating approx '+str(int(3.5*amount*amount*10))+' notifications...',
+        printProgressBar(i + 1, amount*10, prefix='Generating approx '+str(int(3.5*amount*amount*10*10))+' notifications...',
                          suffix='', length=50)
     return messages_seen
 
