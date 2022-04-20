@@ -2,9 +2,10 @@ import sys
 from init_db import initdb
 from drop_all import dropdb
 from random import randrange
-from database import db_session, Base, engine
+from database import db_session
 from faker import Faker
 import models
+
 fake = Faker()
 dropdb()
 initdb()
@@ -60,9 +61,9 @@ def generate_users(amount):
 
 def generate_groups(s, amount):
     groups = []
-    printProgressBar(0, amount, prefix='Generating '+str(amount*10)+' groups...',
+    printProgressBar(0, amount, prefix='Generating '+str(amount)+' groups...',
                      suffix='', length=50)
-    for i in range(amount*10):
+    for i in range(amount):
         admin = s.query(models.User).get(randrange(amount)+1)
         participants = [admin.id]
         friends = s.query(models.Friend).filter_by(userId=admin.id).all()
@@ -77,9 +78,9 @@ def generate_groups(s, amount):
         else:
             groupName = " ".join(fake.words(randrange(6)+1))
         users = [admin]
-        for i in range(len(friends)):
-            if i in participants:
-                u = s.query(models.User).filter_by(id=friends[i].friendId).first()
+        for k in range(len(friends)):
+            if k in participants:
+                u = s.query(models.User).filter_by(id=friends[k].friendId).first()
                 users.append(u)
         admins = [admin]
         addedAdmin = [admin.id]
@@ -95,7 +96,7 @@ def generate_groups(s, amount):
             admins=admins, 
             users=users
         ))
-        printProgressBar(i + 1, amount, prefix='Generating '+str(amount*10)+' groups...',
+        printProgressBar(i + 1, amount, prefix='Generating '+str(amount)+' groups...',
                          suffix='', length=50)
     return groups
 
@@ -122,8 +123,8 @@ def generate_friends(amount):
 
 def generate_messages(s, amount):
     messages = []
-    printProgressBar(0, amount*10, prefix='Generating approx '+str(5*100*amount)+' messages...', suffix='', length=50)
-    for i in range(amount*10):
+    printProgressBar(0, amount, prefix='Generating approx '+str(5*amount)+' messages...', suffix='', length=50)
+    for i in range(amount):
         for j in range(randrange(int(amount/10))+1):
             ppath = None
             group = s.query(models.Group).get(i+1)
@@ -138,14 +139,14 @@ def generate_messages(s, amount):
                 picturePath=ppath,
                 author=author.id,
                 groupId=group.id))
-        printProgressBar(i + 1, amount*10, prefix='Generating approx '+str(5*100*amount)+' messages...',
+        printProgressBar(i + 1, amount, prefix='Generating approx '+str(5*amount)+' messages...',
                          suffix='', length=50)
     return messages
 
 def generate_notifications(s, amount):
     messages_seen = []
-    printProgressBar(0, amount*10*10, prefix='Generating approx '+str(int(3.5*amount*amount*10*10))+' notifications...', suffix='', length=50)
     groups = s.query(models.Group).all()
+    printProgressBar(0, len(groups), prefix='Generating approx '+str(int(3.5*amount*10))+' notifications...', suffix='', length=50)
     for i in range(len(groups)):
         for j in range(len(groups[i].messages)):
             m = groups[i].messages[j]
@@ -159,7 +160,7 @@ def generate_notifications(s, amount):
                     messageId=m.id,
                     seen=seen
                 ))
-        printProgressBar(i + 1, amount*10, prefix='Generating approx '+str(int(3.5*amount*amount*10*10))+' notifications...',
+        printProgressBar(i + 1, len(groups), prefix='Generating approx '+str(int(3.5*amount*10))+' notifications...',
                          suffix='', length=50)
     return messages_seen
 

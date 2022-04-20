@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text, Table, DateTime, func
 from sqlalchemy.orm import relationship
-from database import Base, engine, db_session
+from database import Base
 
 
 user_group = Table('users_groups', Base.metadata,
@@ -55,8 +55,7 @@ class User(Base):
     email = Column(String(320), unique=True, nullable=False)
     password = Column(String(120), unique=False, nullable=False)
     gender = Column(String(120), unique=False)
-    isAdmin = Column(Boolean, unique=False, default=False)
-    # 260 = max path size on windows
+    isAdmin = Column(Boolean, unique=False, default=False) # 260 = max path size on windows
     profilePicturePath = Column(String(260), unique=False)
     writtenmessages = relationship('Message')
     seen = relationship('Message_Seen')
