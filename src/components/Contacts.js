@@ -31,7 +31,7 @@ export default function Contacts(props) {
                 data: { email: email },
             })
                 .then((response) => {
-                    setGroups(response.data.groups);
+                    setGroups({ ...groups, [email]: response.data.groups });
                     setExpanded(panel);
                 })
                 .catch((error) => {
@@ -84,6 +84,7 @@ export default function Contacts(props) {
                         ? contacts.map((contact, index) => {
                               return (
                                   <Accordion
+                                      TransitionProps={{ unmountOnExit: true }}
                                       expanded={expanded === "panel" + index}
                                       onChange={() => {
                                           handleChange(
@@ -123,8 +124,11 @@ export default function Contacts(props) {
                                       </AccordionSummary>
                                       <AccordionDetails key={index}>
                                           <Stack spacing={1}>
-                                              {groups !== null
-                                                  ? groups.map(
+                                              {groups !== null &&
+                                              groups[contact.email] !==
+                                                  undefined &&
+                                              groups[contact.email].length > 0
+                                                  ? groups[contact.email].map(
                                                         (group, index) => {
                                                             return (
                                                                 <Link

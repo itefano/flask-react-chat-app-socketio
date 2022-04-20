@@ -57,7 +57,7 @@ def check_room():
         print(e)
         return {"error": "Something went wrong"}, 500
     if not q:
-        return {"error": "User doesn't have access to this room"}, 403
+        return {"error": "User doesn't have access to this room"}, 401
     else:
         return {"success": "User has access to this room"}, 200
 
@@ -289,3 +289,26 @@ def contact_group():
         res.append ({"name":name, "id":e.id, "picturePath":e.picturePath, "users_names":[u.firstName for u in e.users]})
     s.close()
     return {"groups": res}
+
+@routes.route('/search', methods=['GET'])
+@jwt_required()
+def search():
+    try:
+        s = db_session()
+        user = get_user(get_jwt_identity())
+        search_term = request.json.get("search_term", None)
+        search = "%{}%".format(search_term)
+        firstNames = s.query(models.User).filter(models.User.firstName.like(search)).all()
+        lastNames = s.query(models.User).filter(models.User.lastName.like(search)).all()
+        emails = s.query(models.User).filter(models.User.email.like(search)).all()
+        groupNames = s.query(models.Groups).filter(models.Group.name.like(search)).all()
+        res = firstNames + lastNames + emails + groupNames
+        if not res:
+            s.close()
+            return {"error": "No results found"}, 404
+    except Exception as e:
+        s.close()
+        print(e)
+        return {"error": "Something went wrong"}, 500
+    s.close()
+    return {"results": res}

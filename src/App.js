@@ -30,7 +30,7 @@ function App() {
             Object.keys(info).length > 0
         ) {
             localStorage.setItem("info", JSON.stringify({ ...info }));
-        } else {
+        } else if (token !== null && token !== undefined && token !== "") {
             axios({
                 method: "POST",
                 url: "/api/get_info",
@@ -59,7 +59,7 @@ function App() {
                                 console.log(error.response.headers);
                             }
                         });
-                    if (error.response) {
+                    if (error.response && error.response.status !== 422) {
                         console.log(error.response);
                         console.log(error.response.status);
                         console.log(error.response.headers);

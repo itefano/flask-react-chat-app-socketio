@@ -7,6 +7,7 @@ import {
     Typography,
     Link,
     Container,
+    Box,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
@@ -20,12 +21,6 @@ export default function Groups(props) {
     };
 
     useEffect(() => {
-        if (props.room !== null && props.room !== undefined) {
-            navigate("/chat/");
-        }
-    }, [props.room]);
-
-    useEffect(() => {
         if (roomId !== null && roomId !== undefined) {
             axios({
                 method: "POST",
@@ -36,6 +31,9 @@ export default function Groups(props) {
                 },
             })
                 .then((response) => {
+                    if (props.room !== roomId) {
+                        navigate("/chat/");
+                    }
                     props.setRoom(roomId);
                 })
                 .catch((error) => {
@@ -71,36 +69,44 @@ export default function Groups(props) {
             <Typography variant="h4" color="text.primary" py={2}>
                 Conversations
             </Typography>
-            <Stack spacing={2}>
-                {groups !== null && groups !== undefined && groups.length > 0
-                    ? groups.map((group, index) => {
-                          return (
-                              <Paper key={index}>
-                                  <Link
-                                      href="#"
-                                      p={2}
-                                      onClick={() => {
-                                          updateGroupId(group.id);
-                                      }}
-                                      sx={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          textDecoration: "none",
-                                      }}
-                                  >
-                                      <Avatar
-                                          src={group.picturePath}
-                                          alt={group.name + " group picture"}
-                                      />
-                                      <Typography pl={2}>
-                                          {group.name.replace(/\b\w/, (c) => c.toUpperCase())}
-                                      </Typography>
-                                  </Link>
-                              </Paper>
-                          );
-                      })
-                    : ""}
-            </Stack>
+            <Box sx={{ maxHeight: "80vh", overflow: "auto" }}>
+                <Stack spacing={2}>
+                    {groups !== null &&
+                    groups !== undefined &&
+                    groups.length > 0
+                        ? groups.map((group, index) => {
+                              return (
+                                  <Paper key={index}>
+                                      <Link
+                                          href="#"
+                                          p={2}
+                                          onClick={() => {
+                                              updateGroupId(group.id);
+                                          }}
+                                          sx={{
+                                              display: "flex",
+                                              alignItems: "center",
+                                              textDecoration: "none",
+                                          }}
+                                      >
+                                          <Avatar
+                                              src={group.picturePath}
+                                              alt={
+                                                  group.name + " group picture"
+                                              }
+                                          />
+                                          <Typography pl={2}>
+                                              {group.name.replace(/\b\w/, (c) =>
+                                                  c.toUpperCase()
+                                              )}
+                                          </Typography>
+                                      </Link>
+                                  </Paper>
+                              );
+                          })
+                        : ""}
+                </Stack>
+            </Box>
         </Container>
     );
 }

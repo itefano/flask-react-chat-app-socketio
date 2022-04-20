@@ -75,32 +75,48 @@ export default function PrimarySearchAppBar(props) {
     const [checked, setChecked] = useState(true);
     const [openDrawer, setOpenDrawer] = useState(false);
     const [notifications, setNotifications] = useState(0);
+    const [searchResults, setSearchResults] = useState([]);
     const [unreadMessages, setUnreadMessages] = useState([]);
     const [popperAnchorEl, setPopperAnchorEl] = useState(null);
+    const [searchPopperAnchorEl, setSearchPopperAnchorEl] = useState(null);
     const handleTheme = () => {
         setChecked(!checked);
         props.handleTheme();
     };
+    const [openSearchPopper, setOpenSearchPopper] = useState(false);
     const [openPopper, setOpenPopper] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const handleChange = (event) => {
+        setSearchTerm(event.target.value);
+        if (event.target.value === "") {
+            setOpenSearchPopper(false);
+        } else {
+            setSearchPopperAnchorEl(event.currentTarget);
+            setOpenSearchPopper(true);
+        }
+    };
 
     const getNotifications = () => {
-        axios({
-            method: "POST",
-            url: "/api/notifications",
-            headers: {
-                Authorization: "Bearer " + props.token,
-            },
-        })
-            .then((response) => {
-                setUnreadMessages(response.data.messages);
+        if (props.token) {
+            axios({
+                method: "POST",
+                url: "/api/notifications",
+                headers: {
+                    Authorization: "Bearer " + props.token,
+                },
             })
-            .catch((error) => {
-                if (error.response) {
-                    console.log(error.response);
-                    console.log(error.response.status);
-                    console.log(error.response.headers);
-                }
-            });
+                .then((response) => {
+                    setUnreadMessages(response.data.messages);
+                })
+                .catch((error) => {
+                    if (error.response && error.response.status !== 422) {
+                        console.log(error.response);
+                        console.log(error.response.status);
+                        console.log(error.response.headers);
+                    }
+                });
+        }
     };
 
     const seeNotifications = (e) => {
@@ -108,12 +124,15 @@ export default function PrimarySearchAppBar(props) {
         setOpenPopper((previousOpen) => !previousOpen);
     };
     const canBeOpen = openPopper && Boolean(popperAnchorEl);
+    const canBeOpenSearch = openSearchPopper && Boolean(searchPopperAnchorEl);
     const id = canBeOpen ? "transition-popper" : undefined;
+    const idSearch = canBeOpenSearch ? "transition-popper" : undefined;
 
     useEffect(() => {
         getNotifications();
 
         if (
+            props.info &&
             props.info.notifications !== null &&
             props.info.notifications !== undefined
         ) {
@@ -272,6 +291,10 @@ export default function PrimarySearchAppBar(props) {
         setAnchorEl(null);
     };
 
+    const handleSearchMenuClose = () => {
+        setOpenSearchPopper(false);
+    };
+
     const menuId = "primary-search-account-menu";
     const renderMenu = (
         <Menu
@@ -343,15 +366,146 @@ export default function PrimarySearchAppBar(props) {
                             Blablapp
                         </Typography>
                     </Link>
-                    <Search>
-                        <SearchIconWrapper>
-                            <SearchIcon />
-                        </SearchIconWrapper>
-                        <StyledInputBase
-                            placeholder="Search…"
-                            inputProps={{ "aria-label": "search" }}
-                        />
-                    </Search>
+                    {props.token &&
+                        props.token !== "" &&
+                        props.token !== undefined && (
+                            <Search
+                                onChange={handleChange}
+                                value={searchTerm}
+                                onBlur={handleSearchMenuClose}
+                                aria-describedby={"search" + idSearch}
+                            >
+                                <SearchIconWrapper>
+                                    <SearchIcon />
+                                </SearchIconWrapper>
+                                <StyledInputBase
+                                    placeholder="Search…"
+                                    inputProps={{
+                                        "aria-label": "search" + idSearch,
+                                    }}
+                                />
+                            </Search>
+                        )}
+
+                    <Popper
+                        open={openSearchPopper}
+                        anchorEl={searchPopperAnchorEl}
+                        placement="bottom-start"
+                        transition
+                    >
+                        {({ TransitionProps }) => (
+                            <Fade {...TransitionProps} timeout={350}>
+                                <Box>
+                                    <Paper>
+                                        <Box
+                                            p={2}
+                                            sx={{
+                                                height: "50vh",
+                                                width: "400px",
+                                                overflow: "auto",
+                                            }}
+                                        >
+                                            {!searchResults ||
+                                            searchResults === undefined ||
+                                            searchResults === null ||
+                                            searchResults.length === 0 ? (
+                                                <Box
+                                                    sx={{ textAlign: "center" }}
+                                                >
+                                                    <Typography variant="h5">
+                                                        No matches found
+                                                    </Typography>
+                                                </Box>
+                                            ) : (
+                                                <>
+                                                    <Stack spacing={2}>
+                                                        {searchResults.map(
+                                                            (e, index) => (
+                                                                <Paper
+                                                                    key={index}
+                                                                    elevation={
+                                                                        4
+                                                                    }
+                                                                >
+                                                                    <Box p={2}>
+                                                                        <Box
+                                                                            sx={{
+                                                                                display:
+                                                                                    "flex",
+                                                                                flexDirection:
+                                                                                    "row",
+                                                                                alignItems:
+                                                                                    "center",
+                                                                            }}
+                                                                        >
+                                                                            <Avatar
+                                                                                alt={
+                                                                                    e.authorFirstName +
+                                                                                    "'s Picture"
+                                                                                }
+                                                                                src={
+                                                                                    e.authorProfilePicturePath
+                                                                                }
+                                                                            />
+                                                                            <Box
+                                                                                sx={{
+                                                                                    display:
+                                                                                        "flex",
+                                                                                    flexDirection:
+                                                                                        "row",
+                                                                                    alignItems:
+                                                                                        "baseline",
+                                                                                }}
+                                                                            >
+                                                                                <Typography
+                                                                                    variant="h5"
+                                                                                    pl={
+                                                                                        2
+                                                                                    }
+                                                                                >
+                                                                                    {
+                                                                                        e.authorFirstName
+                                                                                    }
+                                                                                </Typography>
+                                                                                <Typography
+                                                                                    variant="p"
+                                                                                    px={
+                                                                                        1
+                                                                                    }
+                                                                                >
+                                                                                    in
+                                                                                </Typography>
+                                                                                <Typography variant="body1">
+                                                                                    {
+                                                                                        e.groupName
+                                                                                    }
+                                                                                </Typography>
+                                                                            </Box>
+                                                                        </Box>
+                                                                        <Box
+                                                                            pt={
+                                                                                2
+                                                                            }
+                                                                        >
+                                                                            <Typography variant="p">
+                                                                                {
+                                                                                    e.content
+                                                                                }
+                                                                            </Typography>
+                                                                        </Box>
+                                                                    </Box>
+                                                                </Paper>
+                                                            )
+                                                        )}
+                                                    </Stack>
+                                                </>
+                                            )}
+                                        </Box>
+                                    </Paper>
+                                </Box>
+                            </Fade>
+                        )}
+                    </Popper>
                     <Box sx={{ flexGrow: 1 }} />
                     <MaterialUISwitch
                         sx={{ m: 1 }}

@@ -61,42 +61,43 @@ def generate_users(amount):
 
 def generate_groups(s, amount):
     groups = []
-    printProgressBar(0, amount, prefix='Generating '+str(amount)+' groups...',
+    printProgressBar(0, amount, prefix='Generating approx '+str(3*amount)+' groups...',
                      suffix='', length=50)
     for i in range(amount):
-        admin = s.query(models.User).get(randrange(amount)+1)
-        participants = [admin.id]
-        friends = s.query(models.Friend).filter_by(userId=admin.id).all()
-        groupSize = randrange(len(friends)-1)+1
-        randParticipant = randrange(amount)+1
-        for j in range(groupSize+1):
-            participants.append(randParticipant)
-            while randParticipant in participants:
-                randParticipant = randrange(amount)+1
-        if groupSize == 2:
-            groupName = None
-        else:
-            groupName = " ".join(fake.words(randrange(6)+1))
-        users = [admin]
-        for k in range(len(friends)):
-            if k in participants:
-                u = s.query(models.User).filter_by(id=friends[k].friendId).first()
-                users.append(u)
-        admins = [admin]
-        addedAdmin = [admin.id]
-        for n in users:
-            r = randrange(5)
-            if r == 0 and n.id not in addedAdmin:
-                admins.append(n)
-                addedAdmin.append(n.id)
-        groups.append(models.Group(
-            name=groupName,
-            picturePath=fake.image_url(),
-            creator=admin.id,
-            admins=admins, 
-            users=users
-        ))
-        printProgressBar(i + 1, amount, prefix='Generating '+str(amount)+' groups...',
+        admin = s.query(models.User).get(i+1)
+        for ii in range (randrange(int(amount/5))+1):#~2.5 groups created per person
+            participants = [admin.id]
+            friends = s.query(models.Friend).filter_by(userId=admin.id).all()
+            groupSize = randrange(len(friends)-1)+1
+            randParticipant = randrange(amount)+1
+            for j in range(groupSize+1):
+                participants.append(randParticipant)
+                while randParticipant in participants:
+                    randParticipant = randrange(amount)+1
+            if groupSize == 2:
+                groupName = None
+            else:
+                groupName = " ".join(fake.words(randrange(6)+1))
+            users = [admin]
+            for k in range(len(friends)):
+                if k in participants:
+                    u = s.query(models.User).filter_by(id=friends[k].friendId).first()
+                    users.append(u)
+            admins = [admin]
+            addedAdmin = [admin.id]
+            for n in users:
+                r = randrange(5)
+                if r == 0 and n.id not in addedAdmin:
+                    admins.append(n)
+                    addedAdmin.append(n.id)
+            groups.append(models.Group(
+                name=groupName,
+                picturePath=fake.image_url(),
+                creator=admin.id,
+                admins=admins, 
+                users=users
+            ))
+        printProgressBar(i + 1, amount, prefix='Generating approx '+str(3*amount)+' groups...',
                          suffix='', length=50)
     return groups
 
@@ -123,7 +124,7 @@ def generate_friends(amount):
 
 def generate_messages(s, amount):
     messages = []
-    printProgressBar(0, amount, prefix='Generating approx '+str(5*amount)+' messages...', suffix='', length=50)
+    printProgressBar(0, amount, prefix='Generating approx '+str(5*amount)+' messages per user...', suffix='', length=50)
     for i in range(amount):
         for j in range(randrange(int(amount/10))+1):
             ppath = None
@@ -139,7 +140,7 @@ def generate_messages(s, amount):
                 picturePath=ppath,
                 author=author.id,
                 groupId=group.id))
-        printProgressBar(i + 1, amount, prefix='Generating approx '+str(5*amount)+' messages...',
+        printProgressBar(i + 1, amount, prefix='Generating approx '+str(5*amount)+' messages per user...',
                          suffix='', length=50)
     return messages
 
@@ -204,7 +205,7 @@ def seed_db(amount):
     s.commit()
 
 
-amount = 1000
+amount = 100
 try:
     amount = int(sys.argv[1])
     if amount < 4:
@@ -213,5 +214,5 @@ try:
 except ValueError as e:
     raise e
 except IndexError:
-    print('No value provided, 1000 will be used by default')
+    print('No value provided, 100 will be used by default')
 seed_db(amount)

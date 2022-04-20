@@ -17,35 +17,39 @@ function Login(props) {
     const [errorMessage, setErrorMessage] = useState("");
     const [error, setError] = useState(false);
     function logMeIn(event) {
-        axios({
-            method: "POST",
-            url: "/api/token",
-            data: {
-                email: loginForm.email,
-                password: loginForm.password,
-            },
-        })
-            .then((response) => {
-                props.setToken(response.data.access_token);
-                let info = { ...response.data };
-                delete info.access_token;
-                setError(false);
-                setErrorMessage("");
-                props.addInfo(info);
+        if (loginForm.email !== "" && loginForm.password !== "") {
+            axios({
+                method: "POST",
+                url: "/api/token",
+                data: {
+                    email: loginForm.email,
+                    password: loginForm.password,
+                },
             })
-            .catch((error) => {
-                if (error.response) {
-                    setErrorMessage(error.response.data.msg);
-                    setError(true);
-                    console.log(error.response);
-                    console.log(error.response.status);
-                    console.log(error.response.headers);
-                }
-            });
-        setloginForm({
-            email: "",
-            password: "",
-        });
+                .then((response) => {
+                    props.setToken(response.data.access_token);
+                    let info = { ...response.data };
+                    delete info.access_token;
+                    setError(false);
+                    setErrorMessage("");
+                    props.addInfo(info);
+                    setloginForm({
+                        email: "",
+                        password: "",
+                    });
+                })
+                .catch((error) => {
+                    if (error.response) {
+                        setErrorMessage(error.response.data.msg);
+                        setError(true);
+                        if (error.response.status !== 401) {
+                            console.log(error.response);
+                            console.log(error.response.status);
+                            console.log(error.response.headers);
+                        }
+                    }
+                });
+        }
         event.preventDefault();
     }
     function handleChange(event) {
@@ -74,9 +78,9 @@ function Login(props) {
                         placeholder="Email"
                         value={loginForm.email}
                         error={error}
-                        sx={{paddingBottom:'1rem'}}
+                        sx={{ paddingBottom: "1rem" }}
                     />
-                    
+
                     <TextField
                         onChange={handleChange}
                         type="password"
@@ -86,9 +90,9 @@ function Login(props) {
                         value={loginForm.password}
                         error={error}
                     />
-                    <Box width="300px" sx={{ margin: "auto" }} py={2}>
+                    <Box width="100%" sx={{ margin: "auto" }} py={2}>
                         {errorMessage !== "" ? (
-                            <Alert severity="error">{errorMessage}</Alert>
+                            <Alert severity="error" variant="filled" onClose={() => {setErrorMessage(""); setError(false)}}>{errorMessage}</Alert>
                         ) : (
                             ""
                         )}
