@@ -87,7 +87,7 @@ export default function PrimarySearchAppBar(props) {
     const [openPopper, setOpenPopper] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
 
-    const handleChange = (event) => {
+    const handleSearch = (event) => {
         setSearchTerm(event.target.value);
         if (event.target.value === "") {
             setOpenSearchPopper(false);
@@ -108,6 +108,7 @@ export default function PrimarySearchAppBar(props) {
             })
                 .then((response) => {
                     setUnreadMessages(response.data.messages);
+                    setNotifications(response.data.messages.length);
                 })
                 .catch((error) => {
                     if (error.response && error.response.status !== 422) {
@@ -118,7 +119,9 @@ export default function PrimarySearchAppBar(props) {
                 });
         }
     };
-
+    const handleCloseSearch = () => {
+        setOpenPopper(false);
+    };
     const seeNotifications = (e) => {
         setPopperAnchorEl(e.currentTarget);
         setOpenPopper((previousOpen) => !previousOpen);
@@ -129,16 +132,31 @@ export default function PrimarySearchAppBar(props) {
     const idSearch = canBeOpenSearch ? "transition-popper" : undefined;
 
     useEffect(() => {
-        getNotifications();
-
-        if (
-            props.info &&
-            props.info.notifications !== null &&
-            props.info.notifications !== undefined
-        ) {
-            localStorage.setItem("notifications", props.info.notifications);
-            setNotifications(props.info.notifications);
+        if (searchTerm && props.token) {
+            axios({
+                method: "POST",
+                url: "/api/search",
+                headers: {
+                    Authorization: "Bearer " + props.token,
+                },
+                data: { search_term: searchTerm },
+            })
+                .then((response) => {
+                    console.log("response", response.data.results);
+                    setSearchResults(response.data.results);
+                })
+                .catch((error) => {
+                    if (error.response && error.response.status !== 422) {
+                        console.log(error.response);
+                        console.log(error.response.status);
+                        console.log(error.response.headers);
+                    }
+                });
         }
+    }, [searchTerm]);
+
+    useEffect(() => {
+        getNotifications();
     }, []);
 
     useEffect(() => {
@@ -296,29 +314,44 @@ export default function PrimarySearchAppBar(props) {
     };
 
     const menuId = "primary-search-account-menu";
-    const renderMenu = (
-        <Menu
-            anchorEl={anchorEl}
-            anchorOrigin={{
-                vertical: "top",
-                horizontal: "right",
-            }}
-            id={menuId}
-            keepMounted
-            transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-            }}
-            open={isMenuOpen}
-            onClose={handleMenuClose}
-        >
-            <Box>
-                <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-                <MenuItem onClick={handleMenuClose}>My account</MenuItem>
-                <MenuItem onClick={logout}>Logout</MenuItem>
-            </Box>
-        </Menu>
-    );
+    const renderMenu = props.token &&
+        props.token !== "" &&
+        props.token !== undefined && (
+            <Menu
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                }}
+                id={menuId}
+                keepMounted
+                transformOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                }}
+                open={isMenuOpen}
+                onClose={handleMenuClose}
+            >
+                <Box>
+                    <MenuItem
+                        onClick={() => {
+                            handleMenuClose();
+                            navigate("/profile");
+                        }}
+                    >
+                        Profile
+                    </MenuItem>
+                    <MenuItem
+                        onClick={() => {
+                            handleMenuClose();
+                            logout();
+                        }}
+                    >
+                        Logout
+                    </MenuItem>
+                </Box>
+            </Menu>
+        );
 
     return (
         <Box sx={{ flexGrow: 1 }}>
@@ -370,7 +403,7 @@ export default function PrimarySearchAppBar(props) {
                         props.token !== "" &&
                         props.token !== undefined && (
                             <Search
-                                onChange={handleChange}
+                                onChange={handleSearch}
                                 value={searchTerm}
                                 onBlur={handleSearchMenuClose}
                                 aria-describedby={"search" + idSearch}
@@ -419,84 +452,220 @@ export default function PrimarySearchAppBar(props) {
                                             ) : (
                                                 <>
                                                     <Stack spacing={2}>
-                                                        {searchResults.map(
-                                                            (e, index) => (
-                                                                <Paper
-                                                                    key={index}
-                                                                    elevation={
-                                                                        4
+                                                        {searchResults.firstNames &&
+                                                            searchResults.firstNames.map(
+                                                                (e, index) => {
+                                                                    let firstName =
+                                                                        e.firstName;
+                                                                    if (
+                                                                        e.firstName
+                                                                            .toLowerCase()
+                                                                            .includes(
+                                                                                searchTerm.toLowerCase()
+                                                                            )
+                                                                    ) {
+                                                                        let minIndexName =
+                                                                            e.firstName
+                                                                                .toLowerCase()
+                                                                                .indexOf(
+                                                                                    searchTerm.toLowerCase()
+                                                                                );
+                                                                        let maxIndexName =
+                                                                            e.firstName
+                                                                                .toLowerCase()
+                                                                                .indexOf(
+                                                                                    searchTerm.toLowerCase()
+                                                                                ) +
+                                                                            searchTerm.length;
+                                                                        let replaceLeft =
+                                                                            e.firstName.slice(
+                                                                                0,
+                                                                                minIndexName
+                                                                            );
+                                                                        let replaceMiddle =
+                                                                            e.firstName.slice(
+                                                                                minIndexName,
+                                                                                maxIndexName
+                                                                            );
+                                                                        let replaceRight =
+                                                                            e.firstName.slice(
+                                                                                maxIndexName
+                                                                            );
+                                                                        firstName =
+                                                                            replaceLeft +
+                                                                            "<strong>" +
+                                                                            replaceMiddle +
+                                                                            "</strong>" +
+                                                                            replaceRight;
                                                                     }
-                                                                >
-                                                                    <Box p={2}>
-                                                                        <Box
-                                                                            sx={{
-                                                                                display:
-                                                                                    "flex",
-                                                                                flexDirection:
-                                                                                    "row",
-                                                                                alignItems:
-                                                                                    "center",
-                                                                            }}
+
+                                                                    let lastName =
+                                                                        e.lastName;
+                                                                    if (
+                                                                        e.lastName
+                                                                            .toLowerCase()
+                                                                            .includes(
+                                                                                searchTerm.toLowerCase()
+                                                                            )
+                                                                    ) {
+                                                                        let minIndexName =
+                                                                            e.lastName
+                                                                                .toLowerCase()
+                                                                                .indexOf(
+                                                                                    searchTerm.toLowerCase()
+                                                                                );
+                                                                        let maxIndexName =
+                                                                            e.lastName
+                                                                                .toLowerCase()
+                                                                                .indexOf(
+                                                                                    searchTerm.toLowerCase()
+                                                                                ) +
+                                                                            searchTerm.length;
+                                                                        let replaceLeft =
+                                                                            e.lastName.slice(
+                                                                                0,
+                                                                                minIndexName
+                                                                            );
+                                                                        let replaceMiddle =
+                                                                            e.lastName.slice(
+                                                                                minIndexName,
+                                                                                maxIndexName
+                                                                            );
+                                                                        let replaceRight =
+                                                                            e.lastName.slice(
+                                                                                maxIndexName
+                                                                            );
+                                                                        lastName =
+                                                                            replaceLeft +
+                                                                            "<strong>" +
+                                                                            replaceMiddle +
+                                                                            "</strong>" +
+                                                                            replaceRight;
+                                                                    }
+
+                                                                    let email =
+                                                                        e.email;
+                                                                    if (
+                                                                        e.email
+                                                                            .toLowerCase()
+                                                                            .includes(
+                                                                                searchTerm.toLowerCase()
+                                                                            )
+                                                                    ) {
+                                                                        let minIndexName =
+                                                                            e.firstName
+                                                                                .toLowerCase()
+                                                                                .indexOf(
+                                                                                    searchTerm.toLowerCase()
+                                                                                );
+                                                                        let maxIndexName =
+                                                                            e.firstName
+                                                                                .toLowerCase()
+                                                                                .indexOf(
+                                                                                    searchTerm.toLowerCase()
+                                                                                ) +
+                                                                            searchTerm.length;
+                                                                        let replaceLeft =
+                                                                            e.email.slice(
+                                                                                0,
+                                                                                minIndexName
+                                                                            );
+                                                                        let replaceMiddle =
+                                                                            e.email.slice(
+                                                                                minIndexName,
+                                                                                maxIndexName
+                                                                            );
+                                                                        let replaceRight =
+                                                                            e.email.slice(
+                                                                                maxIndexName
+                                                                            );
+                                                                        email =
+                                                                            replaceLeft +
+                                                                            "<strong>" +
+                                                                            replaceMiddle +
+                                                                            "</strong>" +
+                                                                            replaceRight;
+                                                                    }
+
+                                                                    return (
+                                                                        <Paper
+                                                                            key={
+                                                                                index
+                                                                            }
+                                                                            elevation={
+                                                                                4
+                                                                            }
                                                                         >
-                                                                            <Avatar
-                                                                                alt={
-                                                                                    e.authorFirstName +
-                                                                                    "'s Picture"
-                                                                                }
-                                                                                src={
-                                                                                    e.authorProfilePicturePath
-                                                                                }
-                                                                            />
                                                                             <Box
-                                                                                sx={{
-                                                                                    display:
-                                                                                        "flex",
-                                                                                    flexDirection:
-                                                                                        "row",
-                                                                                    alignItems:
-                                                                                        "baseline",
-                                                                                }}
+                                                                                p={
+                                                                                    2
+                                                                                }
                                                                             >
+                                                                                <Box
+                                                                                    sx={{
+                                                                                        display:
+                                                                                            "flex",
+                                                                                        flexDirection:
+                                                                                            "row",
+                                                                                        alignItems:
+                                                                                            "center",
+                                                                                    }}
+                                                                                >
+                                                                                    <Avatar
+                                                                                        alt={
+                                                                                            e.firstName +
+                                                                                            "'s Picture"
+                                                                                        }
+                                                                                        src={
+                                                                                            e.profilePicturePath
+                                                                                        }
+                                                                                    />
+                                                                                    <Box
+                                                                                        sx={{
+                                                                                            display:
+                                                                                                "flex",
+                                                                                            flexDirection:
+                                                                                                "row",
+                                                                                            alignItems:
+                                                                                                "baseline",
+                                                                                        }}
+                                                                                    >
+                                                                                        <Typography
+                                                                                            variant="p"
+                                                                                            pl={
+                                                                                                2
+                                                                                            }
+                                                                                            dangerouslySetInnerHTML={{
+                                                                                                __html:
+                                                                                                    firstName +
+                                                                                                    " " +
+                                                                                                    lastName,
+                                                                                            }}
+                                                                                        ></Typography>
+                                                                                    </Box>
+                                                                                </Box>
                                                                                 <Typography
-                                                                                    variant="h5"
-                                                                                    pl={
+                                                                                    variant="p"
+                                                                                    dangerouslySetInnerHTML={{
+                                                                                        __html: email,
+                                                                                    }}
+                                                                                ></Typography>
+                                                                                <Box
+                                                                                    pt={
                                                                                         2
                                                                                     }
                                                                                 >
-                                                                                    {
-                                                                                        e.authorFirstName
-                                                                                    }
-                                                                                </Typography>
-                                                                                <Typography
-                                                                                    variant="p"
-                                                                                    px={
-                                                                                        1
-                                                                                    }
-                                                                                >
-                                                                                    in
-                                                                                </Typography>
-                                                                                <Typography variant="body1">
-                                                                                    {
-                                                                                        e.groupName
-                                                                                    }
-                                                                                </Typography>
+                                                                                    <Typography variant="p">
+                                                                                        {
+                                                                                            e.content
+                                                                                        }
+                                                                                    </Typography>
+                                                                                </Box>
                                                                             </Box>
-                                                                        </Box>
-                                                                        <Box
-                                                                            pt={
-                                                                                2
-                                                                            }
-                                                                        >
-                                                                            <Typography variant="p">
-                                                                                {
-                                                                                    e.content
-                                                                                }
-                                                                            </Typography>
-                                                                        </Box>
-                                                                    </Box>
-                                                                </Paper>
-                                                            )
-                                                        )}
+                                                                        </Paper>
+                                                                    );
+                                                                }
+                                                            )}
                                                     </Stack>
                                                 </>
                                             )}
@@ -528,6 +697,7 @@ export default function PrimarySearchAppBar(props) {
                                 }
                                 color="inherit"
                                 onClick={seeNotifications}
+                                onBlur={handleCloseSearch}
                             >
                                 {notifications > 0 ? (
                                     <Badge

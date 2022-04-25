@@ -44,7 +44,13 @@ class Group(Base):
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
-
+    @property
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'picturePath': self.picturePath,
+        }
 
 
 class User(Base):
@@ -55,7 +61,8 @@ class User(Base):
     email = Column(String(320), unique=True, nullable=False)
     password = Column(String(120), unique=False, nullable=False)
     gender = Column(String(120), unique=False)
-    isAdmin = Column(Boolean, unique=False, default=False) # 260 = max path size on windows
+    # 260 = max path size on windows
+    isAdmin = Column(Boolean, unique=False, default=False)
     profilePicturePath = Column(String(260), unique=False)
     writtenmessages = relationship('Message')
     seen = relationship('Message_Seen')
@@ -73,6 +80,16 @@ class User(Base):
 
     def __repr__(self):
         return f'<User {self.firstName!r} {self.lastName!r}>'
+
+    @property
+    def serialize(self):
+        return {
+            'id': self.id,
+            'firstName': self.firstName,
+            'lastName': self.lastName,
+            'email': self.email,
+            'profilePicturePath': self.profilePicturePath,
+        }
 
 
 class Friend(Base):
@@ -121,7 +138,8 @@ class Message(Base):
     def __repr__(self):
         return f'<Message {self.title!r} : {self.content!r}>'
 
-class Message_Seen(Base): 
+
+class Message_Seen(Base):
     __tablename__ = 'messages_seen'
     id = Column(Integer, primary_key=True)
     userId = Column(Integer, ForeignKey('users.id'))
@@ -135,5 +153,3 @@ class Message_Seen(Base):
 
     def __repr__(self):  # for debugging purposes only, yeet it later
         return f'<Notification {self.userId!r} saw {self.messageId!r}>'
-
-    

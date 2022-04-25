@@ -11,6 +11,7 @@ import {
     AccordionDetails,
     Accordion,
     Link,
+    Skeleton,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +20,7 @@ export default function Contacts(props) {
     const [contacts, setContacts] = useState(null);
     const [groups, setGroups] = useState(null);
     const navigate = useNavigate();
+    const [roomId, setRoomId] = useState(null);
 
     const handleChange = (panel, email) => {
         if (expanded !== panel) {
@@ -45,8 +47,28 @@ export default function Contacts(props) {
             setExpanded("");
         }
     };
+
     useEffect(() => {
-        if (props.room !== null && props.room !== undefined) {
+        if (roomId !== null && roomId !== undefined) {
+            axios({
+                method: "POST",
+                url: "/api/check_room",
+                data: { groupId: roomId },
+                headers: {
+                    Authorization: "Bearer " + props.token,
+                },
+            })
+                .then((response) => {
+                    props.setRoom(roomId);
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        }
+    }, [roomId]);
+
+    useEffect(() => {
+        if (roomId && props.room === roomId) {
             navigate("/chat/");
         }
     }, [props.room]);
@@ -80,96 +102,105 @@ export default function Contacts(props) {
                 <Stack spacing={2}>
                     {contacts !== null &&
                     contacts !== undefined &&
-                    contacts.length > 0
-                        ? contacts.map((contact, index) => {
-                              return (
-                                  <Accordion
-                                      TransitionProps={{ unmountOnExit: true }}
-                                      expanded={expanded === "panel" + index}
-                                      onChange={() => {
-                                          handleChange(
-                                              "panel" + index,
-                                              contact.email
-                                          );
-                                      }}
-                                      key={index}
-                                  >
-                                      <AccordionSummary
-                                          expandIcon={<ExpandMoreIcon />}
-                                          aria-controls="panel1bh-content"
-                                          id="panel1bh-header"
-                                      >
-                                          <Box
-                                              key={index}
-                                              sx={{
-                                                  display: "flex",
-                                                  alignItems: "center",
-                                                  textDecoration: "none",
-                                              }}
-                                              p={2}
-                                          >
-                                              <Avatar
-                                                  src={
-                                                      contact.profilePicturePath
-                                                  }
-                                                  alt={
-                                                      "Profile Picture of " +
-                                                      contact.firstName
-                                                  }
-                                              />
-                                              <Typography variant="h5" pl={2}>
-                                                  {contact.email}
-                                              </Typography>
-                                          </Box>
-                                      </AccordionSummary>
-                                      <AccordionDetails key={index}>
-                                          <Stack spacing={1}>
-                                              {groups !== null &&
-                                              groups[contact.email] !==
-                                                  undefined &&
-                                              groups[contact.email].length > 0
-                                                  ? groups[contact.email].map(
-                                                        (group, index) => {
-                                                            return (
-                                                                <Link
-                                                                    key={index}
-                                                                    href="#"
-                                                                    underline="none"
-                                                                    onClick={() => {
-                                                                        console.log(
-                                                                            "setting",
-                                                                            group.id
-                                                                        );
-                                                                        props.setRoom(
-                                                                            group.id
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    <Paper
-                                                                        elevation={
-                                                                            4
-                                                                        }
-                                                                        sx={{
-                                                                            padding: 2,
-                                                                        }}
-                                                                    >
-                                                                        <Typography variant="h6">
-                                                                            {
-                                                                                group.name
-                                                                            }
-                                                                        </Typography>
-                                                                    </Paper>
-                                                                </Link>
-                                                            );
-                                                        }
-                                                    )
-                                                  : ""}
-                                          </Stack>
-                                      </AccordionDetails>
-                                  </Accordion>
-                              );
-                          })
-                        : ""}
+                    contacts.length > 0 ? (
+                        contacts.map((contact, index) => {
+                            return (
+                                <Accordion
+                                    TransitionProps={{ unmountOnExit: true }}
+                                    expanded={expanded === "panel" + index}
+                                    onChange={() => {
+                                        handleChange(
+                                            "panel" + index,
+                                            contact.email
+                                        );
+                                    }}
+                                    key={index}
+                                >
+                                    <AccordionSummary
+                                        expandIcon={<ExpandMoreIcon />}
+                                        aria-controls="panel1bh-content"
+                                        id="panel1bh-header"
+                                    >
+                                        <Box
+                                            key={index}
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                textDecoration: "none",
+                                            }}
+                                            p={2}
+                                        >
+                                            <Avatar
+                                                src={contact.profilePicturePath}
+                                                alt={
+                                                    "Profile Picture of " +
+                                                    contact.firstName
+                                                }
+                                            />
+                                            <Typography variant="h5" pl={2}>
+                                                {contact.email}
+                                            </Typography>
+                                        </Box>
+                                    </AccordionSummary>
+                                    <AccordionDetails key={index}>
+                                        <Stack spacing={1}>
+                                            {groups !== null &&
+                                            groups[contact.email] !==
+                                                undefined &&
+                                            groups[contact.email].length > 0
+                                                ? groups[contact.email].map(
+                                                      (group, index) => {
+                                                          return (
+                                                              <Link
+                                                                  key={index}
+                                                                  href="#"
+                                                                  underline="none"
+                                                                  onClick={() => {
+                                                                      console.log(
+                                                                          "setting",
+                                                                          group.id
+                                                                      );
+                                                                      setRoomId(
+                                                                          group.id
+                                                                      );
+                                                                  }}
+                                                              >
+                                                                  <Paper
+                                                                      elevation={
+                                                                          4
+                                                                      }
+                                                                      sx={{
+                                                                          padding: 2,
+                                                                      }}
+                                                                  >
+                                                                      <Typography variant="h6">
+                                                                          {
+                                                                              group.name
+                                                                          }
+                                                                      </Typography>
+                                                                  </Paper>
+                                                              </Link>
+                                                          );
+                                                      }
+                                                  )
+                                                : ""}
+                                        </Stack>
+                                    </AccordionDetails>
+                                </Accordion>
+                            );
+                        })
+                    ) : (
+                        <>
+                            <Skeleton variant="rectangular" height={100} />
+                            <Skeleton variant="rectangular" height={100} />
+                            <Skeleton variant="rectangular" height={100} />
+                            <Skeleton variant="rectangular" height={100} />
+                            <Skeleton variant="rectangular" height={100} />
+                            <Skeleton variant="rectangular" height={100} />
+                            <Skeleton variant="rectangular" height={100} />
+                            <Skeleton variant="rectangular" height={100} />
+                        </>
+                    )}
                 </Stack>
             </Box>
         </Container>

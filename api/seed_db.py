@@ -61,11 +61,11 @@ def generate_users(amount):
 
 def generate_groups(s, amount):
     groups = []
-    printProgressBar(0, amount, prefix='Generating approx '+str(3*amount)+' groups...',
+    printProgressBar(0, amount, prefix='Generating ~'+str(int(7.5*amount))+' groups...',
                      suffix='', length=50)
     for i in range(amount):
         admin = s.query(models.User).get(i+1)
-        for ii in range (randrange(int(amount/5))+1):#~2.5 groups created per person
+        for ii in range (randrange(5)+5):#~5 groups created per person
             participants = [admin.id]
             friends = s.query(models.Friend).filter_by(userId=admin.id).all()
             groupSize = randrange(len(friends)-1)+1
@@ -97,7 +97,7 @@ def generate_groups(s, amount):
                 admins=admins, 
                 users=users
             ))
-        printProgressBar(i + 1, amount, prefix='Generating approx '+str(3*amount)+' groups...',
+        printProgressBar(i + 1, amount, prefix='Generating ~'+str(int(7.5*amount))+' groups...',
                          suffix='', length=50)
     return groups
 
@@ -108,7 +108,7 @@ def generate_friends(amount):
                      suffix='', length=50)
     for i in range(amount):
         randomFriends = []
-        for j in range(10):
+        for j in range(10):#each user has 10 friends
             randomFriend = randrange(amount)+1
             while randomFriend != i+1 and randomFriend in randomFriends:
                 randomFriend = randrange(amount)+1
@@ -124,11 +124,12 @@ def generate_friends(amount):
 
 def generate_messages(s, amount):
     messages = []
-    printProgressBar(0, amount, prefix='Generating approx '+str(5*amount)+' messages per user...', suffix='', length=50)
-    for i in range(amount):
+    groups = s.query(models.Group).all()
+    printProgressBar(0, len(groups), prefix='Generating ~'+str(int(7.5*len(groups)))+' messages per groups...', suffix='', length=50)
+    for i in range(len(groups)):
         for j in range(randrange(int(amount/10))+1):
             ppath = None
-            group = s.query(models.Group).get(i+1)
+            group = groups[i]
             # hacky, but saves time
             users = s.query(models.Group).get(i+1).users
             author = users[randrange(len(users))]
@@ -140,29 +141,36 @@ def generate_messages(s, amount):
                 picturePath=ppath,
                 author=author.id,
                 groupId=group.id))
-        printProgressBar(i + 1, amount, prefix='Generating approx '+str(5*amount)+' messages per user...',
+        printProgressBar(i + 1, len(groups), prefix='Generating ~'+str(int(7.5*len(groups)))+' messages per groups...',
                          suffix='', length=50)
     return messages
 
-def generate_notifications(s, amount):
+def generate_notifications(s):
     messages_seen = []
+    messages = s.query(models.Message).all()
     groups = s.query(models.Group).all()
-    printProgressBar(0, len(groups), prefix='Generating approx '+str(int(3.5*amount*10))+' notifications...', suffix='', length=50)
+    printProgressBar(0, len(groups), prefix='Generating ~'+str(int(7.5*len(messages)))+' notifications...', suffix='', length=50)
+    k = 0
+    kk = 0
     for i in range(len(groups)):
         for j in range(len(groups[i].messages)):
             m = groups[i].messages[j]
+            k += 1
             r = randrange(2)
             seen = True
             if r==0:
                 seen = False
             for u in groups[i].users:
+                kk += 1
                 messages_seen.append(models.Message_Seen(
                     userId=u.id,
                     messageId=m.id,
                     seen=seen
                 ))
-        printProgressBar(i + 1, len(groups), prefix='Generating approx '+str(int(3.5*amount*10))+' notifications...',
+        printProgressBar(i + 1, len(groups), prefix='Generating ~'+str(int(7.5*len(messages)))+' notifications...',
                          suffix='', length=50)
+    print('did', k)
+    print('for total', kk)
     return messages_seen
 
 
@@ -200,7 +208,7 @@ def seed_db(amount):
     messages = (generate_messages(s, amount))
     s.add_all(messages)
     s.commit()
-    notifications = generate_notifications(s, amount)
+    notifications = generate_notifications(s)
     s.add_all(notifications)
     s.commit()
 

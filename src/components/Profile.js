@@ -1,5 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
+import {
+    Container,
+    Paper,
+    TextField,
+    Typography,
+    FormGroup,
+    Button,
+    Skeleton
+} from "@mui/material";
+import { Box } from "@mui/system";
 
 function Profile(props) {
     const [profileData, setProfileData] = useState(null);
@@ -13,11 +23,8 @@ function Profile(props) {
         })
             .then((response) => {
                 const res = response.data;
-                res.access_token && props.setToken(res.access_token);
-                setProfileData({
-                    profile_name: res.name,
-                    about_me: res.about,
-                });
+                // res.access_token && props.setToken(res.access_token);
+                setProfileData(res);
             })
             .catch((error) => {
                 if (error.response) {
@@ -27,17 +34,82 @@ function Profile(props) {
                 }
             });
     }
+    useEffect(() => {
+        getData();
+    }, []);
     return (
-        <div className="Profile">
-            <p>To get your profile details: </p>
-            <button onClick={getData}>Click me</button>
-            {profileData && (
-                <div>
-                    <p>Profile name: {profileData.profile_name}</p>
-                    <p>About me: {profileData.about_me}</p>
-                </div>
-            )}
-        </div>
+        <Paper className="Profile" sx={{ display: "flex" }}>
+            <Container maxWidth="sm" sx={{}}>
+                <Typography variant="h1">Your profile : </Typography>
+
+                {!profileData ? (
+                    <>
+                        <Skeleton />
+                        <Skeleton variant="rectangular" height={70} />
+                        <Skeleton />
+                        <Skeleton variant="rectangular" height={70} />
+                        <Skeleton />
+                        <Skeleton variant="rectangular" height={70} />
+                        <Skeleton
+                            variant="rectangular"
+                            height={150}
+                            width={300}
+                        />
+                    </>
+                ) : (
+                    <>
+                        <FormGroup>
+                            <Typography>Email</Typography>
+                            <TextField
+                                value={profileData["email"]}
+                                onChange={(e) => {
+                                    setProfileData({
+                                        ...profileData,
+                                        email: e.target.value,
+                                    });
+                                }}
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Typography>First Name</Typography>
+                            <TextField
+                                value={profileData["firstName"]}
+                                onChange={(e) => {
+                                    setProfileData({
+                                        ...profileData,
+                                        firstName: e.target.value,
+                                    });
+                                }}
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Typography>Last Name</Typography>
+                            <TextField
+                                value={profileData["lastName"]}
+                                onChange={(e) => {
+                                    setProfileData({
+                                        ...profileData,
+                                        lastName: e.target.value,
+                                    });
+                                }}
+                            />
+                        </FormGroup>
+                        <img
+                            src={profileData["profilePicturePath"]}
+                            width="300"
+                        />
+                        ;
+                    </>
+                )}
+                <Box sx={{ textAlign: "center" }}>
+                    {" "}
+                    <Button variant="outlined">
+                        {" "}
+                        Enregistrer les modifications{" "}
+                    </Button>
+                </Box>
+            </Container>
+        </Paper>
     );
 }
 

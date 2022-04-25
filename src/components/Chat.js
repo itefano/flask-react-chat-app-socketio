@@ -85,9 +85,7 @@ export default function Groups(props) {
             },
         });
         socket.current.on("connect", () => {
-            socket.current.on("disconnect", () => {
-                console.log("disconnecting");
-            });
+            console.log("connected");
         });
         socket.current.emit("join", { groupId: props.room });
         socket.current.on("message", (data) => {
@@ -124,7 +122,7 @@ export default function Groups(props) {
                 });
 
             return () => {
-                socket.current.disconnect();
+                socket.current.disconnect();//not sure which one of these two I should be using
                 props.setRoom(null);
             };
         }

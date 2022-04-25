@@ -7,6 +7,7 @@ from flask_jwt_extended import create_access_token, get_jwt_identity, \
 from dotenv import load_dotenv
 import models
 from sqlalchemy import desc
+from sqlalchemy.ext.serializer import dumps, loads
 load_dotenv()
 
 routes = Blueprint('example_blueprint', __name__)
@@ -70,11 +71,17 @@ def register():
 @routes.route('/profile')
 @jwt_required()
 def my_profile():  # to be completed later
-    response_body = {
-        "name": "My name",
-        "about": "Some stuff about me"
-    }
-    return response_body
+    try:
+        s = db_session()
+        user = s.query(models.User).filter_by(email=get_email()).one()
+        s.close()
+    except Exception as e:
+        s.close()
+        print(e)
+        return {"error": "Session desynchronized"}, 401
+    print("yo wtf")
+    return jsonify({"firstName": user.firstName, "lastName": user.lastName, "email": user.email, "profilePicturePath": user.profilePicturePath})
+    # return response_body
 
 
 @routes.route('/get_info', methods=["POST"])
@@ -130,14 +137,16 @@ def list_groups():
             users = [u for u in e.users]
             name = None
             curr_user = get_user(get_jwt_identity())
-            if not e.name or e.name=="":
-                if len(users) < 2:#s'il n'y a que 2 utilisateurs et que la conversation n'a pas de nom, la conversation prend le nom de l'autre utilisateur
+            if not e.name or e.name == "":
+                if len(users) < 2:  # s'il n'y a que 2 utilisateurs et que la conversation n'a pas de nom, la conversation prend le nom de l'autre utilisateur
                     if curr_user.id == users[0].id:
                         name = users[1].firstName+" "+users[1].lastName
                     else:
                         name = users[0].firstName+" "+users[0].lastName
-                else: # si il y a plus de 2 utilisateurs, on ajoute le nom de tout les autres utilisateurs (en ignorant l'utilisateur courant)
-                    name = ", ".join([u.firstName+" "+u.lastName for u in users if curr_user.id != u.id])
+                # si il y a plus de 2 utilisateurs, on ajoute le nom de tout les autres utilisateurs (en ignorant l'utilisateur courant)
+                else:
+                    name = ", ".join(
+                        [u.firstName+" "+u.lastName for u in users if curr_user.id != u.id])
             else:
                 name = e.name
             res.append(
@@ -167,14 +176,16 @@ def list_messages():
         mId = [m.id for m in group_messages]
         usr = s.query(models.User).get(get_jwt_identity())
         curr_user = get_user(get_jwt_identity())
-        if not group.name or group.name=="":
-            if len(users) < 2:#s'il n'y a que 2 utilisateurs et que la conversation n'a pas de nom, la conversation prend le nom de l'autre utilisateur
+        if not group.name or group.name == "":
+            if len(users) < 2:  # s'il n'y a que 2 utilisateurs et que la conversation n'a pas de nom, la conversation prend le nom de l'autre utilisateur
                 if curr_user.id == users[0].id:
                     name = users[1].firstName+" "+users[1].lastName
                 else:
                     name = users[0].firstName+" "+users[0].lastName
-            else: # si il y a plus de 2 utilisateurs, on ajoute le nom de tout les autres utilisateurs (en ignorant l'utilisateur courant)
-                name = ", ".join([u.firstName+" "+u.lastName for u in users if curr_user.id != u.id])
+            # si il y a plus de 2 utilisateurs, on ajoute le nom de tout les autres utilisateurs (en ignorant l'utilisateur courant)
+            else:
+                name = ", ".join(
+                    [u.firstName+" "+u.lastName for u in users if curr_user.id != u.id])
         else:
             name = group.name
         for m in group_messages:
@@ -257,7 +268,8 @@ def mark_all_as_read():
     return {"success": True}
 
 
-@routes.route('/contactgroup', methods=['POST']) # looks for a contact group convo, or creates one if it doesn't exist
+# looks for a contact group convo, or creates one if it doesn't exist
+@routes.route('/contactgroup', methods=['POST'])
 @jwt_required()
 def contact_group():
     try:
@@ -269,28 +281,33 @@ def contact_group():
             s.close()
             return {"error": "Contact does not exist"}, 404
         contact = contact
-        contact_groups = s.query(models.Group).filter(models.Group.users.any(id=contact.id)).filter(models.Group.users.any(id=get_jwt_identity())).all()
+        contact_groups = s.query(models.Group).filter(models.Group.users.any(
+            id=contact.id)).filter(models.Group.users.any(id=get_jwt_identity())).all()
         if not contact_groups:
-            contact_group = models.Group(name=None, picturePath="", users=[user, contact])
+            contact_group = models.Group(
+                name=None, picturePath="", users=[user, contact])
             s.add(contact_group)
             s.commit()
-            contact_groups = s.query(models.Group).filter(models.Group.users.any(id=contact.id)).filter(models.Group.users.any(id=get_jwt_identity())).all()
+            contact_groups = s.query(models.Group).filter(models.Group.users.any(
+                id=contact.id)).filter(models.Group.users.any(id=get_jwt_identity())).all()
     except Exception as e:
         s.close()
         print(e)
         return {"error": "Something went wrong"}, 500
-    res = []#🤮
+    res = []  # 🤮
     for e in contact_groups:
         name = None
         if e.name:
             name = e.name
         else:
             name = contact.firstName+" "+contact.lastName
-        res.append ({"name":name, "id":e.id, "picturePath":e.picturePath, "users_names":[u.firstName for u in e.users]})
+        res.append({"name": name, "id": e.id, "picturePath": e.picturePath,
+                   "users_names": [u.firstName for u in e.users]})
     s.close()
     return {"groups": res}
 
-@routes.route('/search', methods=['GET'])
+
+@routes.route('/search', methods=['POST'])
 @jwt_required()
 def search():
     try:
@@ -298,17 +315,29 @@ def search():
         user = get_user(get_jwt_identity())
         search_term = request.json.get("search_term", None)
         search = "%{}%".format(search_term)
-        firstNames = s.query(models.User).filter(models.User.firstName.like(search)).all()
-        lastNames = s.query(models.User).filter(models.User.lastName.like(search)).all()
-        emails = s.query(models.User).filter(models.User.email.like(search)).all()
-        groupNames = s.query(models.Groups).filter(models.Group.name.like(search)).all()
-        res = firstNames + lastNames + emails + groupNames
-        if not res:
-            s.close()
+        firstNames = s.query(models.User).filter(
+            models.User.firstName.like(search)).all()#add filter for user
+        lastNames = s.query(models.User).filter(
+            models.User.lastName.like(search)).all()
+        emails = s.query(models.User).filter(
+            models.User.email.like(search)).all()
+        groupNames = s.query(models.Group).filter(
+            models.Group.name.like(search)).all()
+        res = dict()
+        if firstNames:  
+            res["firstNames"] = [e.serialize for e in lastNames]
+        if lastNames:
+            res["lastNames"] = [e.serialize for e in lastNames]
+        if emails:
+            res["emails"] = [e.serialize for e in emails]
+        if groupNames:
+            res["groupNames"] = [e.serialize for e in groupNames]
+        s.close()
+        if not res or res=={} or len(res)==0:
             return {"error": "No results found"}, 404
     except Exception as e:
         s.close()
         print(e)
         return {"error": "Something went wrong"}, 500
     s.close()
-    return {"results": res}
+    return {"results":res}

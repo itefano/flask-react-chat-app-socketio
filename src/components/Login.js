@@ -33,10 +33,6 @@ function Login(props) {
                     setError(false);
                     setErrorMessage("");
                     props.addInfo(info);
-                    setloginForm({
-                        email: "",
-                        password: "",
-                    });
                 })
                 .catch((error) => {
                     if (error.response) {

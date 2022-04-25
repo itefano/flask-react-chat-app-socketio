@@ -8,6 +8,7 @@ import {
     Link,
     Container,
     Box,
+    Skeleton
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
@@ -20,6 +21,13 @@ export default function Groups(props) {
         setRoomId(id);
     };
 
+    useEffect(()=>{
+
+        if (roomId && props.room === roomId) {
+            navigate("/chat/");
+        }
+    }, [props.room])
+
     useEffect(() => {
         if (roomId !== null && roomId !== undefined) {
             axios({
@@ -31,9 +39,6 @@ export default function Groups(props) {
                 },
             })
                 .then((response) => {
-                    if (props.room !== roomId) {
-                        navigate("/chat/");
-                    }
                     props.setRoom(roomId);
                 })
                 .catch((error) => {
@@ -104,7 +109,16 @@ export default function Groups(props) {
                                   </Paper>
                               );
                           })
-                        : ""}
+                        :                         <>
+                        <Skeleton variant="rectangular" height={75} />
+                        <Skeleton variant="rectangular" height={75} />
+                        <Skeleton variant="rectangular" height={75} />
+                        <Skeleton variant="rectangular" height={75} />
+                        <Skeleton variant="rectangular" height={75} />
+                        <Skeleton variant="rectangular" height={75} />
+                        <Skeleton variant="rectangular" height={75} />
+                        <Skeleton variant="rectangular" height={75} />
+                    </>}
                 </Stack>
             </Box>
         </Container>
