@@ -142,7 +142,6 @@ export default function PrimarySearchAppBar(props) {
                 data: { search_term: searchTerm },
             })
                 .then((response) => {
-                    console.log("response", response.data.results);
                     setSearchResults(response.data.results);
                 })
                 .catch((error) => {
@@ -452,31 +451,54 @@ export default function PrimarySearchAppBar(props) {
                                             ) : (
                                                 <>
                                                     <Stack spacing={2}>
-                                                        {searchResults.firstNames &&
-                                                            searchResults.firstNames.map(
+                                                        {searchResults.users &&
+                                                            searchResults.users.map(
                                                                 (e, index) => {
                                                                     let firstName =
                                                                         e.firstName;
+                                                                    let currentSearchTerm =
+                                                                        searchTerm.trim();
+                                                                    if (
+                                                                        searchResults.isFirstLastName &&
+                                                                        currentSearchTerm.split(
+                                                                            " "
+                                                                        )[0]
+                                                                    ) {
+                                                                        currentSearchTerm =
+                                                                            currentSearchTerm.split(
+                                                                                " "
+                                                                            )[0];
+                                                                    } else if (
+                                                                        searchResults.isLastFirstName &&
+                                                                        currentSearchTerm.split(
+                                                                            " "
+                                                                        )[1]
+                                                                    ) {
+                                                                        currentSearchTerm =
+                                                                            searchTerm.split(
+                                                                                " "
+                                                                            )[1];
+                                                                    }
                                                                     if (
                                                                         e.firstName
                                                                             .toLowerCase()
                                                                             .includes(
-                                                                                searchTerm.toLowerCase()
+                                                                                currentSearchTerm.toLowerCase()
                                                                             )
                                                                     ) {
                                                                         let minIndexName =
                                                                             e.firstName
                                                                                 .toLowerCase()
                                                                                 .indexOf(
-                                                                                    searchTerm.toLowerCase()
+                                                                                    currentSearchTerm.toLowerCase()
                                                                                 );
                                                                         let maxIndexName =
                                                                             e.firstName
                                                                                 .toLowerCase()
                                                                                 .indexOf(
-                                                                                    searchTerm.toLowerCase()
+                                                                                    currentSearchTerm.toLowerCase()
                                                                                 ) +
-                                                                            searchTerm.length;
+                                                                            currentSearchTerm.length;
                                                                         let replaceLeft =
                                                                             e.firstName.slice(
                                                                                 0,
@@ -498,29 +520,53 @@ export default function PrimarySearchAppBar(props) {
                                                                             "</strong>" +
                                                                             replaceRight;
                                                                     }
-
+                                                                    if (
+                                                                        searchResults.isFirstLastName &&
+                                                                        searchTerm.trim().split(
+                                                                            " "
+                                                                        )
+                                                                            .length >
+                                                                            1
+                                                                    ) {
+                                                                        currentSearchTerm =
+                                                                            searchTerm.trim().split(
+                                                                                " "
+                                                                            )[1];
+                                                                    } else if (
+                                                                        searchResults.isLastFirstName &&
+                                                                        searchTerm.trim().split(
+                                                                            " "
+                                                                        )
+                                                                            .length >
+                                                                            1
+                                                                    ) {
+                                                                        currentSearchTerm =
+                                                                            searchTerm.trim().split(
+                                                                                " "
+                                                                            )[0];
+                                                                    }
                                                                     let lastName =
                                                                         e.lastName;
                                                                     if (
                                                                         e.lastName
                                                                             .toLowerCase()
                                                                             .includes(
-                                                                                searchTerm.toLowerCase()
+                                                                                currentSearchTerm.toLowerCase()
                                                                             )
                                                                     ) {
                                                                         let minIndexName =
                                                                             e.lastName
                                                                                 .toLowerCase()
                                                                                 .indexOf(
-                                                                                    searchTerm.toLowerCase()
+                                                                                    currentSearchTerm.toLowerCase()
                                                                                 );
                                                                         let maxIndexName =
                                                                             e.lastName
                                                                                 .toLowerCase()
                                                                                 .indexOf(
-                                                                                    searchTerm.toLowerCase()
+                                                                                    currentSearchTerm.toLowerCase()
                                                                                 ) +
-                                                                            searchTerm.length;
+                                                                            currentSearchTerm.length;
                                                                         let replaceLeft =
                                                                             e.lastName.slice(
                                                                                 0,
@@ -544,27 +590,28 @@ export default function PrimarySearchAppBar(props) {
                                                                     }
 
                                                                     let email =
-                                                                        e.email;
+                                                                        e.email.toLowerCase();
+                                                                    currentSearchTerm =
+                                                                        searchTerm.trim().split(' ').join('').toLowerCase();
+                                                                    if (searchResults.isLastFirstName)
+                                                                    {
+                                                                        currentSearchTerm =
+                                                                            searchTerm.trim().split(' ').join('').toLowerCase();
+                                                                    }
                                                                     if (
-                                                                        e.email
-                                                                            .toLowerCase()
-                                                                            .includes(
-                                                                                searchTerm.toLowerCase()
-                                                                            )
+                                                                        e.email.includes(
+                                                                            currentSearchTerm
+                                                                        )
                                                                     ) {
                                                                         let minIndexName =
-                                                                            e.firstName
-                                                                                .toLowerCase()
-                                                                                .indexOf(
-                                                                                    searchTerm.toLowerCase()
-                                                                                );
+                                                                            e.email.indexOf(
+                                                                                currentSearchTerm
+                                                                            );
                                                                         let maxIndexName =
-                                                                            e.firstName
-                                                                                .toLowerCase()
-                                                                                .indexOf(
-                                                                                    searchTerm.toLowerCase()
-                                                                                ) +
-                                                                            searchTerm.length;
+                                                                            e.email.indexOf(
+                                                                                currentSearchTerm
+                                                                            ) +
+                                                                            currentSearchTerm.length;
                                                                         let replaceLeft =
                                                                             e.email.slice(
                                                                                 0,

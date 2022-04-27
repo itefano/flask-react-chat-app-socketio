@@ -213,7 +213,7 @@ def list_messages():
         s.close()
     except Exception as e:
         s.close()
-        raise(e)
+        print(e)
         return {"error": "Something went wrong"}, 500
     return jsonify(res)
 
@@ -313,31 +313,49 @@ def search():
     try:
         s = db_session()
         user = get_user(get_jwt_identity())
+        firstLastNames, lastFirstNames, firstNames, lastNames, emails = [], [], [], [], []
         search_term = request.json.get("search_term", None)
-        search = "%{}%".format(search_term)
-        firstNames = s.query(models.User).filter(
-            models.User.firstName.like(search)).all()#add filter for user
-        lastNames = s.query(models.User).filter(
-            models.User.lastName.like(search)).all()
-        emails = s.query(models.User).filter(
-            models.User.email.like(search)).all()
+        if ' ' in search_term:  # in case they search for firstname and lastname
+            for i in range(len(search_term.split(' '))):
+                # takes the first n words as first names
+                firstName = ' '.join(search_term.split(' ')[:i])
+                # takes the first n words as first names
+                lastName = ' '.join(search_term.split(' ')[i:])
+                firstLastNames.extend(s.query(models.User).filter(models.User.firstName.ilike(
+                    "%{}%".format(firstName))).filter(models.User.lastName.ilike("%{}%".format(lastName))).all())  # unholy abomination
+                lastFirstNames.extend(s.query(models.User).filter(models.User.lastName.ilike("%{}%".format(
+                    firstName))).filter(models.User.firstName.ilike("%{}%".format(lastName))).all())
+        else:
+            firstNames = s.query(models.User).filter(
+                models.User.firstName.ilike("%{}%".format(search_term))).all()  # TODO : add filter for user
+            lastNames = s.query(models.User).filter(
+                models.User.lastName.ilike("%{}%".format(search_term))).all()
+            emails = s.query(models.User).filter(
+                models.User.email.ilike("%{}%".format(search_term))).all()
         groupNames = s.query(models.Group).filter(
-            models.Group.name.like(search)).all()
+            models.Group.name.ilike("%{}%".format(search_term))).all()
         res = dict()
-        if firstNames:  
-            res["firstNames"] = [e.serialize for e in lastNames]
-        if lastNames:
-            res["lastNames"] = [e.serialize for e in lastNames]
-        if emails:
-            res["emails"] = [e.serialize for e in emails]
+        res["users"] = []
+        res['isFirstLastName'] = False
+        res['isLastFirstNames'] = False
+        for resultBit in [firstLastNames, lastFirstNames, firstNames, lastNames, emails]:# monstrosity that gets rid of duplicates
+            if resultBit and len(resultBit)>0:
+                for r in resultBit:
+                    isIn = False
+                    for e in res['users']:
+                        if e['email'] == r.email:
+                            isIn = True
+                    if not isIn:
+                        res['users'].append(r.serialize)
+        print(res)
         if groupNames:
             res["groupNames"] = [e.serialize for e in groupNames]
         s.close()
-        if not res or res=={} or len(res)==0:
+        if not res or res == {} or len(res) == 0:
             return {"error": "No results found"}, 404
     except Exception as e:
         s.close()
-        print(e)
+        raise(e)
         return {"error": "Something went wrong"}, 500
     s.close()
-    return {"results":res}
+    return {"results": res}

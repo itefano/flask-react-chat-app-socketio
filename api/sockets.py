@@ -12,7 +12,7 @@ import json
 def client_ack():
     print('message was gotten')
 
-def message_received(methods=['POST']):
+def message_received():
     # renvoie une notification au back end en cas de réception de message
     print('message was received!!!')
 
@@ -25,13 +25,11 @@ def join_group(jsonresponse):
         # vérifie que l'user est bien dans un groupe
         users = [e.id for e in models.Group.query.get(
             jsonresponse['groupId']).users]
-        print(get_user(get_jwt_identity()).id, users)
         if (get_user(get_jwt_identity()).id not in users):
             s.close()
             return {"errorMessage": "User does not have access to this group. How the hell did you get here?"}, 404
         else:
             join_room(groupId)
-            print('joined room')
             emit("joined group", {"groupId": groupId},
                  namespace="/chat", room=groupId, broadcast=True)
             s.close()
@@ -121,7 +119,6 @@ def message_sent(jsonresponse):
                     }
                     send(msg, namespace="/chat",
                          room=jsonresponse['groupId'], broadcast=True)
-                    print('message sent:', msg)
                     return {"success": True}
             except Exception as e:
                 print("something went wrong during db insertion :'(")
