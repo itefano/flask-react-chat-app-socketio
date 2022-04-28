@@ -75,6 +75,15 @@ class User(Base):
     time_created = Column(DateTime(timezone=True), default=func.now())
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
 
+    def unread_messages(self):
+        res = []
+        for e in self.groups:
+            for m in e.messages:
+                msg = Message_Seen.query.filter_by(seen=False, messageId=m.id).first()
+                if msg:
+                    res.append(msg)
+        return res
+
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
 
@@ -130,7 +139,7 @@ class Message(Base):
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
     seenBy = relationship('Message_Seen')
     groupId = Column(Integer, ForeignKey('groups.id'), default=None)
-    parentMessage = Column(Integer, ForeignKey('messages.id'))
+    parentMessage = Column(Integer, ForeignKey('messages.id')) #future implementation of message threads/replies
 
     def __init__(self, **kwargs):
         super(Message, self).__init__(**kwargs)
@@ -152,4 +161,7 @@ class Message_Seen(Base):
         super(Message_Seen, self).__init__(**kwargs)
 
     def __repr__(self):  # for debugging purposes only, yeet it later
-        return f'<Notification {self.userId!r} saw {self.messageId!r}>'
+        word = "didn\'t read"
+        if self.seen:
+            word = 'read'
+        return f'<Notification {self.userId!r} {word} {self.messageId!r}>'

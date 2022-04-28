@@ -60,31 +60,29 @@ def generate_users(amount):
     return users
 
 
-def generate_groups(s, amount):#TODO fix the amount of users in groups
+def generate_groups(s, amount):
     groups = []
-    printProgressBar(0, amount, prefix='Generating ~'+str(int(7.5*amount))+' groups...',
+    printProgressBar(0, amount, prefix='Generating ~'+str(7*amount)+' groups...',
                      suffix='', length=50)
     for i in range(amount):
         admin = s.query(models.User).get(i+1)
-        for ii in range(randrange(5)+5):  # ~7.5 groups created per person
+        groupAmt = randrange(5)+5
+        for ii in range(groupAmt):  # ~7.5 groups created per person
             participants = [admin.id]
             friends = s.query(models.Friend).filter_by(userId=admin.id).all()
-            groupSize = randrange(len(friends)-1)+1
-            randParticipant = randrange(amount)+1
-            for j in range(groupSize+1):#TODO: fix the amounts here
-                participants.append(randParticipant)
-                while randParticipant in participants:
-                    randParticipant = randrange(amount)+1
+            groupSize = randrange(len(friends))+1 # the use of min here avoids an infinite loop in the case where the amount of total users is too low (like ~10 ppl)
             if groupSize == 2:
                 groupName = None
             else:
                 groupName = " ".join(fake.words(randrange(6)+1))
             users = [admin]
-            for k in range(len(friends)):
-                if k in participants:
-                    u = s.query(models.User).filter_by(
-                        id=friends[k].friendId).first()
-                    users.append(u)
+            participants = [admin.id]
+            for k in range(min(groupSize, len(friends))):
+                uid = friends[randrange(len(friends))].friendId
+                while uid in participants:
+                    uid = friends[randrange(len(friends))].friendId
+                participants.append(uid)
+                users.append(s.query(models.User).get(uid))
             admins = [admin]
             addedAdmin = [admin.id]
             for n in users:
@@ -99,7 +97,7 @@ def generate_groups(s, amount):#TODO fix the amount of users in groups
                 admins=admins,
                 users=users
             ))
-        printProgressBar(i + 1, amount, prefix='Generating ~'+str(int(7.5*amount))+' groups...',
+        printProgressBar(i + 1, amount, prefix='Generating ~'+str(7*amount)+' groups...',
                          suffix='', length=50)
     return groups
 
@@ -127,10 +125,10 @@ def generate_friends(amount):
 def generate_messages(s, amount):
     messages = []
     groups = s.query(models.Group).all()
-    printProgressBar(0, len(groups), prefix='Generating ~'+str(int(5.5 *
+    printProgressBar(0, len(groups), prefix='Generating ~'+str(int(9.5 *
                      len(groups)))+' messages...', suffix='', length=50)
     for i in range(len(groups)):
-        for j in range(randrange(int(amount/10))+1):
+        for j in range(randrange(10)+5):  # ~9 messages per group
             ppath = None
             group = groups[i]
             # hacky, but saves time
@@ -144,7 +142,7 @@ def generate_messages(s, amount):
                 picturePath=ppath,
                 author=author.id,
                 groupId=group.id))
-        printProgressBar(i + 1, len(groups), prefix='Generating ~'+str(int(5.5*len(groups)))+' messages...',
+        printProgressBar(i + 1, len(groups), prefix='Generating ~'+str(int(9.5*len(groups)))+' messages...',
                          suffix='', length=50)
     return messages
 
@@ -154,7 +152,7 @@ def generate_notifications(s):
     messages = s.query(models.Message).all()
     groups = s.query(models.Group).all()
     printProgressBar(0, len(groups), prefix='Generating ~' +
-                     str(int(7.5*len(messages)))+' notifications...', suffix='', length=50)
+                     str(int(7*len(messages)))+' notifications...', suffix='', length=50)
     k = 0
     kk = 0
     for i in range(len(groups)):
@@ -172,8 +170,9 @@ def generate_notifications(s):
                     messageId=m.id,
                     seen=seen
                 ))
-        printProgressBar(i + 1, len(groups), prefix='Generating ~'+str(int(7.5*len(messages)))+' notifications...',
+        printProgressBar(i + 1, len(groups), prefix='Generating ~'+str(int(7*len(messages)))+' notifications...',
                          suffix='', length=50)
+    print("read", kk, "messages/users relationships")
     return messages_seen
 
 
@@ -219,7 +218,7 @@ def seed_db(amount):
 amount = 100
 try:
     amount = int(sys.argv[1])
-    if amount < 4:
+    if amount < 10:
         raise ValueError(
             "Value is too low! Please provide a number greater than 4")
 except ValueError as e:
