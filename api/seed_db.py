@@ -77,7 +77,7 @@ def generate_groups(s, amount):
                 groupName = " ".join(fake.words(randrange(6)+1))
             users = [admin]
             participants = [admin.id]
-            for k in range(min(groupSize, len(friends))-1):
+            for k in range(min(groupSize, len(friends))-1):#weirdly, this seems to get stuck whenever the group size is exactly the amount of friends
                 uid = friends[randrange(len(friends))].friendId
                 while uid in participants:
                     uid = friends[randrange(len(friends))].friendId
