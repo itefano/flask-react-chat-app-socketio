@@ -460,10 +460,10 @@ export default function PrimarySearchAppBar(props) {
                                                                     let searchTermSplit = currentSearchTerm.split(' ');
                                                                     for(let i = 0; i<searchTermSplit.length; i++)
                                                                     {//fuck me that one was needlessly tedious
-                                                                        let searchPattern = new RegExp(searchTermSplit[i],'gi');
-                                                                        let sliceIndexMin = firstNameLastName.search(searchPattern)
-                                                                        let sliceIndexMax = sliceIndexMin+searchTermSplit[i].length;
-                                                                        firstNameLastName = firstNameLastName.replace(searchPattern, "<strong>"+firstNameLastName.slice(sliceIndexMin, sliceIndexMax)+"<\/strong>")
+                                                                        let searchPattern = new RegExp('(?![^<]*>|[^<>]*</)'+searchTermSplit[i]+'(?![^</]*>|[^</>]*</)','gi');//allows us to ignore the case and to replace appropriately
+                                                                        let sliceIndexMin = firstNameLastName.search(searchPattern)//for legibility's sake
+                                                                        let sliceIndexMax = sliceIndexMin+searchTermSplit[i].length;//same as above
+                                                                        firstNameLastName = firstNameLastName.replace(searchPattern, "<strong>"+firstNameLastName.slice(sliceIndexMin, sliceIndexMax)+"<\/strong>")//replaces the first found occurence of a word that corresponds to the given pattern, with the pattern surrounded by <strong> tags. Note : this is case insensitive and replaces the pattern (kind of) appropriately. The best part? It also replaces the pattern correctly if the words are given in disorder. The worst part? It doesn't work for people who have both the same first name and last name. Fuck. I think I have to fix that.
                                                                     }
                                                                     let email =
                                                                         e.email.toLowerCase();
