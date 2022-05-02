@@ -145,7 +145,7 @@ export default function PrimarySearchAppBar(props) {
                     setSearchResults(response.data.results);
                 })
                 .catch((error) => {
-                    if (error.response && error.response.status !== 422) {
+                    if (error.response && error.response.status !== 422 && error.response.status !== 401) {
                         console.log(error.response);
                         console.log(error.response.status);
                         console.log(error.response.headers);
@@ -454,141 +454,17 @@ export default function PrimarySearchAppBar(props) {
                                                         {searchResults.users &&
                                                             searchResults.users.map(
                                                                 (e, index) => {
-                                                                    let firstName =
-                                                                        e.firstName;
+                                                                    let firstNameLastName = e.firstName + " " + e.lastName;
                                                                     let currentSearchTerm =
                                                                         searchTerm.trim();
-                                                                    if (
-                                                                        searchResults.isFirstLastName &&
-                                                                        currentSearchTerm.split(
-                                                                            " "
-                                                                        )[0]
-                                                                    ) {
-                                                                        currentSearchTerm =
-                                                                            currentSearchTerm.split(
-                                                                                " "
-                                                                            )[0];
-                                                                    } else if (
-                                                                        searchResults.isLastFirstName &&
-                                                                        currentSearchTerm.split(
-                                                                            " "
-                                                                        )[1]
-                                                                    ) {
-                                                                        currentSearchTerm =
-                                                                            searchTerm.split(
-                                                                                " "
-                                                                            )[1];
+                                                                    let searchTermSplit = currentSearchTerm.split(' ');
+                                                                    for(let i = 0; i<searchTermSplit.length; i++)
+                                                                    {//fuck me that one was needlessly tedious
+                                                                        let searchPattern = new RegExp(searchTermSplit[i],'gi');
+                                                                        let sliceIndexMin = firstNameLastName.search(searchPattern)
+                                                                        let sliceIndexMax = sliceIndexMin+searchTermSplit[i].length;
+                                                                        firstNameLastName = firstNameLastName.replace(searchPattern, "<strong>"+firstNameLastName.slice(sliceIndexMin, sliceIndexMax)+"<\/strong>")
                                                                     }
-                                                                    if (
-                                                                        e.firstName
-                                                                            .toLowerCase()
-                                                                            .includes(
-                                                                                currentSearchTerm.toLowerCase()
-                                                                            )
-                                                                    ) {
-                                                                        let minIndexName =
-                                                                            e.firstName
-                                                                                .toLowerCase()
-                                                                                .indexOf(
-                                                                                    currentSearchTerm.toLowerCase()
-                                                                                );
-                                                                        let maxIndexName =
-                                                                            e.firstName
-                                                                                .toLowerCase()
-                                                                                .indexOf(
-                                                                                    currentSearchTerm.toLowerCase()
-                                                                                ) +
-                                                                            currentSearchTerm.length;
-                                                                        let replaceLeft =
-                                                                            e.firstName.slice(
-                                                                                0,
-                                                                                minIndexName
-                                                                            );
-                                                                        let replaceMiddle =
-                                                                            e.firstName.slice(
-                                                                                minIndexName,
-                                                                                maxIndexName
-                                                                            );
-                                                                        let replaceRight =
-                                                                            e.firstName.slice(
-                                                                                maxIndexName
-                                                                            );
-                                                                        firstName =
-                                                                            replaceLeft +
-                                                                            "<strong>" +
-                                                                            replaceMiddle +
-                                                                            "</strong>" +
-                                                                            replaceRight;
-                                                                    }
-                                                                    if (
-                                                                        searchResults.isFirstLastName &&
-                                                                        searchTerm.trim().split(
-                                                                            " "
-                                                                        )
-                                                                            .length >
-                                                                            1
-                                                                    ) {
-                                                                        currentSearchTerm =
-                                                                            searchTerm.trim().split(
-                                                                                " "
-                                                                            )[1];
-                                                                    } else if (
-                                                                        searchResults.isLastFirstName &&
-                                                                        searchTerm.trim().split(
-                                                                            " "
-                                                                        )
-                                                                            .length >
-                                                                            1
-                                                                    ) {
-                                                                        currentSearchTerm =
-                                                                            searchTerm.trim().split(
-                                                                                " "
-                                                                            )[0];
-                                                                    }
-                                                                    let lastName =
-                                                                        e.lastName;
-                                                                    if (
-                                                                        e.lastName
-                                                                            .toLowerCase()
-                                                                            .includes(
-                                                                                currentSearchTerm.toLowerCase()
-                                                                            )
-                                                                    ) {
-                                                                        let minIndexName =
-                                                                            e.lastName
-                                                                                .toLowerCase()
-                                                                                .indexOf(
-                                                                                    currentSearchTerm.toLowerCase()
-                                                                                );
-                                                                        let maxIndexName =
-                                                                            e.lastName
-                                                                                .toLowerCase()
-                                                                                .indexOf(
-                                                                                    currentSearchTerm.toLowerCase()
-                                                                                ) +
-                                                                            currentSearchTerm.length;
-                                                                        let replaceLeft =
-                                                                            e.lastName.slice(
-                                                                                0,
-                                                                                minIndexName
-                                                                            );
-                                                                        let replaceMiddle =
-                                                                            e.lastName.slice(
-                                                                                minIndexName,
-                                                                                maxIndexName
-                                                                            );
-                                                                        let replaceRight =
-                                                                            e.lastName.slice(
-                                                                                maxIndexName
-                                                                            );
-                                                                        lastName =
-                                                                            replaceLeft +
-                                                                            "<strong>" +
-                                                                            replaceMiddle +
-                                                                            "</strong>" +
-                                                                            replaceRight;
-                                                                    }
-
                                                                     let email =
                                                                         e.email.toLowerCase();
                                                                     currentSearchTerm =
@@ -683,10 +559,7 @@ export default function PrimarySearchAppBar(props) {
                                                                                                 2
                                                                                             }
                                                                                             dangerouslySetInnerHTML={{
-                                                                                                __html:
-                                                                                                    firstName +
-                                                                                                    " " +
-                                                                                                    lastName,
+                                                                                                __html:firstNameLastName
                                                                                             }}
                                                                                         ></Typography>
                                                                                     </Box>

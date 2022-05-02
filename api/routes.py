@@ -321,18 +321,19 @@ def search():
                 firstName = ' '.join(search_term.split(' ')[:i])
                 # takes the first n words as first names
                 lastName = ' '.join(search_term.split(' ')[i:])
-                firstLastNames.extend(s.query(models.User).filter(models.User.firstName.ilike(
+                firstLastNames.extend(s.query(models.User).join(models.Friend, models.Friend.friendId==models.User.id).filter(models.Friend.userId==user.id).filter(models.User.firstName.ilike(
                     "%{}%".format(firstName))).filter(models.User.lastName.ilike("%{}%".format(lastName))).all())  # unholy abomination
-                lastFirstNames.extend(s.query(models.User).filter(models.User.lastName.ilike("%{}%".format(
+                #all queries are built similarily : look for all users that are friends with the current connected user (and not necessary the other way around) bc I'm too lazy to fix it
+                lastFirstNames.extend(s.query(models.User).join(models.Friend, models.Friend.friendId==models.User.id).filter(models.Friend.userId==user.id).filter(models.User.lastName.ilike("%{}%".format(
                     firstName))).filter(models.User.firstName.ilike("%{}%".format(lastName))).all())
         else:
-            firstNames = s.query(models.User).filter(
+            firstNames = s.query(models.User).join(models.Friend, models.Friend.friendId==models.User.id).filter(models.Friend.userId==user.id).filter(
                 models.User.firstName.ilike("%{}%".format(search_term))).all()  # TODO : add filter for user
-            lastNames = s.query(models.User).filter(
+            lastNames = s.query(models.User).join(models.Friend, models.Friend.friendId==models.User.id).filter(models.Friend.userId==user.id).filter(
                 models.User.lastName.ilike("%{}%".format(search_term))).all()
-            emails = s.query(models.User).filter(
+            emails = s.query(models.User).join(models.Friend, models.Friend.friendId==models.User.id).filter(models.Friend.userId==user.id).filter(
                 models.User.email.ilike("%{}%".format(search_term))).all()
-        groupNames = s.query(models.Group).filter(
+        groupNames = s.query(models.Group).join(models.User).filter(models.Group.users.any(id=get_jwt_identity())).filter(
             models.Group.name.ilike("%{}%".format(search_term))).all()
         res = dict()
         res["users"] = []
@@ -347,7 +348,6 @@ def search():
                             isIn = True
                     if not isIn:
                         res['users'].append(r.serialize)
-        print(res)
         if groupNames:
             res["groupNames"] = [e.serialize for e in groupNames]
         s.close()
