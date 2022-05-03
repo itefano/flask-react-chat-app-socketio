@@ -3,7 +3,7 @@ from flask import Blueprint
 from database import db_session
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, get_jwt_identity, \
-    unset_jwt_cookies, jwt_required
+    unset_jwt_cookies, jwt_required, verify_jwt_in_request
 from dotenv import load_dotenv
 import models
 from sqlalchemy import desc
@@ -305,6 +305,29 @@ def contact_group():
                    "users_names": [u.firstName for u in e.users]})
     s.close()
     return {"groups": res}
+
+@routes.route('/stories', methods=['GET'])
+def get_stories():
+    try:
+        s = db_session()
+        verify_jwt_in_request()
+        userId = get_jwt_identity()
+        if userId:
+            stories = s.query(models.Story).filter(models.Story.author != userId).all()
+            res = [e.serialize for e in stories]
+        else:
+            stories = s.query(models.Story).all()
+            res = [e.serialize for e in stories]
+        if len(res) == 0:
+            return {"error": "No stories found"}, 404
+    except Exception as e:
+        s.close()
+        raise(e)
+        return {"error": "Something went wrong"}, 500
+    s.close()
+    # print('results:', {"stories":res})
+    return {"stories":res}
+
 
 
 @routes.route('/search', methods=['POST'])

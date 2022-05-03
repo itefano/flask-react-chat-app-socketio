@@ -123,7 +123,7 @@ function App() {
                                 <Route
                                     exact
                                     path="/"
-                                    element={<Homepage info={info} />}
+                                    element={<Homepage info={info} token={token} />}
                                 />
                                 <Route
                                     exact

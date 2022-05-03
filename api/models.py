@@ -126,6 +126,17 @@ class Story(Base):
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
     author = Column(Integer, ForeignKey('users.id'))
 
+    @property
+    def serialize(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'authorName': User.query.filter_by(id=self.author).first().firstName,
+            'picturePath': self.picturePath,
+            'description': self.description,
+            'time_created': self.time_created,
+        }
+
 
 class Message(Base):
     __tablename__ = 'messages'

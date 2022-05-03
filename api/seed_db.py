@@ -77,8 +77,11 @@ def generate_groups(s, amount):
                 groupName = " ".join(fake.words(randrange(6)+1))
             users = [admin]
             participants = [admin.id]
-            for k in range(min(groupSize, len(friends))-1):#weirdly, this seems to get stuck whenever the group size is exactly the amount of friends
+            friendsId = [friend.friendId for friend in friends]
+            for k in range(min(groupSize, len(friends))):
                 uid = friends[randrange(len(friends))].friendId
+                if set(participants) == set(friendsId):# prevents endless loops in case user has too few friends
+                    break
                 while uid in participants:
                     uid = friends[randrange(len(friends))].friendId
                 participants.append(uid)
@@ -177,18 +180,19 @@ def generate_notifications(s):
 
 def generate_stories(amount):
     stories = []
-    printProgressBar(0, amount, prefix='Generating '+str(amount)+' stories...',
+    printProgressBar(0, amount, prefix='Generating '+str(10*amount)+' stories...',
                      suffix='', length=50)
     for i in range(amount):
-        authorId = randrange(amount)+1
-        stories.append(models.Story(
-            title=" ".join(fake.words(randrange(6)+1)),
-            description=fake.text(max_nb_chars=randrange(250) +
-                                  5),
-            picturePath=fake.image_url(),
-            author=authorId
-        ))
-        printProgressBar(i + 1, amount, prefix='Generating '+str(amount)+' stories...',
+        authorId = i+1
+        for j in range(10):# 10 stories per user
+            stories.append(models.Story(
+                title=" ".join(fake.words(randrange(6)+1)),
+                description=fake.text(max_nb_chars=randrange(250) +
+                                    5),
+                picturePath=fake.image_url(),
+                author=authorId
+            ))
+        printProgressBar(i + 1, amount, prefix='Generating '+str(10*amount)+' stories...',
                          suffix='', length=50)
     return stories
 
