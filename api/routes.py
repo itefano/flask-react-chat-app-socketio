@@ -7,7 +7,8 @@ from flask_jwt_extended import create_access_token, get_jwt_identity, \
 from dotenv import load_dotenv
 import models
 from sqlalchemy import desc
-from sqlalchemy.ext.serializer import dumps, loads
+import bcrypt
+from datetime import datetime
 load_dotenv()
 
 routes = Blueprint('example_blueprint', __name__)
@@ -106,9 +107,11 @@ def create_token():
     password = request.json.get("password", None)
     try:
         s = db_session()
+        salt = s.query(models.UserSalts).filter_by(email=email).first().salt
+        print('zout:', salt)
         # to edit to account for password hashing
         q = s.query(models.User).filter_by(
-            email=email, password=password).first()
+            email=email, password=bcrypt.hashpw(password=str.encode(password, 'utf-8'), salt=salt)).first()
         if not q:
             return {"msg": "Wrong email or password"}, 401
         access_token = create_access_token(identity=q.id)
@@ -312,8 +315,10 @@ def get_stories():
         s = db_session()
         verify_jwt_in_request()
         userId = get_jwt_identity()
+        today = datetime(datetime.today().year, datetime.today().month, datetime.today().day)
+        print('today:', today)
         if userId:
-            stories = s.query(models.Story).filter(models.Story.author != userId).all()
+            stories = s.query(models.Story).filter(models.Story.author != userId, models.Story.time_created>=today).order_by(models.Story.author.desc(), models.Story.time_created.desc()).all()
             res = [e.serialize for e in stories]
         else:
             stories = s.query(models.Story).all()

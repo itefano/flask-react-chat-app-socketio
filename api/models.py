@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text, Table, DateTime, func
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text, Table, DateTime, func, LargeBinary
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -52,6 +52,12 @@ class Group(Base):
             'picturePath': self.picturePath,
         }
 
+class UserSalts(Base):
+    __tablename__ = 'user_salts'
+    id = Column(Integer, primary_key=True)
+    email = Column(String(320), unique=True, nullable=False)
+    salt = Column(LargeBinary, unique=False)
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -59,7 +65,7 @@ class User(Base):
     firstName = Column(String(50), unique=False, nullable=False)
     lastName = Column(String(100), unique=False, nullable=False)
     email = Column(String(320), unique=True, nullable=False)
-    password = Column(String(120), unique=False, nullable=False)
+    password = Column(LargeBinary, unique=False, nullable=False)
     gender = Column(String(120), unique=False)
     # 260 = max path size on windows
     isAdmin = Column(Boolean, unique=False, default=False)
@@ -132,6 +138,7 @@ class Story(Base):
             'id': self.id,
             'title': self.title,
             'authorName': User.query.filter_by(id=self.author).first().firstName,
+            'authorEmail':User.query.filter_by(id=self.author).first().email,
             'picturePath': self.picturePath,
             'description': self.description,
             'time_created': self.time_created,
@@ -172,7 +179,7 @@ class Message_Seen(Base):
         super(Message_Seen, self).__init__(**kwargs)
 
     def __repr__(self):  # for debugging purposes only, yeet it later
-        word = "didn\'t read"
+        word = "didn't read"
         if self.seen:
             word = 'read'
         return f'<Notification {self.userId!r} {word} {self.messageId!r}>'

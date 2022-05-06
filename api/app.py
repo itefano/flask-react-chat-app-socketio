@@ -4,7 +4,6 @@ import json
 from flask import Flask
 from datetime import datetime, timedelta, timezone
 from flask_jwt_extended import create_access_token, get_jwt, get_jwt_identity, JWTManager
-
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
 load_dotenv()

@@ -5,6 +5,9 @@ import {
     ImageListItem,
     Skeleton,
     Container,
+    Card,
+    CardContent,
+    CardMedia,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -24,7 +27,7 @@ export default function Homepage(props) {
                 },
             })
                 .then((response) => {
-                    setStories(response.data);
+                    setStories(response.data);//TODO: group stories by user to make singletons
                 })
                 .catch((error) => {
                     setStories([]);
@@ -37,10 +40,9 @@ export default function Homepage(props) {
         }
     };
 
-    useEffect(()=>
-    {
-        console.log('stories:', stories)
-    }, [stories])
+    useEffect(() => {
+        console.log("stories:", stories);
+    }, [stories]);
 
     useEffect(() => {
         getStories();
@@ -55,40 +57,63 @@ export default function Homepage(props) {
             }}
             pt={2}
         >
-            <Typography variant="h4" color="text.primary">
+            <Typography variant="h4" color="text.primary" mb={2}>
                 Welcome, {props.info ? props.info.firstName : ""}
             </Typography>
             <Container>
-                {stories!==null ? (
-                    stories.stories ? (
+                {stories !== null ? (
+                    <>
+                        <Typography variant="h5" color="text.primary" mb={2}>
+                            Here are the latest stories
+                        </Typography>
+                        {stories.stories ? (
                         <>
-                            <ImageList cols={4} rowHeight={150} sx={{maxHeight:'80vh'}}>
-                                {stories.stories.map((story, index) => (
+                            <ImageList
+                                cols={4}
+                                rowHeight={225}
+                                sx={{ maxHeight: "70vh" }}
+                            >
+                                {stories.stories.map((story, index) => {
+                                    return(
                                     <ImageListItem key={index}>
-                                        <Link to={"story/" + story.id}>
-                                            <img
-                                                src={story.picturePath}
-                                                width={280}
-                                                height={130}
-                                            />
-                                            <Typography variant="body1">
-                                                {story.title}
-                                            </Typography>
-                                            <Typography variant="caption">
-                                                By {story.authorName}
-                                            </Typography>
+                                        <Link
+                                            to={"story/" + story.id}
+                                            sx={{ textDecoration: "none" }}
+                                        >
+                                            <Card>
+                                                <CardMedia
+                                                    component="img"
+                                                    image={story.picturePath}
+                                                    width={280}
+                                                    height={130}
+                                                    alt={story.title}
+                                                />
+                                                <CardContent>
+                                                    <Typography variant="body1">
+                                                        {story.title}
+                                                    </Typography>
+                                                    <Typography variant="caption">
+                                                        By {story.authorName}
+                                                    </Typography>
+                                                </CardContent>
+                                            </Card>
                                         </Link>
-                                    </ImageListItem>
-                                ))}
+                                    </ImageListItem>)
+                                })}
                             </ImageList>
                         </>
-                    ) : (
-                        <Box sx={{ textAlign: "center", width:'100%' }}>
-                            <Typography variant="h5" pt={3} color="secondary.main">
+                        ) : (
+                        <Box sx={{ textAlign: "center", width: "100%" }}>
+                            <Typography
+                                variant="h5"
+                                pt={3}
+                                color="secondary.main"
+                            >
                                 Nothing here...
                             </Typography>
                         </Box>
-                    )
+                        )}
+                    </>
                 ) : (
                     <>
                         <ImageList cols={4} rowHeight={150}>

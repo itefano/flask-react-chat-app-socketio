@@ -5,11 +5,14 @@ from random import randrange
 from database import db_session
 from faker import Faker
 import models
-
+import bcrypt
+from pathlib import Path
+import os
 fake = Faker()
 dropdb()
 initdb()
 
+DIR_PATH = Path(__file__).resolve().parent
 
 def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█', printEnd="\n"):
     percent = ("{0:." + str(decimals) + "f}").format(100 *
@@ -31,33 +34,49 @@ def generate_users(amount):
     users = []
     names = []
     emails = []
-    while len(names) < amount:
-        firstName = fake.first_name()
-        lastName = fake.last_name()
-        if ((firstName, lastName) not in names):
-            names.append((firstName, lastName))
+    user_salts =[]
+    try:
+        if os.path.exists(os.path.join(DIR_PATH,'passwords.txt')):
+            os.remove(os.path.join(DIR_PATH,'passwords.txt'))
+        f = open(os.path.join(DIR_PATH,"passwords.txt"), "a")
+        while len(names) < amount:
+            firstName = fake.first_name()
+            lastName = fake.last_name()
+            if ((firstName, lastName) not in names):
+                names.append((firstName, lastName))
 
-    for i in range(len(names)):
-        email = names[i][0].lower()+names[i][1].lower() + \
-            "@"+fake.safe_domain_name()
-        emails.append(email)
-    printProgressBar(0, amount, prefix='Generating '+str(amount)+' users...',
-                     suffix='', length=50)
-    for i in range(amount):
-        isAdmin = False
-        if randrange(10)+1 == 0:  # roughly 10% of user base will be admins
-            isAdmin = True
-        users.append(models.User(
-            firstName=names[i][0],
-            lastName=names[i][1],
-            email=emails[i],
-            password=fake.password(),
-            isAdmin=isAdmin,
-            profilePicturePath=fake.image_url(),
-        ))
-        printProgressBar(i + 1, amount, prefix='Generating '+str(amount)+' users...',
-                         suffix='', length=50)
-    return users
+        for i in range(len(names)):
+            email = names[i][0].lower()+names[i][1].lower() + \
+                "@"+fake.safe_domain_name()
+            emails.append(email)
+        printProgressBar(0, amount, prefix='Generating '+str(amount)+' users...',
+                        suffix='', length=50)
+        for i in range(amount):
+            isAdmin = False
+            if randrange(10)+1 == 0:  # roughly 10% of user base will be admins
+                isAdmin = True
+
+            salt = bcrypt.gensalt()
+            password = fake.password()
+            f.write(emails[i]+': '+password+'\n')
+            users.append(models.User(
+                firstName=names[i][0],
+                lastName=names[i][1],
+                email=emails[i],
+                password = bcrypt.hashpw(password=str.encode(password, 'utf-8'), salt=salt),
+                isAdmin=isAdmin,
+                profilePicturePath=fake.image_url(),
+            ))
+            user_salts.append(models.UserSalts(
+                email=emails[i],
+                salt = salt
+            ))
+            printProgressBar(i + 1, amount, prefix='Generating '+str(amount)+' users...',
+                            suffix='', length=50)
+        f.close()
+        return users, user_salts
+    except Exception as e:
+        raise(e) 
 
 
 def generate_groups(s, amount):
@@ -199,7 +218,9 @@ def generate_stories(amount):
 
 def seed_db(amount):
     s = db_session()
-    s.add_all(generate_users(amount))
+    usersNsalts = generate_users(amount)
+    s.add_all(usersNsalts[0])#gotta get users AND their salts
+    s.add_all(usersNsalts[1])
     s.commit()
     friends = generate_friends(amount)
     s.add_all(friends)
