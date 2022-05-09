@@ -67,7 +67,7 @@ def generate_users(amount):
                 isAdmin=isAdmin,
                 profilePicturePath=fake.image_url(),
             ))
-            user_salts.append(models.UserSalts(
+            user_salts.append(models.UserSalt(
                 email=emails[i],
                 salt = salt
             ))

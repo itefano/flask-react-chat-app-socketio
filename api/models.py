@@ -52,7 +52,7 @@ class Group(Base):
             'picturePath': self.picturePath,
         }
 
-class UserSalts(Base):
+class UserSalt(Base):
     __tablename__ = 'user_salts'
     id = Column(Integer, primary_key=True)
     email = Column(String(320), unique=True, nullable=False)

@@ -107,7 +107,7 @@ def create_token():
     password = request.json.get("password", None)
     try:
         s = db_session()
-        salt = s.query(models.UserSalts).filter_by(email=email).first().salt
+        salt = s.query(models.UserSalt).filter_by(email=email).first().salt
         print('zout:', salt)
         # to edit to account for password hashing
         q = s.query(models.User).filter_by(
