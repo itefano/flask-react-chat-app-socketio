@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text, Table, DateTime, func, LargeBinary
 from sqlalchemy.orm import relationship
 from database import Base
-
+from faker import Faker
 
 user_group = Table('users_groups', Base.metadata,
                    Column('userId', Integer, ForeignKey('users.id')),
@@ -130,7 +130,16 @@ class Story(Base):
     picturePath = Column(String(260), nullable=False)
     time_created = Column(DateTime(timezone=True), default=func.now())
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
+    slug = Column(String(255), unique=True)
     author = Column(Integer, ForeignKey('users.id'))
+
+    def __init__(self, **kwargs):
+        super(Story, self).__init__(**kwargs)
+        fake = Faker()
+        tSlug = self.title.lower().replace(' ', '-')+"-"+fake.md5()[0:10] #arbitrary length, might change it later
+        while Story.query.filter_by(slug=tSlug).first(): #make sure the slug is unique
+            tSlug = self.title.lower().replace(' ', '-')+"-"+fake.md5()[0:10]
+        self.slug = tSlug
 
     @property
     def serialize(self):
@@ -142,6 +151,7 @@ class Story(Base):
             'picturePath': self.picturePath,
             'description': self.description,
             'time_created': self.time_created,
+            'slug':self.slug
         }
 
 

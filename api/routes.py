@@ -1,3 +1,4 @@
+from click import option
 from utils import get_email, get_notifications, get_user
 from flask import Blueprint
 from database import db_session
@@ -108,7 +109,6 @@ def create_token():
     try:
         s = db_session()
         salt = s.query(models.UserSalt).filter_by(email=email).first().salt
-        print('zout:', salt)
         # to edit to account for password hashing
         q = s.query(models.User).filter_by(
             email=email, password=bcrypt.hashpw(password=str.encode(password, 'utf-8'), salt=salt)).first()
@@ -309,19 +309,32 @@ def contact_group():
     s.close()
     return {"groups": res}
 
+
+@routes.route('/story/<slug>', methods=['GET'])
+def get_story(slug):
+    try:
+        s = db_session()
+        story = s.query(models.Story).filter_by(slug=slug).first()
+        if not story:
+            return {"error": "Story does not exist"}, 404
+    except Exception as e:
+        s.close()
+        print(e)
+        return {"error": "Something went wrong"}, 500
+    s.close()
+    return {"story": story.serialize}
+
 @routes.route('/stories', methods=['GET'])
 def get_stories():
     try:
         s = db_session()
-        verify_jwt_in_request()
-        userId = get_jwt_identity()
-        today = datetime(datetime.today().year, datetime.today().month, datetime.today().day)
-        print('today:', today)
-        if userId:
-            stories = s.query(models.Story).filter(models.Story.author != userId, models.Story.time_created>=today).order_by(models.Story.author.desc(), models.Story.time_created.desc()).all()
+        if verify_jwt_in_request(optional=True):
+            userId = get_jwt_identity()
+            today = datetime(datetime.today().year, datetime.today().month, datetime.today().day)
+            stories = s.query(models.Story).filter(models.Story.author != userId, models.Story.time_created>=today).order_by(models.Story.author.desc(), models.Story.time_created.desc()).limit(100).all()
             res = [e.serialize for e in stories]
         else:
-            stories = s.query(models.Story).all()
+            stories = s.query(models.Story).order_by(models.Story.time_created.desc()).limit(100).all()
             res = [e.serialize for e in stories]
         if len(res) == 0:
             return {"error": "No stories found"}, 404

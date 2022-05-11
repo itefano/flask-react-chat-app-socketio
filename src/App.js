@@ -13,6 +13,7 @@ import Contacts from "./components/Contacts";
 import Groups from "./components/Groups";
 import Chat from "./components/Chat";
 import axios from "axios";
+import Story from "./components/Story";
 
 function App() {
     const [theme, setTheme] = useState(useContext(Theme));
@@ -109,6 +110,18 @@ function App() {
                         {!token || token === "" || token === undefined ? (
                             <Routes>
                                 <Route
+                                    exact
+                                    path="/"
+                                    element={
+                                        <Homepage info={info} token={token} />
+                                    }
+                                />
+                                <Route
+                                    exact
+                                    path="/story/:slug"
+                                    element={<Story />}
+                                />
+                                <Route
                                     path="*"
                                     element={
                                         <Login
@@ -123,7 +136,9 @@ function App() {
                                 <Route
                                     exact
                                     path="/"
-                                    element={<Homepage info={info} token={token} />}
+                                    element={
+                                        <Homepage info={info} token={token} />
+                                    }
                                 />
                                 <Route
                                     exact

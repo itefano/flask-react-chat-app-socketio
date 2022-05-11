@@ -38,6 +38,25 @@ export default function Homepage(props) {
                     }
                 });
         }
+        else
+        {
+
+            axios({
+                method: "GET",
+                url: "/api/stories"
+            })
+                .then((response) => {
+                    setStories(response.data);
+                })
+                .catch((error) => {
+                    setStories([]);
+                    if (error.response && error.response.status !== 422) {
+                        console.log(error.response);
+                        console.log(error.response.status);
+                        console.log(error.response.headers);
+                    }
+                });
+        }
     };
 
     useEffect(() => {
@@ -58,7 +77,7 @@ export default function Homepage(props) {
             pt={2}
         >
             <Typography variant="h4" color="text.primary" mb={2}>
-                Welcome, {props.info ? props.info.firstName : ""}
+                Welcome{props.info ? ","+props.info.firstName : ""}
             </Typography>
             <Container>
                 {stories !== null ? (
@@ -77,8 +96,8 @@ export default function Homepage(props) {
                                     return(
                                     <ImageListItem key={index}>
                                         <Link
-                                            to={"story/" + story.id}
-                                            sx={{ textDecoration: "none" }}
+                                            to={"story/" + story.slug}
+                                            style={{ textDecoration: "none",  }}
                                         >
                                             <Card>
                                                 <CardMedia
