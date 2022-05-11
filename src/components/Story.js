@@ -12,7 +12,6 @@ export default function Story(props) {
                 url: "/api/story/" + param.slug,
             })
                 .then((response) => {
-                    console.log(response);
                     setStory(response.data.story);
                 })
                 .catch((error) => {
