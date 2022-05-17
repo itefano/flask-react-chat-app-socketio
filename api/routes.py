@@ -345,6 +345,25 @@ def get_stories():
     return {"stories":res}
 
 
+@routes.route('/creategroup', methods=['POST'])
+@jwt_required()
+def create_group():
+    try:
+        s = db_session()
+        user = get_user(get_jwt_identity())
+        name = request.json.get("name", None)
+        picturePath = request.json.get("picturePath", None)
+        users = request.json.get("users", None)
+        group = models.Group(name=name, picturePath=picturePath, users=users+[user], admins=[users])
+        s.add(group)
+        s.commit()
+    except Exception as e:
+        s.close()
+        print(e)
+        return {"error": "Something went wrong"}, 500
+    s.close()
+    return {"success": True}
+
 
 @routes.route('/search', methods=['POST'])
 @jwt_required()

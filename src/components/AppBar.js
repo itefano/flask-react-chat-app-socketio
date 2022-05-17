@@ -14,10 +14,6 @@ import {
     Box,
     AppBar,
     SwipeableDrawer,
-    List,
-    ListItem,
-    Divider,
-    ListItemText,
     Popper,
     Fade,
     Avatar,
@@ -29,6 +25,7 @@ import AccountCircle from "@mui/icons-material/AccountCircle";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import GroupList from "./GroupList";
 
 const Search = styled("div")(({ theme }) => ({
     position: "relative",
@@ -145,7 +142,11 @@ export default function PrimarySearchAppBar(props) {
                     setSearchResults(response.data.results);
                 })
                 .catch((error) => {
-                    if (error.response && error.response.status !== 422 && error.response.status !== 401) {
+                    if (
+                        error.response &&
+                        error.response.status !== 422 &&
+                        error.response.status !== 401
+                    ) {
                         console.log(error.response);
                         console.log(error.response.status);
                         console.log(error.response.headers);
@@ -268,32 +269,9 @@ export default function PrimarySearchAppBar(props) {
             onKeyDown={() => {
                 toggleDrawer(false);
             }}
+            sx={{width:'300px'}}
         >
-            <List>
-                {[
-                    { name: "Homepage", link: "/" },
-                    { name: "Contacts", link: "/contacts" },
-                    { name: "Groups", link: "groups" },
-                ].map((e, index) => (
-                    <Link
-                        key={e.name}
-                        to={e.link}
-                        style={{ textDecoration: "none", color: "inherit" }}
-                    >
-                        <ListItem button>
-                            <ListItemText>{e.name}</ListItemText>
-                        </ListItem>
-                    </Link>
-                ))}
-            </List>
-            <Divider />
-            <List>
-                {["Legal", "About", "Report a bug"].map((text, index) => (
-                    <ListItem button key={text}>
-                        <ListItemText primary={text} />
-                    </ListItem>
-                ))}
-            </List>
+            <GroupList token={props.token} />
         </Box>
     );
     const signIn = () => {
@@ -454,25 +432,78 @@ export default function PrimarySearchAppBar(props) {
                                                         {searchResults.users &&
                                                             searchResults.users.map(
                                                                 (e, index) => {
-                                                                    let firstNameLastName = e.firstName + " " + e.lastName;
+                                                                    let firstNameLastName =
+                                                                        e.firstName +
+                                                                        " " +
+                                                                        e.lastName;
                                                                     let currentSearchTerm =
                                                                         searchTerm.trim();
-                                                                    let searchTermSplit = currentSearchTerm.split(' ');
-                                                                    for(let i = 0; i<searchTermSplit.length; i++)
-                                                                    {//fuck me that one was needlessly tedious
-                                                                        let searchPattern = new RegExp('(?![^<]*>|[^<>]*</)'+searchTermSplit[i]+'(?![^</]*>|[^</>]*</)','gi');//allows us to ignore the case and to replace appropriately
-                                                                        let sliceIndexMin = firstNameLastName.search(searchPattern)//for legibility's sake
-                                                                        let sliceIndexMax = sliceIndexMin+searchTermSplit[i].length;//same as above
-                                                                        firstNameLastName = firstNameLastName.replace(searchPattern, "<strong>"+firstNameLastName.slice(sliceIndexMin, sliceIndexMax)+"<\/strong>")//replaces the first found occurence of a word that corresponds to the given pattern, with the pattern surrounded by <strong> tags. Note : this is case insensitive and replaces the pattern (kind of) appropriately. The best part? It also replaces the pattern correctly if the words are given in disorder. The worst part? It doesn't work well for people who have both the same first name and last name.
+                                                                    let searchTermSplit =
+                                                                        currentSearchTerm.split(
+                                                                            " "
+                                                                        );
+                                                                    for (
+                                                                        let i = 0;
+                                                                        i <
+                                                                        searchTermSplit.length;
+                                                                        i++
+                                                                    ) {
+                                                                        //fuck me that one was needlessly tedious
+                                                                        let searchPattern =
+                                                                            new RegExp(
+                                                                                "(?![^<]*>|[^<>]*</)" +
+                                                                                    searchTermSplit[
+                                                                                        i
+                                                                                    ] +
+                                                                                    "(?![^</]*>|[^</>]*</)",
+                                                                                "gi"
+                                                                            ); //allows us to ignore the case and to replace appropriately
+                                                                        let sliceIndexMin =
+                                                                            firstNameLastName.search(
+                                                                                searchPattern
+                                                                            ); //for legibility's sake
+                                                                        let sliceIndexMax =
+                                                                            sliceIndexMin +
+                                                                            searchTermSplit[
+                                                                                i
+                                                                            ]
+                                                                                .length; //same as above
+                                                                        firstNameLastName =
+                                                                            firstNameLastName.replace(
+                                                                                searchPattern,
+                                                                                "<strong>" +
+                                                                                    firstNameLastName.slice(
+                                                                                        sliceIndexMin,
+                                                                                        sliceIndexMax
+                                                                                    ) +
+                                                                                    "</strong>"
+                                                                            ); //replaces the first found occurence of a word that corresponds to the given pattern, with the pattern surrounded by <strong> tags. Note : this is case insensitive and replaces the pattern (kind of) appropriately. The best part? It also replaces the pattern correctly if the words are given in disorder. The worst part? It doesn't work well for people who have both the same first name and last name.
                                                                     }
                                                                     let email =
                                                                         e.email.toLowerCase();
                                                                     currentSearchTerm =
-                                                                        searchTerm.trim().split(' ').join('').toLowerCase();
-                                                                    if (searchResults.isLastFirstName)
-                                                                    {
+                                                                        searchTerm
+                                                                            .trim()
+                                                                            .split(
+                                                                                " "
+                                                                            )
+                                                                            .join(
+                                                                                ""
+                                                                            )
+                                                                            .toLowerCase();
+                                                                    if (
+                                                                        searchResults.isLastFirstName
+                                                                    ) {
                                                                         currentSearchTerm =
-                                                                            searchTerm.trim().split(' ').join('').toLowerCase();
+                                                                            searchTerm
+                                                                                .trim()
+                                                                                .split(
+                                                                                    " "
+                                                                                )
+                                                                                .join(
+                                                                                    ""
+                                                                                )
+                                                                                .toLowerCase();
                                                                     }
                                                                     if (
                                                                         e.email.includes(
@@ -559,7 +590,7 @@ export default function PrimarySearchAppBar(props) {
                                                                                                 2
                                                                                             }
                                                                                             dangerouslySetInnerHTML={{
-                                                                                                __html:firstNameLastName
+                                                                                                __html: firstNameLastName,
                                                                                             }}
                                                                                         ></Typography>
                                                                                     </Box>

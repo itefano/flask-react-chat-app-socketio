@@ -9,24 +9,34 @@ import {
     Paper,
     Button,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import "./Chat.css";
 import ChatMsg from "@mui-treasury/components/chatMsg/ChatMsg";
 
 import io from "socket.io-client";
+import { useLocation } from 'react-router-dom';
 const ENDPOINT = "http://localhost:5000/chat";
 
 export default function Chat(props) {
+    const location = useLocation();
     const socket = useRef(null); //l'utilisation d'une ref permet de garder la connexion ouverte lors d'un re-render de composants
     const [groupInfo, setGroupInfo] = useState(null);
     const [messages, setMessages] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [value, setValue] = useState("");
     const [msgError, setMsgError] = useState(false);
+    const [roomId, setRoomId] = useState(null);
     const handleChange = (event) => {
         setValue(event.target.value);
     };
-    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (location.state.groupId) {
+            setRoomId(location.state.groupId);
+        } else {
+            setRoomId(props.room);
+        }
+    }, [location.groupId, props.room]);
+
     const sendMessage = (e) => {
         if (
             value !== null &&
@@ -37,7 +47,7 @@ export default function Chat(props) {
             setMsgError(false);
             socket.current.emit("message sent", {
                 message: value,
-                groupId: props.room,
+                groupId: roomId,
             });
         } else {
             setMsgError(true);
@@ -88,7 +98,7 @@ export default function Chat(props) {
         socket.current.on("connect", () => {
             console.log("connected");
         });
-        socket.current.emit("join", { groupId: props.room });
+        socket.current.emit("join", { groupId: roomId });
         socket.current.on("message", (data) => {
             setMessages((messages) => [...messages, data]);
         });
@@ -97,13 +107,11 @@ export default function Chat(props) {
     useEffect(() => {
         //réceptions de messages par la socket
         //récupération des messages déjà existants
-        if (props.room === null || props.room === undefined) {
-            navigate("/");
-        } else {
+        if (roomId && roomId !== null && roomId !== undefined) {
             axios({
                 method: "POST",
                 url: "/api/messagelist",
-                data: { groupId: props.room },
+                data: { groupId: roomId },
                 headers: {
                     Authorization: "Bearer " + props.token,
                 },
@@ -123,11 +131,11 @@ export default function Chat(props) {
                 });
 
             return () => {
-                socket.current.disconnect();//not sure which one of these two I should be using
+                socket.current.disconnect(); //not sure which one of these two I should be using
                 props.setRoom(null);
             };
         }
-    }, []);
+    }, [roomId]);
 
     return (
         <>
@@ -160,7 +168,7 @@ export default function Chat(props) {
                             color: "primary.main",
                         }}
                     >
-                        {messages !== null &&//on vérifie qu'il y a bien des message
+                        {messages !== null && //on vérifie qu'il y a bien des message
                         messages !== undefined &&
                         messages.length > 0
                             ? mapMessages(messages).map((message, index) => {
@@ -207,29 +215,41 @@ export default function Chat(props) {
                                                       }
                                                   />
                                                   <Box mb={1}>
-                                                  <Typography variant="body2"
-                                                      style={{
-                                                          display: "block",
-                                                          //   color: "grey",
-                                                          fontSize: "0.7rem",
-                                                          marginTop: "0px",
-                                                          marginBotto:'0px'
-                                                      }}
-                                                      color="primary.disabled"
-                                                  >
-                                                      Sent by :{" "}
-                                                      {message.sender.firstName}
-                                                  </Typography>
-                                                  <Typography variant="caption"
-                                                      style={{
-                                                          display: "block",
-                                                          color: "grey",
-                                                          fontSize: "0.5rem",
-                                                          marginTop: "0px",
-                                                          marginBotto:'0px'
-                                                      }}
-                                                      color="primary.disabled"
-                                                  >{message.timestamp}</Typography></Box>
+                                                      <Typography
+                                                          variant="body2"
+                                                          style={{
+                                                              display: "block",
+                                                              //   color: "grey",
+                                                              fontSize:
+                                                                  "0.7rem",
+                                                              marginTop: "0px",
+                                                              marginBotto:
+                                                                  "0px",
+                                                          }}
+                                                          color="primary.disabled"
+                                                      >
+                                                          Sent by :{" "}
+                                                          {
+                                                              message.sender
+                                                                  .firstName
+                                                          }
+                                                      </Typography>
+                                                      <Typography
+                                                          variant="caption"
+                                                          style={{
+                                                              display: "block",
+                                                              color: "grey",
+                                                              fontSize:
+                                                                  "0.5rem",
+                                                              marginTop: "0px",
+                                                              marginBotto:
+                                                                  "0px",
+                                                          }}
+                                                          color="primary.disabled"
+                                                      >
+                                                          {message.timestamp}
+                                                      </Typography>
+                                                  </Box>
                                               </>
                                           )}
                                           <AlwaysScrollToBottom />
