@@ -16,7 +16,7 @@ import ChatMsg from "@mui-treasury/components/chatMsg/ChatMsg";
 import io from "socket.io-client";
 const ENDPOINT = "http://localhost:5000/chat";
 
-export default function Groups(props) {
+export default function Chat(props) {
     const socket = useRef(null); //l'utilisation d'une ref permet de garder la connexion ouverte lors d'un re-render de composants
     const [groupInfo, setGroupInfo] = useState(null);
     const [messages, setMessages] = useState(null);
@@ -110,7 +110,6 @@ export default function Groups(props) {
             })
                 .then((response) => {
                     const res = response.data;
-                    console.log(res);
                     setGroupInfo(res.groupInfo);
                     setMessages(res.messages);
                     setCurrentUser(res.currentUser);
@@ -161,7 +160,7 @@ export default function Groups(props) {
                             color: "primary.main",
                         }}
                     >
-                        {messages !== null &&
+                        {messages !== null &&//on vérifie qu'il y a bien des message
                         messages !== undefined &&
                         messages.length > 0
                             ? mapMessages(messages).map((message, index) => {

@@ -22,15 +22,14 @@ def join_group(jsonresponse):
     groupId = jsonresponse.get("groupId")
     if groupId:
         s = db_session()
-        # vérifie que l'user est bien dans un groupe
         users = [e.id for e in models.Group.query.get(
-            jsonresponse['groupId']).users]
+            jsonresponse['groupId']).users]# vérifie que l'user est bien dans un groupe
         if (get_user(get_jwt_identity()).id not in users):
             s.close()
             return {"errorMessage": "User does not have access to this group. How the hell did you get here?"}, 404
         else:
             join_room(groupId)
-            emit("joined group", {"groupId": groupId},
+            send("joined group", {"groupId": groupId},
                  namespace="/chat", room=groupId, broadcast=True)
             s.close()
             return {"success": True}
