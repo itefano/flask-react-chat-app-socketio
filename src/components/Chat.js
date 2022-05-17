@@ -54,6 +54,7 @@ export default function Groups(props) {
                     messageList: [e.content],
                     picturePath: e.picturePath,
                     sender: e.sender,
+                    timestamp: e.timestamp,
                 });
             } else {
                 newMessageMapping[
@@ -109,6 +110,7 @@ export default function Groups(props) {
             })
                 .then((response) => {
                     const res = response.data;
+                    console.log(res);
                     setGroupInfo(res.groupInfo);
                     setMessages(res.messages);
                     setCurrentUser(res.currentUser);
@@ -205,19 +207,30 @@ export default function Groups(props) {
                                                           message.messageList
                                                       }
                                                   />
-                                                  <p
+                                                  <Box mb={1}>
+                                                  <Typography variant="body2"
                                                       style={{
-                                                          display: "inline",
-                                                          float: "left",
+                                                          display: "block",
                                                           //   color: "grey",
                                                           fontSize: "0.7rem",
                                                           marginTop: "0px",
+                                                          marginBotto:'0px'
                                                       }}
                                                       color="primary.disabled"
                                                   >
                                                       Sent by :{" "}
                                                       {message.sender.firstName}
-                                                  </p>
+                                                  </Typography>
+                                                  <Typography variant="caption"
+                                                      style={{
+                                                          display: "block",
+                                                          color: "grey",
+                                                          fontSize: "0.5rem",
+                                                          marginTop: "0px",
+                                                          marginBotto:'0px'
+                                                      }}
+                                                      color="primary.disabled"
+                                                  >{message.timestamp}</Typography></Box>
                                               </>
                                           )}
                                           <AlwaysScrollToBottom />

@@ -71,8 +71,8 @@ def message_sent(jsonresponse):
                 jsonresponse['groupId']).users]
         except Exception as e:
             s.close()
-            return {"error", "Aint supposed to be here, my dude"}, 403
-        if get_jwt_identity() in users:  # checks if the user is in the group
+            return {"error", "User isn't present in the group"}, 403
+        if get_jwt_identity() in users:
             s = db_session()
             title = None
             if jsonresponse.get('title'):
@@ -104,7 +104,7 @@ def message_sent(jsonresponse):
                 try:
                     s.add_all(notifications)
                     s.commit()
-                finally:
+                finally: # no idea why I did that ...?
                     s.close()
                     user = get_user(get_jwt_identity())
                     msg = {
@@ -123,5 +123,6 @@ def message_sent(jsonresponse):
             except Exception as e:
                 print("something went wrong during db insertion :'(")
                 s.close()
+                return {'error', 'Something went wrong'}, 500
                 raise(e)
-    return ['WHAT']
+    return {'error', 'message was not sent'}, 500

@@ -81,9 +81,7 @@ def my_profile():  # to be completed later
         s.close()
         print(e)
         return {"error": "Session desynchronized"}, 401
-    print("yo wtf")
     return jsonify({"firstName": user.firstName, "lastName": user.lastName, "email": user.email, "profilePicturePath": user.profilePicturePath})
-    # return response_body
 
 
 @routes.route('/get_info', methods=["POST"])

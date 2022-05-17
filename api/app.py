@@ -10,18 +10,18 @@ load_dotenv()
 
 from routes import routes
 
-api = Flask(__name__)
+app = Flask(__name__)
 
-socketio = SocketIO(api, cors_allowed_origins="*",
+socketio = SocketIO(app, cors_allowed_origins="*",
                     logger=True, engineio_logger=True)
 from sockets import socketio
 
-api.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
-api.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
-jwt = JWTManager(api)
+app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
+jwt = JWTManager(app)
 
 
-@api.after_request
+@app.after_request
 def refresh_expiring_jwts(response):
     try:
         exp_timestamp = get_jwt()["exp"]
@@ -37,9 +37,9 @@ def refresh_expiring_jwts(response):
     except (RuntimeError, KeyError):
         return response
 
-api.register_blueprint(routes, url_prefix='/api')
+app.register_blueprint(routes, url_prefix='/api')
 
 
 
 if __name__ == "__main__":
-    socketio.run(api, debug=True)
+    socketio.run(app, debug=True)

@@ -297,7 +297,7 @@ export default function PrimarySearchAppBar(props) {
         </Box>
     );
     const signIn = () => {
-        navigate("/");
+        navigate("/login");
     };
 
     const handleProfileMenuOpen = (event) => {

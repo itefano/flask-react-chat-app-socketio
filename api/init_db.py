@@ -1,4 +1,4 @@
-from database import db_session, Base, engine
+from database import Base, engine
 
 def initdb():
     import models

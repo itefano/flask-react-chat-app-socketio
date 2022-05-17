@@ -1,5 +1,8 @@
+"""
+Not gonna lie to u chief, I forgot what this file was supposed to be about.
+"""
+
 from authlib.oauth1 import ClientMixin
-from database import db_session
 import models
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text, relationship
 
