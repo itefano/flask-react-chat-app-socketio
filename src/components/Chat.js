@@ -105,7 +105,7 @@ export default function Chat(props) {
     }, [ENDPOINT, props.token]);
 
     useEffect(() => {
-        //réceptions de messages par la socket
+        //réceptions de messages
         //récupération des messages déjà existants
         if (roomId && roomId !== null && roomId !== undefined) {
             axios({
