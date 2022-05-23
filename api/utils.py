@@ -25,3 +25,17 @@ def get_notifications(id):
     if not q:
         q = 0
     return q
+
+def isEmail(email):
+    import re
+    return re.fullmatch(re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+'), email)
+
+
+def isSafe(pwd):
+    """Checks if password is safe
+    Checks : 
+        - If it has at least 8 chars
+        - If it is not a string of numbers
+    Doesn't check for more bc salting, and also, I'm too lazy"""
+    return len(pwd)>7 and not pwd.isDigit() and any(char.isdigit() for char in pwd)
+

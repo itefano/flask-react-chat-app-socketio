@@ -85,7 +85,7 @@ export default function Homepage(props) {
                         {stories.stories ? (
                             <>
                                 <ImageList
-                                    cols={{ sm: 1, md: 3, xl: 4 }}
+                                    cols={3}
                                     rowHeight={225}
                                     sx={{ maxHeight: "70vh" }}
                                 >

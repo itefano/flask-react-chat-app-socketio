@@ -1,5 +1,5 @@
 from click import option
-from utils import get_email, get_notifications, get_user
+from utils import get_email, get_notifications, get_user, isSafe, isEmail
 from flask import Blueprint
 from database import db_session
 from flask import request, jsonify
@@ -322,17 +322,21 @@ def get_story(slug):
     s.close()
     return {"story": story.serialize}
 
+
 @routes.route('/stories', methods=['GET'])
 def get_stories():
     try:
         s = db_session()
         if verify_jwt_in_request(optional=True):
             userId = get_jwt_identity()
-            today = datetime(datetime.today().year, datetime.today().month, datetime.today().day)
-            stories = s.query(models.Story).filter(models.Story.author != userId, models.Story.time_created>=today).order_by(models.Story.author.desc(), models.Story.time_created.desc()).limit(100).all()
+            today = datetime(datetime.today().year,
+                             datetime.today().month, datetime.today().day)
+            stories = s.query(models.Story).filter(models.Story.author != userId, models.Story.time_created >= today).order_by(
+                models.Story.author.desc(), models.Story.time_created.desc()).limit(100).all()
             res = [e.serialize for e in stories]
         else:
-            stories = s.query(models.Story).order_by(models.Story.time_created.desc()).limit(100).all()
+            stories = s.query(models.Story).order_by(
+                models.Story.time_created.desc()).limit(100).all()
             res = [e.serialize for e in stories]
         if len(res) == 0:
             return {"error": "No stories found"}, 404
@@ -342,7 +346,7 @@ def get_stories():
         return {"error": "Something went wrong"}, 500
     s.close()
     # print('results:', {"stories":res})
-    return {"stories":res}
+    return {"stories": res}
 
 
 @routes.route('/creategroup', methods=['POST'])
@@ -354,7 +358,8 @@ def create_group():
         name = request.json.get("name", None)
         picturePath = request.json.get("picturePath", None)
         users = request.json.get("users", None)
-        group = models.Group(name=name, picturePath=picturePath, users=users+[user], admins=[users])
+        group = models.Group(name=name, picturePath=picturePath,
+                             users=users+[user], admins=[users])
         s.add(group)
         s.commit()
     except Exception as e:
@@ -379,17 +384,17 @@ def search():
                 firstName = ' '.join(search_term.split(' ')[:i])
                 # takes the first n words as first names
                 lastName = ' '.join(search_term.split(' ')[i:])
-                firstLastNames.extend(s.query(models.User).join(models.Friend, models.Friend.friendId==models.User.id).filter(models.Friend.userId==user.id).filter(models.User.firstName.ilike(
+                firstLastNames.extend(s.query(models.User).join(models.Friend, models.Friend.friendId == models.User.id).filter(models.Friend.userId == user.id).filter(models.User.firstName.ilike(
                     "%{}%".format(firstName))).filter(models.User.lastName.ilike("%{}%".format(lastName))).all())  # unholy abomination
-                #all queries are built similarily : look for all users that are friends with the current connected user (and not necessary the other way around) bc I'm too lazy to fix it
-                lastFirstNames.extend(s.query(models.User).join(models.Friend, models.Friend.friendId==models.User.id).filter(models.Friend.userId==user.id).filter(models.User.lastName.ilike("%{}%".format(
+                # all queries are built similarily : look for all users that are friends with the current connected user (and not necessary the other way around) bc I'm too lazy to fix it
+                lastFirstNames.extend(s.query(models.User).join(models.Friend, models.Friend.friendId == models.User.id).filter(models.Friend.userId == user.id).filter(models.User.lastName.ilike("%{}%".format(
                     firstName))).filter(models.User.firstName.ilike("%{}%".format(lastName))).all())
         else:
-            firstNames = s.query(models.User).join(models.Friend, models.Friend.friendId==models.User.id).filter(models.Friend.userId==user.id).filter(
+            firstNames = s.query(models.User).join(models.Friend, models.Friend.friendId == models.User.id).filter(models.Friend.userId == user.id).filter(
                 models.User.firstName.ilike("%{}%".format(search_term))).all()  # TODO : add filter for user
-            lastNames = s.query(models.User).join(models.Friend, models.Friend.friendId==models.User.id).filter(models.Friend.userId==user.id).filter(
+            lastNames = s.query(models.User).join(models.Friend, models.Friend.friendId == models.User.id).filter(models.Friend.userId == user.id).filter(
                 models.User.lastName.ilike("%{}%".format(search_term))).all()
-            emails = s.query(models.User).join(models.Friend, models.Friend.friendId==models.User.id).filter(models.Friend.userId==user.id).filter(
+            emails = s.query(models.User).join(models.Friend, models.Friend.friendId == models.User.id).filter(models.Friend.userId == user.id).filter(
                 models.User.email.ilike("%{}%".format(search_term))).all()
         groupNames = s.query(models.Group).join(models.User).filter(models.Group.users.any(id=get_jwt_identity())).filter(
             models.Group.name.ilike("%{}%".format(search_term))).all()
@@ -397,8 +402,9 @@ def search():
         res["users"] = []
         res['isFirstLastName'] = False
         res['isLastFirstNames'] = False
-        for resultBit in [firstLastNames, lastFirstNames, firstNames, lastNames, emails]:# monstrosity that gets rid of duplicates
-            if resultBit and len(resultBit)>0:
+        # monstrosity that gets rid of duplicates
+        for resultBit in [firstLastNames, lastFirstNames, firstNames, lastNames, emails]:
+            if resultBit and len(resultBit) > 0:
                 for r in resultBit:
                     isIn = False
                     for e in res['users']:
@@ -417,3 +423,35 @@ def search():
         return {"error": "Something went wrong"}, 500
     s.close()
     return {"results": res}
+
+
+# ================== CREATES ====================
+
+@routes.route('/createuser', methods=['POST'])
+def create_user():
+    try:
+        s = db_session()
+        firstName = request.json.get("firstName", None)
+        lastName = request.json.get("lastName", None)
+        email = request.json.get("email", None)
+
+        password1 = request.json.get("password1", None)
+        password2 = request.json.get("password2", None)
+        if password1!=password2:
+            return {"error":"Passwords don't match!"}, 403
+        password = password1
+        gender = request.json.get("gender", None)
+        isAdmin = False
+        profilePicturePath = request.json.get('profilePicturePath', None)
+        if not isSafe(password) or not email or not isEmail(email):
+            s.close()
+            return {"error":"Password isn't safe"}#TODO: Front-End check first.
+        user = models.User(firstName=firstName, lastName=lastName, email=email, password=password,
+                           gender=gender, isAdmin=isAdmin, profilePicturePath=profilePicturePath)
+        s.add(user)
+        s.commit()
+        s.close()
+    except Exception as e:
+        print(e)
+        s.close()
+        return {"error":"User creation could not proceed. Something went wrong on our end."}, 500
