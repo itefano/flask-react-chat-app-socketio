@@ -116,7 +116,7 @@ def message_sent(jsonresponse):
                         'profilePicturePath': get_user(get_jwt_identity()).profilePicturePath,
                         'timestamp': json.dumps(datetime.now(), indent=4, sort_keys=True, default=str)
                     }
-                    send(msg, namespace="/chat",
+                    emit("message", msg, namespace="/chat",
                          room=jsonresponse['groupId'], broadcast=True)
                     return {"success": True}
             except Exception as e:

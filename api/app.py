@@ -7,11 +7,11 @@ from flask_jwt_extended import create_access_token, get_jwt, get_jwt_identity, J
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
 load_dotenv()
-
+from flask_cors import CORS
 from routes import routes
 
 app = Flask(__name__)
-
+CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*",
                     logger=True, engineio_logger=True)
 from sockets import socketio
