@@ -97,7 +97,7 @@ export default function PrimarySearchAppBar(props) {
     const getNotifications = () => {
         if (props.token) {
             axios({
-                method: "POST",
+                method: "GET",
                 url: "/api/notifications",
                 headers: {
                     Authorization: "Bearer " + props.token,
@@ -131,12 +131,12 @@ export default function PrimarySearchAppBar(props) {
     useEffect(() => {
         if (searchTerm && props.token) {
             axios({
-                method: "POST",
+                method: "GET",
                 url: "/api/search",
                 headers: {
                     Authorization: "Bearer " + props.token,
                 },
-                data: { search_term: searchTerm },
+                params: { search_term: searchTerm },
             })
                 .then((response) => {
                     setSearchResults(response.data.results);
@@ -170,7 +170,7 @@ export default function PrimarySearchAppBar(props) {
 
     const markAllAsRead = () => {
         axios({
-            method: "POST",
+            method: "GET",
             url: "/api/markallasread",
             headers: {
                 Authorization: "Bearer " + props.token,
@@ -244,7 +244,7 @@ export default function PrimarySearchAppBar(props) {
     const isMenuOpen = Boolean(anchorEl);
     const logout = () => {
         axios({
-            method: "POST",
+            method: "GET",
             url: "/api/logout",
         })
             .then((response) => {

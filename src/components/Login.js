@@ -36,7 +36,18 @@ function Login(props) {
                 })
                 .catch((error) => {
                     if (error.response) {
-                        setErrorMessage(error.response.data.msg);
+                        if (
+                            error.response.data.msg &&
+                            error.response.data.msg !== "" &&
+                            error.response.data.msg !== null &&
+                            error.response.data.msg !== undefined
+                        ) {
+                            setErrorMessage(error.response.data.msg);
+                        } else {
+                            setErrorMessage(
+                                "Something went wrong. Please try again in a few seconds."
+                            );
+                        }
                         setError(true);
                         if (error.response.status !== 401) {
                             console.log(error.response);
@@ -88,7 +99,16 @@ function Login(props) {
                     />
                     <Box width="100%" sx={{ margin: "auto" }} py={2}>
                         {errorMessage !== "" ? (
-                            <Alert severity="error" variant="filled" onClose={() => {setErrorMessage(""); setError(false)}}>{errorMessage}</Alert>
+                            <Alert
+                                severity="error"
+                                variant="filled"
+                                onClose={() => {
+                                    setErrorMessage("");
+                                    setError(false);
+                                }}
+                            >
+                                {errorMessage}
+                            </Alert>
                         ) : (
                             ""
                         )}

@@ -33,7 +33,7 @@ function App() {
             localStorage.setItem("info", JSON.stringify({ ...info }));
         } else if (token !== null && token !== undefined && token !== "") {
             axios({
-                method: "POST",
+                method: "GET",
                 url: "/api/get_info",
                 headers: {
                     Authorization: "Bearer " + token,
@@ -45,7 +45,7 @@ function App() {
                 .catch((error) => {
                     //disconnects user for safety in case something goes wrong
                     axios({
-                        method: "POST",
+                        method: "GET",
                         url: "/api/logout",
                     })
                         .then((response) => {

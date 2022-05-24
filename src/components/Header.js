@@ -3,7 +3,7 @@ import axios from "axios";
 function Header(props) {
     function logMeOut() {
         axios({
-            method: "POST",
+            method: "GET",
             url: "/api/logout",
         })
             .then((response) => {

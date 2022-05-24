@@ -25,12 +25,12 @@ export default function Contacts(props) {
     const handleChange = (panel, email) => {
         if (expanded !== panel) {
             axios({
-                method: "POST",
+                method: "GET",
                 url: "/api/contactgroup",
                 headers: {
                     Authorization: "Bearer " + props.token,
                 },
-                data: { email: email },
+                params: { email: email },
             })
                 .then((response) => {
                     setGroups({ ...groups, [email]: response.data.groups });

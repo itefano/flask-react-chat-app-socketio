@@ -13,7 +13,7 @@ import "./Chat.css";
 import ChatMsg from "@mui-treasury/components/chatMsg/ChatMsg";
 
 import io from "socket.io-client";
-import { useLocation } from 'react-router-dom';
+import { useLocation } from "react-router-dom";
 const ENDPOINT = "http://localhost:5000/chat";
 
 export default function Chat(props) {
@@ -28,7 +28,12 @@ export default function Chat(props) {
     const handleChange = (event) => {
         setValue(event.target.value);
     };
-
+    useEffect(() => {
+        return () => {
+            socket.current.disconnect();
+            props.setRoom(null);
+        };
+    }, []);
     useEffect(() => {
         if (location.state.groupId) {
             setRoomId(location.state.groupId);
@@ -109,9 +114,9 @@ export default function Chat(props) {
         //récupération des messages déjà existants
         if (roomId && roomId !== null && roomId !== undefined) {
             axios({
-                method: "POST",
+                method: "GET",
                 url: "/api/messagelist",
-                data: { groupId: roomId },
+                params: { groupId: roomId },
                 headers: {
                     Authorization: "Bearer " + props.token,
                 },

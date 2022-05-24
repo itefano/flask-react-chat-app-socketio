@@ -15,7 +15,7 @@ load_dotenv()
 routes = Blueprint('example_blueprint', __name__)
 
 
-@routes.route("/logout", methods=["POST"])
+@routes.route("/logout", methods=["GET"])
 def logout():
     response = jsonify({"msg": "logout successful"})
     unset_jwt_cookies(response)
@@ -48,7 +48,7 @@ def check_room():
     q = None
     try:
         s = db_session()
-        groupId = request.json.get("groupId", None)
+        groupId = request.data.get("groupId", None)
         if not groupId:
             s.close()
             return {"error": "No group provided"}, 401
@@ -84,7 +84,7 @@ def my_profile():  # to be completed later
     return jsonify({"firstName": user.firstName, "lastName": user.lastName, "email": user.email, "profilePicturePath": user.profilePicturePath})
 
 
-@routes.route('/get_info', methods=["POST"])
+@routes.route('/get_info', methods=["GET"])
 @jwt_required()
 def get_info():
     try:
@@ -100,10 +100,11 @@ def get_info():
     return response
 
 
-@routes.route('/token', methods=["POST"])
+@routes.route('/token', methods=["GET"])
 def create_token():
     email = request.json.get("email", None)
     password = request.json.get("password", None)
+    print(email, password)
     try:
         s = db_session()
         salt = s.query(models.UserSalt).filter_by(email=email).first().salt
@@ -160,10 +161,10 @@ def list_groups():
     return jsonify(res)
 
 
-@routes.route('/messagelist', methods=['POST'])
+@routes.route('/messagelist', methods=['GET'])
 @jwt_required()
 def list_messages():
-    groupId = request.json.get("groupId", None)
+    groupId = request.args.get("groupId", None)
     try:
         s = db_session()
         group = s.query(models.Group).get(groupId)
@@ -219,7 +220,7 @@ def list_messages():
     return jsonify(res)
 
 
-@routes.route('/notifications', methods=['POST'])
+@routes.route('/notifications', methods=['GET'])
 @jwt_required()
 def list_unread_messages():
     try:
@@ -250,7 +251,7 @@ def list_unread_messages():
     return {"messages": unreadMessages}
 
 
-@routes.route('/markallasread', methods=['POST'])
+@routes.route('/markallasread', methods=['GET'])
 @jwt_required()
 def mark_all_as_read():
     try:
@@ -270,13 +271,13 @@ def mark_all_as_read():
 
 
 # looks for a contact group convo, or creates one if it doesn't exist
-@routes.route('/contactgroup', methods=['POST'])
+@routes.route('/contactgroup', methods=['GET'])
 @jwt_required()
 def contact_group():
     try:
         s = db_session()
         user = get_user(get_jwt_identity())
-        email = request.json.get("email", None)
+        email = request.args.get("email", None)
         contact = s.query(models.User).filter_by(email=email).first()
         if not contact:
             s.close()
@@ -349,15 +350,15 @@ def get_stories():
     return {"stories": res}
 
 
-@routes.route('/creategroup', methods=['POST'])
+@routes.route('/creategroup', methods=['GET'])
 @jwt_required()
 def create_group():
     try:
         s = db_session()
         user = get_user(get_jwt_identity())
-        name = request.json.get("name", None)
-        picturePath = request.json.get("picturePath", None)
-        users = request.json.get("users", None)
+        name = request.data.get("name", None)
+        picturePath = request.data.get("picturePath", None)
+        users = request.data.get("users", None)
         group = models.Group(name=name, picturePath=picturePath,
                              users=users+[user], admins=[users])
         s.add(group)
@@ -370,14 +371,14 @@ def create_group():
     return {"success": True}
 
 
-@routes.route('/search', methods=['POST'])
+@routes.route('/search', methods=['GET'])
 @jwt_required()
 def search():
     try:
         s = db_session()
         user = get_user(get_jwt_identity())
         firstLastNames, lastFirstNames, firstNames, lastNames, emails = [], [], [], [], []
-        search_term = request.json.get("search_term", None)
+        search_term = request.args.get("search_term", None)
         if ' ' in search_term:  # in case they search for firstname and lastname
             for i in range(len(search_term.split(' '))):
                 # takes the first n words as first names
@@ -427,22 +428,22 @@ def search():
 
 # ================== CREATES ====================
 
-@routes.route('/createuser', methods=['POST'])
+@routes.route('/createuser', methods=['GET'])
 def create_user():
     try:
         s = db_session()
-        firstName = request.json.get("firstName", None)
-        lastName = request.json.get("lastName", None)
-        email = request.json.get("email", None)
+        firstName = request.data.get("firstName", None)
+        lastName = request.data.get("lastName", None)
+        email = request.data.get("email", None)
 
-        password1 = request.json.get("password1", None)
-        password2 = request.json.get("password2", None)
+        password1 = request.data.get("password1", None)
+        password2 = request.data.get("password2", None)
         if password1!=password2:
             return {"error":"Passwords don't match!"}, 403
         password = password1
-        gender = request.json.get("gender", None)
+        gender = request.data.get("gender", None)
         isAdmin = False
-        profilePicturePath = request.json.get('profilePicturePath', None)
+        profilePicturePath = request.data.get('profilePicturePath', None)
         if not isSafe(password) or not email or not isEmail(email):
             s.close()
             return {"error":"Password isn't safe"}#TODO: Front-End check first.

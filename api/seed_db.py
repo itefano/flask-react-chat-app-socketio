@@ -14,6 +14,7 @@ initdb()
 
 DIR_PATH = Path(__file__).resolve().parent
 
+
 def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█', printEnd="\n"):
     percent = ("{0:." + str(decimals) + "f}").format(100 *
                                                      (iteration / float(total)))
@@ -34,11 +35,11 @@ def generate_users(amount):
     users = []
     names = []
     emails = []
-    user_salts =[]
+    user_salts = []
     try:
-        if os.path.exists(os.path.join(DIR_PATH,'passwords.txt')):
-            os.remove(os.path.join(DIR_PATH,'passwords.txt'))
-        f = open(os.path.join(DIR_PATH,"passwords.txt"), "a")
+        if os.path.exists(os.path.join(DIR_PATH, 'passwords.txt')):
+            os.remove(os.path.join(DIR_PATH, 'passwords.txt'))
+        f = open(os.path.join(DIR_PATH, "passwords.txt"), "a")
         while len(names) < amount:
             firstName = fake.first_name()
             lastName = fake.last_name()
@@ -50,7 +51,7 @@ def generate_users(amount):
                 "@"+fake.safe_domain_name()
             emails.append(email)
         printProgressBar(0, amount, prefix='Generating '+str(amount)+' users...',
-                        suffix='', length=50)
+                         suffix='', length=50)
         for i in range(amount):
             isAdmin = False
             if randrange(10)+1 == 0:  # roughly 10% of user base will be admins
@@ -63,20 +64,21 @@ def generate_users(amount):
                 firstName=names[i][0],
                 lastName=names[i][1],
                 email=emails[i],
-                password = bcrypt.hashpw(password=str.encode(password, 'utf-8'), salt=salt),
+                password=bcrypt.hashpw(password=str.encode(
+                    password, 'utf-8'), salt=salt),
                 isAdmin=isAdmin,
                 profilePicturePath=fake.image_url(),
             ))
             user_salts.append(models.UserSalt(
                 email=emails[i],
-                salt = salt
+                salt=salt
             ))
             printProgressBar(i + 1, amount, prefix='Generating '+str(amount)+' users...',
-                            suffix='', length=50)
+                             suffix='', length=50)
         f.close()
         return users, user_salts
     except Exception as e:
-        raise(e) 
+        raise(e)
 
 
 def generate_groups(s, amount):
@@ -89,7 +91,8 @@ def generate_groups(s, amount):
         for ii in range(groupAmt):  # ~7.5 groups created per person
             participants = [admin.id]
             friends = s.query(models.Friend).filter_by(userId=admin.id).all()
-            groupSize = randrange(len(friends))+1 # the use of min here avoids an infinite loop in the case where the amount of total users is too low (like ~10 ppl)
+            # the use of min here avoids an infinite loop in the case where the amount of total users is too low (like ~10 ppl)
+            groupSize = randrange(len(friends))+1
             if groupSize == 2:
                 groupName = None
             else:
@@ -99,7 +102,7 @@ def generate_groups(s, amount):
             friendsId = [friend.friendId for friend in friends]
             for k in range(min(groupSize, len(friends))):
                 uid = friends[randrange(len(friends))].friendId
-                if set(participants) == set(friendsId):# prevents endless loops in case user has too few friends
+                if sorted(participants) == sorted(friendsId+[admin.id]):# prevents endless loops in case user has too few friends
                     break
                 while uid in participants:
                     uid = friends[randrange(len(friends))].friendId
@@ -124,21 +127,35 @@ def generate_groups(s, amount):
     return groups
 
 
-def generate_friends(amount):
+def generate_friends(s, amount):
     friends = []
     printProgressBar(0, amount, prefix='Generating '+str(amount)+' friends...',
                      suffix='', length=50)
+    friendDict = dict()  # keeps track of who's friends with who
     for i in range(amount):
         randomFriends = []
+        if not friendDict.get(i+1):
+            friendDict[i+1] = []
         for j in range(10):  # each user has 10 friends
             randomFriend = randrange(amount)+1
-            while randomFriend != i+1 and randomFriend in randomFriends:
+            while randomFriend == i+1 or randomFriend in randomFriends:
                 randomFriend = randrange(amount)+1
             randomFriends.append(randomFriend)
-            friends.append(models.Friend(
-                userId=i+1,
-                friendId=randomFriend
-            ))
+            # checks whether a friend has already been added by another friend to avoid duplicates
+            if randomFriend not in friendDict.get(i+1):
+                friends.append(models.Friend(
+                    userId=i+1,
+                    friendId=randomFriend
+                ))
+                friendDict[i+1].append(randomFriend)
+            if not friendDict.get(randomFriend) or i+1 not in friendDict.get(randomFriend):
+                friends.append(models.Friend(
+                    userId=randomFriend,
+                    friendId=i+1
+                ))  # reciprocity of the first friend
+                if not friendDict.get(randomFriend):
+                    friendDict[randomFriend] = []
+                friendDict[randomFriend].append(i+1)
         printProgressBar(i + 1, amount, prefix='Generating '+str(amount)+' friends...',
                          suffix='', length=50)
     return friends
@@ -199,19 +216,19 @@ def generate_notifications(s):
 
 def generate_stories(amount):
     stories = []
-    printProgressBar(0, amount, prefix='Generating '+str(10*amount)+' stories...',
+    printProgressBar(0, amount, prefix='Generating '+str(3*amount)+' stories...',
                      suffix='', length=50)
     for i in range(amount):
         authorId = i+1
-        for j in range(10):# 10 stories per user
+        for j in range(randrange(6)):  # 10 stories per user
             stories.append(models.Story(
                 title=" ".join(fake.words(randrange(6)+1)),
                 description=fake.text(max_nb_chars=randrange(250) +
-                                    5),
+                                      5),
                 picturePath=fake.image_url(),
                 author=authorId
             ))
-        printProgressBar(i + 1, amount, prefix='Generating '+str(10*amount)+' stories...',
+        printProgressBar(i + 1, amount, prefix='Generating '+str(3*amount)+' stories...',
                          suffix='', length=50)
     return stories
 
@@ -219,10 +236,10 @@ def generate_stories(amount):
 def seed_db(amount):
     s = db_session()
     usersNsalts = generate_users(amount)
-    s.add_all(usersNsalts[0])#gotta get users AND their salts
+    s.add_all(usersNsalts[0])  # gotta get users AND their salts
     s.add_all(usersNsalts[1])
     s.commit()
-    friends = generate_friends(amount)
+    friends = generate_friends(s, amount)
     s.add_all(friends)
     s.commit()
     groups = generate_groups(s, amount)
