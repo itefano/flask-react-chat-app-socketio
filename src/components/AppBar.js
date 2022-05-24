@@ -277,6 +277,9 @@ export default function PrimarySearchAppBar(props) {
     const signIn = () => {
         navigate("/login");
     };
+    const signUp = () => {
+        navigate("/signUp");
+    };
 
     const handleProfileMenuOpen = (event) => {
         setAnchorEl(event.currentTarget);
@@ -677,8 +680,9 @@ export default function PrimarySearchAppBar(props) {
                                 </IconButton>
                             </Box>
                         </>
-                    ) : (
-                        <MenuItem onClick={signIn}>Sign In</MenuItem>
+                    ) : (<>
+                        <MenuItem onClick={signIn}>Login</MenuItem>
+                        <MenuItem onClick={signUp}>Sign Up</MenuItem></>
                     )}
                 </Toolbar>
             </AppBar>

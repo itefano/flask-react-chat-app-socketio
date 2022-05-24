@@ -428,7 +428,7 @@ def search():
 
 # ================== CREATES ====================
 
-@routes.route('/createuser', methods=['GET'])
+@routes.route('/signup', methods=['POST'])
 def create_user():
     try:
         s = db_session()

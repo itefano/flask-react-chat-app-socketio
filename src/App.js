@@ -14,7 +14,7 @@ import Groups from "./components/Groups";
 import Chat from "./components/Chat";
 import axios from "axios";
 import Story from "./components/Story";
-
+import SignUp from "./components/SignUp";
 function App() {
     const [theme, setTheme] = useState(useContext(Theme));
     const [info, setInfo] = useState({});
@@ -120,6 +120,11 @@ function App() {
                                     exact
                                     path="/story/:slug"
                                     element={<Story />}
+                                />
+                                <Route
+                                    exact
+                                    path="/SignUp"
+                                    element={<SignUp />}
                                 />
                                 <Route
                                     path="*"
