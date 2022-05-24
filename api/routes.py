@@ -100,7 +100,7 @@ def get_info():
     return response
 
 
-@routes.route('/token', methods=["GET"])
+@routes.route('/token', methods=["POST"])
 def create_token():
     email = request.json.get("email", None)
     password = request.json.get("password", None)
