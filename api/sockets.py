@@ -20,6 +20,7 @@ def message_received():
 @jwt_required()
 def join_group(jsonresponse):
     groupId = jsonresponse.get("groupId")
+    print('joined', groupId)
     if groupId:
         s = db_session()
         users = [e.id for e in models.Group.query.get(
@@ -58,7 +59,7 @@ def leave_group(jsonresponse):
 @socketio.on('message sent', namespace="/chat")
 @jwt_required()
 def message_sent(jsonresponse):
-    if jsonresponse.get('message') and\
+    if jsonresponse.get('groupId') and jsonresponse.get('message') and\
             jsonresponse.get('message') != "" and\
             jsonresponse.get('groupId') and\
             jsonresponse.get('message').isprintable() and not\
@@ -116,7 +117,7 @@ def message_sent(jsonresponse):
                         'profilePicturePath': get_user(get_jwt_identity()).profilePicturePath,
                         'timestamp': json.dumps(datetime.now(), indent=4, sort_keys=True, default=str)
                     }
-                    emit("message", msg, namespace="/chat",
+                    send(msg, namespace="/chat",
                          room=jsonresponse['groupId'], broadcast=True)
                     return {"success": True}
             except Exception as e:

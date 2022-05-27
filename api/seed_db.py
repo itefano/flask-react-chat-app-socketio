@@ -56,7 +56,6 @@ def generate_users(amount):
             isAdmin = False
             if randrange(10)+1 == 0:  # roughly 10% of user base will be admins
                 isAdmin = True
-
             salt = bcrypt.gensalt()
             password = fake.password()
             f.write(emails[i]+': '+password+'\n')

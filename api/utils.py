@@ -37,5 +37,5 @@ def isSafe(pwd):
         - If it has at least 8 chars
         - If it is not a string of numbers
     Doesn't check for more bc salting, and also, I'm too lazy"""
-    return len(pwd)>7 and not pwd.isDigit() and any(char.isdigit() for char in pwd)
+    return len(pwd)>7 and not pwd.isdigit() and any(char.isdigit() for char in pwd)
 

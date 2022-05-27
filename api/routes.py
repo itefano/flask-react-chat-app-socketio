@@ -48,7 +48,7 @@ def check_room():
     q = None
     try:
         s = db_session()
-        groupId = request.data.get("groupId", None)
+        groupId = request.json.get("groupId", None)
         if not groupId:
             s.close()
             return {"error": "No group provided"}, 401
@@ -331,9 +331,11 @@ def get_stories():
         if verify_jwt_in_request(optional=True):
             userId = get_jwt_identity()
             today = datetime(datetime.today().year,
-                             datetime.today().month, datetime.today().day)
-            stories = s.query(models.Story).filter(models.Story.author != userId, models.Story.time_created >= today).order_by(
-                models.Story.author.desc(), models.Story.time_created.desc()).limit(100).all()
+                             datetime.today().month, datetime.today().day-1)  # gets yesterday
+            # stories = s.query(models.Story).filter(models.Story.author != userId, models.Story.time_created >= today).order_by(models.Story.author.desc(), models.Story.time_created.desc()).limit(100).all()
+            stories = s.query(models.Story).filter(models.Story.author != userId).order_by(models.Story.author.desc(
+            ), models.Story.time_created.desc()).limit(100).all()  # no filters by date for testing purposes because i'm really lazy
+            print('stories for', userId, stories)
             res = [e.serialize for e in stories]
         else:
             stories = s.query(models.Story).order_by(
@@ -350,15 +352,15 @@ def get_stories():
     return {"stories": res}
 
 
-@routes.route('/creategroup', methods=['GET'])
+@routes.route('/creategroup', methods=['POST'])
 @jwt_required()
 def create_group():
     try:
         s = db_session()
         user = get_user(get_jwt_identity())
-        name = request.data.get("name", None)
-        picturePath = request.data.get("picturePath", None)
-        users = request.data.get("users", None)
+        name = request.json.get("name", None)
+        picturePath = request.json.get("picturePath", None)
+        users = request.json.get("users", None)
         group = models.Group(name=name, picturePath=picturePath,
                              users=users+[user], admins=[users])
         s.add(group)
@@ -432,27 +434,33 @@ def search():
 def create_user():
     try:
         s = db_session()
-        firstName = request.data.get("firstName", None)
-        lastName = request.data.get("lastName", None)
-        email = request.data.get("email", None)
+        firstName = request.json.get("firstName", None)
+        lastName = request.json.get("lastName", None)
+        email = request.json.get("email", None)
 
-        password1 = request.data.get("password1", None)
-        password2 = request.data.get("password2", None)
-        if password1!=password2:
-            return {"error":"Passwords don't match!"}, 403
-        password = password1
-        gender = request.data.get("gender", None)
+        password1 = request.json.get("password1", None)
+        password2 = request.json.get("password2", None)
+        if password1 != password2:
+            return {"error": "Passwords don't match!"}, 403
+        gender = request.json.get("gender", None)
         isAdmin = False
-        profilePicturePath = request.data.get('profilePicturePath', None)
-        if not isSafe(password) or not email or not isEmail(email):
+        profilePicturePath = request.json.get('profilePicturePath', None)
+        if not isSafe(password1) or not email or not isEmail(email):
             s.close()
-            return {"error":"Password isn't safe"}#TODO: Front-End check first.
+            # TODO: Front-End check first.
+            return {"error": "Password isn't safe"}
+        salt = bcrypt.gensalt()
+        password = bcrypt.hashpw(password=str.encode(
+            password1, 'utf-8'), salt=salt)
+        userSalt = models.UserSalt(email=email, salt=salt)
         user = models.User(firstName=firstName, lastName=lastName, email=email, password=password,
                            gender=gender, isAdmin=isAdmin, profilePicturePath=profilePicturePath)
+        s.add(userSalt)
         s.add(user)
         s.commit()
         s.close()
     except Exception as e:
         print(e)
         s.close()
-        return {"error":"User creation could not proceed. Something went wrong on our end."}, 500
+        return {"error": "User creation could not proceed. Something went wrong on our end."}, 500
+    return {"success": True}

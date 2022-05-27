@@ -35,14 +35,11 @@ export default function Chat(props) {
         };
     }, []);
     useEffect(() => {
-        if (location.state.groupId) {
-            setRoomId(location.state.groupId);
-        } else {
-            setRoomId(props.room);
-        }
-    }, [location.groupId, props.room]);
+        setRoomId(location.state.groupId);
+    }, [location.state.groupId]);
 
     const sendMessage = (e) => {
+        console.log("sending on:", roomId);
         if (
             value !== null &&
             value !== undefined &&
@@ -103,16 +100,19 @@ export default function Chat(props) {
         socket.current.on("connect", () => {
             console.log("connected");
         });
-        socket.current.emit("join", { groupId: roomId });
+        if (roomId) {
+            socket.current.emit("join", { groupId: roomId });
+        }
         socket.current.on("message", (data) => {
             setMessages((messages) => [...messages, data]);
         });
-    }, [ENDPOINT, props.token]);
+    }, [roomId, ENDPOINT, props.token]);
 
     useEffect(() => {
         //réceptions de messages
         //récupération des messages déjà existants
         if (roomId && roomId !== null && roomId !== undefined) {
+            console.log("getting:", roomId);
             axios({
                 method: "GET",
                 url: "/api/messagelist",

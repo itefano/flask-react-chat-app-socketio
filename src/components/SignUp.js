@@ -12,8 +12,10 @@ import {
     MenuItem,
     FormControl,
 } from "@mui/material";
+import {useNavigate} from "react-router-dom";
 
 export default function SignUp(props) {
+    const navigate = useNavigate();
     const [signUpForm, setSignUpForm] = useState({
         email: "",
         password1: "",
@@ -46,12 +48,7 @@ export default function SignUp(props) {
                     },
                 })
                     .then((response) => {
-                        props.setToken(response.data.access_token);
-                        let info = { ...response.data };
-                        delete info.access_token;
-                        setError(false);
-                        setErrorMessage("");
-                        props.addInfo(info);
+                        navigate('/login', { state: { successMsg:'Account created successfully!' }});
                     })
                     .catch((error) => {
                         if (error.response) {

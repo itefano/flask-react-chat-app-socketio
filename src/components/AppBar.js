@@ -26,7 +26,8 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import GroupList from "./GroupList";
-
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 const Search = styled("div")(({ theme }) => ({
     position: "relative",
     borderRadius: theme.shape.borderRadius,
@@ -108,7 +109,7 @@ export default function PrimarySearchAppBar(props) {
                     setNotifications(response.data.messages.length);
                 })
                 .catch((error) => {
-                    if (error.response && error.response.status !== 422) {
+                    if (error.response.status !== 422) {
                         console.log(error.response);
                         console.log(error.response.status);
                         console.log(error.response.headers);
@@ -264,15 +265,54 @@ export default function PrimarySearchAppBar(props) {
     // drawer contents :
 
     const drawerContents = () => (
-        <Box
-            role="presentation"
-            onKeyDown={() => {
-                toggleDrawer(false);
-            }}
-            sx={{width:'300px'}}
-        >
-            <GroupList token={props.token} />
-        </Box>
+        <Paper role="presentation" sx={{ width: "400px" }}>
+            {/* <AddFriend/>
+            <CreateGroup/> */}
+            <Box
+                sx={{
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    flexDirection: "row",
+                }}
+            >
+                {props.token &&
+                    props.token !== "" &&
+                    props.token !== undefined && (
+                        <Search
+                            onChange={handleSearch}
+                            value={searchTerm}
+                            onBlur={handleSearchMenuClose}
+                            aria-describedby={"search" + idSearch}
+                        >
+                            <SearchIconWrapper>
+                                <SearchIcon />
+                            </SearchIconWrapper>
+                            <StyledInputBase
+                                placeholder="Search…"
+                                inputProps={{
+                                    "aria-label": "search" + idSearch,
+                                }}
+                            />
+                        </Search>
+                    )}
+                <IconButton aria-label="addFriend" size="large">
+                    <PersonAddIcon fontSize="inherit" />
+                </IconButton>
+
+                <IconButton aria-label="createGroup" size="large">
+                    <GroupAddIcon fontSize="inherit" />
+                </IconButton>
+            </Box>
+            <Box
+                // onKeyDown={() => {
+                //     toggleDrawer(false);
+                // }}
+                sx={{width:'100%'}}
+            >
+                <GroupList token={props.token} />
+            </Box>
+        </Paper>
     );
     const signIn = () => {
         navigate("/login");
@@ -349,7 +389,7 @@ export default function PrimarySearchAppBar(props) {
                             aria-label="open drawer"
                             sx={{ mr: 2 }}
                             onClick={() => {
-                                toggleDrawer(!openDrawer); //doesn't seem to be working if I hard set it to false ???
+                                toggleDrawer(true); //doesn't seem to be working if I set it to false ???
                             }}
                         >
                             <MenuIcon />
@@ -379,26 +419,6 @@ export default function PrimarySearchAppBar(props) {
                             Blablapp
                         </Typography>
                     </Link>
-                    {props.token &&
-                        props.token !== "" &&
-                        props.token !== undefined && (
-                            <Search
-                                onChange={handleSearch}
-                                value={searchTerm}
-                                onBlur={handleSearchMenuClose}
-                                aria-describedby={"search" + idSearch}
-                            >
-                                <SearchIconWrapper>
-                                    <SearchIcon />
-                                </SearchIconWrapper>
-                                <StyledInputBase
-                                    placeholder="Search…"
-                                    inputProps={{
-                                        "aria-label": "search" + idSearch,
-                                    }}
-                                />
-                            </Search>
-                        )}
 
                     <Popper
                         open={openSearchPopper}
@@ -680,9 +700,11 @@ export default function PrimarySearchAppBar(props) {
                                 </IconButton>
                             </Box>
                         </>
-                    ) : (<>
-                        <MenuItem onClick={signIn}>Login</MenuItem>
-                        <MenuItem onClick={signUp}>Sign Up</MenuItem></>
+                    ) : (
+                        <>
+                            <MenuItem onClick={signIn}>Login</MenuItem>
+                            <MenuItem onClick={signUp}>Sign Up</MenuItem>
+                        </>
                     )}
                 </Toolbar>
             </AppBar>

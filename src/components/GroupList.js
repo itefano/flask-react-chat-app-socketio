@@ -6,7 +6,7 @@ import {
     Typography,
     ListItem,
     Avatar,
-    Stack
+    Stack,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -48,9 +48,13 @@ export default function GroupList(props) {
                     <>
                         {groups.map((group, i) => {
                             return (
-                                <ListItem disablePadding spacing={0} alignItems="flex-start">
+                                <ListItem
+                                    disablePadding
+                                    spacing={0}
+                                    alignItems="flex-start"
+                                    key={i}
+                                >
                                     <Paper
-                                        key={i}
                                         sx={{
                                             width: "100%",
                                             display: "flex",
@@ -67,7 +71,7 @@ export default function GroupList(props) {
                                                 width: "100%",
                                             }}
                                         >
-                                            <Stack p={2}>
+                                            <Stack p={2} direction="row">
                                                 <Avatar
                                                     src={group.picturePath}
                                                     alt={
@@ -75,14 +79,25 @@ export default function GroupList(props) {
                                                         " group picture"
                                                     }
                                                 />
-                                                <Typography
-                                                    pl={2}
-                                                >
-                                                    {group.name.replace(
-                                                        /\b\w/,
-                                                        (c) => c.toUpperCase()
-                                                    )}
-                                                </Typography>
+                                                <Box>
+                                                    <Typography pl={2} variant="h5"
+                                                        sx={{fontWeight:'bold'}}>
+                                                        {group.name.replace(
+                                                            /\b\w/,
+                                                            (c) =>
+                                                                c.toUpperCase()
+                                                        )}
+                                                    </Typography>
+                                                    <Typography
+                                                        pl={2}
+                                                        variant="body1"
+                                                        color="text.secondary"
+                                                    >
+                                                        {group.users_names.join(
+                                                            ", "
+                                                        ).length>20?group.users_names.join(", ").substring(0,40)+"...":group.users_names.join(", ")}
+                                                    </Typography>
+                                                </Box>
                                             </Stack>
                                         </Link>
                                     </Paper>

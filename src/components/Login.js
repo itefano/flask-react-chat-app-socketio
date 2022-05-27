@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import {
     Alert,
@@ -7,15 +7,38 @@ import {
     TextField,
     Typography,
     Button,
+    Snackbar
 } from "@mui/material";
+import { useLocation } from "react-router-dom";
 
 function Login(props) {
     const [loginForm, setloginForm] = useState({
         email: "",
         password: "",
     });
+    const [snackBarOpen, setSnackBarOpen] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [error, setError] = useState(false);
+    const [snackBarMessage, setSnackBarMessage] = useState("");
+    const location = useLocation();
+    useEffect(()=>{
+        if (location.state && location.state.successMsg !== undefined && location.state.successMsg !== null && location.state.successMsg !== "") {
+            setSnackBarMessage(location.state.successMsg);
+        }
+    }, [location])
+    useEffect(()=>{
+        if (snackBarMessage && snackBarMessage !== "") {
+        setSnackBarOpen(true);
+        }
+    }, [snackBarMessage])
+  const handleClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setSnackBarOpen(false);
+  };
+
     function logMeIn(event) {
         if (loginForm.email !== "" && loginForm.password !== "") {
             axios({
@@ -118,6 +141,12 @@ function Login(props) {
                     </Button>
                 </form>
             </Container>
+            <Snackbar open={snackBarOpen} autoHideDuration={6000} onClose={handleClose}>
+            <Alert onClose={handleClose} severity="success" sx={{ width: '100%' }}>
+                
+                {snackBarMessage}
+            </Alert>
+            </Snackbar>
         </Box>
     );
 }

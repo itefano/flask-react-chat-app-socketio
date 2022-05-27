@@ -1,5 +1,5 @@
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Login";
 import Homepage from "./components/Homepage";
 import AppBar from "./components/AppBar";
@@ -15,14 +15,22 @@ import Chat from "./components/Chat";
 import axios from "axios";
 import Story from "./components/Story";
 import SignUp from "./components/SignUp";
+
 function App() {
     const [theme, setTheme] = useState(useContext(Theme));
     const [info, setInfo] = useState({});
     const [room, setRoom] = useState(null);
+
+    const { token, removeToken, setToken } = UseToken();
     const addInfo = (infos) => {
         setInfo({ ...infos });
     };
-
+    useEffect(()=>{
+        if (!token || token ==="" || token === null || token === undefined) {
+            setRoom(null);
+            localStorage.clear();
+        }
+    }, [token])
     useEffect(() => {
         if (
             info &&
@@ -87,7 +95,6 @@ function App() {
             setTheme(lightTheme);
         }
     };
-    const { token, removeToken, setToken } = UseToken();
     return (
         <ThemeProvider theme={theme}>
             <Box
@@ -132,6 +139,7 @@ function App() {
                                         <Login
                                             setToken={setToken}
                                             addInfo={addInfo}
+                                            token={token}
                                         />
                                     }
                                 ></Route>
@@ -189,6 +197,10 @@ function App() {
                                         />
                                     }
                                 />
+                                <Route
+                                    path="/*"
+                                    element={<Navigate to="/" replace />}
+                                ></Route>
                             </Routes>
                         )}
                     </div>

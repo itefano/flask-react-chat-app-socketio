@@ -13,7 +13,7 @@ from routes import routes
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*",
-                    logger=True, engineio_logger=True)
+                    logger=False, engineio_logger=False)
 from sockets import socketio
 
 app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
