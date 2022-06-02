@@ -471,7 +471,7 @@ export default function PrimarySearchAppBar(props) {
                                                                         searchTermSplit.length;
                                                                         i++
                                                                     ) {
-                                                                        //fuck me that one was needlessly tedious
+                                                                        //f... me that one was needlessly tedious
                                                                         let searchPattern =
                                                                             new RegExp(
                                                                                 "(?![^<]*>|[^<>]*</)" +

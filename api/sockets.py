@@ -20,7 +20,6 @@ def message_received():
 @jwt_required()
 def join_group(jsonresponse):
     groupId = jsonresponse.get("groupId")
-    print('joined', groupId)
     if groupId:
         s = db_session()
         users = [e.id for e in models.Group.query.get(
