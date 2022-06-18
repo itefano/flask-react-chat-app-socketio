@@ -284,6 +284,7 @@ export default function PrimarySearchAppBar(props) {
                             value={searchTerm}
                             onBlur={handleSearchMenuClose}
                             aria-describedby={"search" + idSearch}
+                            id="searchBoxDrawer"
                         >
                             <SearchIconWrapper>
                                 <SearchIcon />
@@ -296,19 +297,39 @@ export default function PrimarySearchAppBar(props) {
                             />
                         </Search>
                     )}
+                    <Link
+                        to="/addUser"
+                        style={{
+                            display: "flex",
+                            textDecoration: "none",
+                            color: "inherit",
+                            width: "100%",
+                        }}
+                    >
                 <IconButton aria-label="addFriend" size="large">
                     <PersonAddIcon fontSize="inherit" />
                 </IconButton>
+                </Link>
 
+                <Link
+                        to="/createGroup"
+                        style={{
+                            display: "flex",
+                            textDecoration: "none",
+                            color: "inherit",
+                            width: "100%",
+                        }}
+                    >
                 <IconButton aria-label="createGroup" size="large">
                     <GroupAddIcon fontSize="inherit" />
                 </IconButton>
+                </Link>
             </Box>
             <Box
                 // onKeyDown={() => {
                 //     toggleDrawer(false);
                 // }}
-                sx={{width:'100%'}}
+                sx={{ width: "100%" }}
             >
                 <GroupList token={props.token} />
             </Box>
@@ -388,8 +409,13 @@ export default function PrimarySearchAppBar(props) {
                             color="inherit"
                             aria-label="open drawer"
                             sx={{ mr: 2 }}
-                            onClick={() => {
-                                toggleDrawer(true); //doesn't seem to be working if I set it to false ???
+                            onClick={(e) => {
+                                let parent =
+                                    document.getElementById("searchBoxDrawer");
+                                if (!parent || !parent === e.target || !parent.contains(e.target)) {
+                                    //very hacky but seems to work...? Normal drawer behaviour can't differenciate between what's inside of the drawer and what's outside, so I just check which elements i click on through their parent to make sure not to close the drawer in some instances
+                                    toggleDrawer(!openDrawer);
+                                }
                             }}
                         >
                             <MenuIcon />
@@ -398,9 +424,9 @@ export default function PrimarySearchAppBar(props) {
                                 onClose={() => {
                                     toggleDrawer(false);
                                 }}
-                                onOpen={() => {
-                                    toggleDrawer(true);
-                                }}
+                                // onOpen={() => {
+                                //     toggleDrawer(true);
+                                // }}
                             >
                                 {drawerContents()}
                             </SwipeableDrawer>

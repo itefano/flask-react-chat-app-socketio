@@ -106,6 +106,13 @@ class User(Base):
             'profilePicturePath': self.profilePicturePath,
         }
 
+    def get_notification_amount(self):
+        s = db_session()
+        q = User.query.filter_by(id=self.id).join(models.Message_Seen).filter_by(seen=False).count()
+        if not q:
+            q = 0
+        return q
+
 
 class Friend(Base):
     __tablename__ = 'friends'
@@ -193,3 +200,16 @@ class Message_Seen(Base):
         if self.seen:
             word = 'read'
         return f'<Notification {self.userId!r} {word} {self.messageId!r}>'
+
+class Friend_Requests(Base):
+    __tablename__ = 'friend_requests'
+    id = Column(Integer, primary_key=True)
+    friendship = Column(Integer, ForeignKey('friends.id'))
+    time_created = Column(DateTime(timezone=True), default=func.now())
+    time_updated = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def __init__(self, **kwargs):
+        super(Friend_Requests, self).__init__(**kwargs)
+
+    def __repr__(self):  # for debugging purposes only, yeet it later
+        return f'<Friend_Requests {self.userId!r} : {self.friendId!r}>'

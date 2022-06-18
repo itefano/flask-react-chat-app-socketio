@@ -14,6 +14,7 @@ import Groups from "./components/Groups";
 import Chat from "./components/Chat";
 import axios from "axios";
 import Story from "./components/Story";
+import AddUser from "./components/AddUser";
 import SignUp from "./components/SignUp";
 
 function App() {
@@ -120,7 +121,8 @@ function App() {
                                     exact
                                     path="/"
                                     element={
-                                        <Homepage info={info} token={token} />
+                                        <Homepage info={info} 
+                                        setInfo={setInfo} token={token} />
                                     }
                                 />
                                 <Route
@@ -164,6 +166,15 @@ function App() {
                                         />
                                     }
                                     setRoom={setRoom}
+                                />
+                                <Route
+                                    exact
+                                    path="/addUser"
+                                    element={
+                                        <AddUser
+                                            token={token}
+                                        />
+                                    }
                                 />
                                 <Route
                                     exact

@@ -9,17 +9,17 @@ import {
     Button,
     Snackbar
 } from "@mui/material";
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
-function Login(props) {
-    const [loginForm, setloginForm] = useState({
+function AddUser(props) {
+    const [addUserForm, setAddUserForm] = useState({
         email: "",
-        password: "",
     });
     const [snackBarOpen, setSnackBarOpen] = useState(false);
+    const [snackBarMessage, setSnackBarMessage] = useState("");
+    
     const [errorMessage, setErrorMessage] = useState("");
     const [error, setError] = useState(false);
-    const [snackBarMessage, setSnackBarMessage] = useState("");
     const location = useLocation();
     useEffect(()=>{
         if (location.state && location.state.successMsg !== undefined && location.state.successMsg !== null && location.state.successMsg !== "") {
@@ -38,24 +38,25 @@ function Login(props) {
 
     setSnackBarOpen(false);
   };
-
-    const logMeIn = (event) => {
-        if (loginForm && loginForm.email !== "" && loginForm.password !== "") {
+    const addUser = (e) => {
+        e.preventDefault();
+        if (addUserForm && addUserForm.email !== "")
+        {
             axios({
                 method: "POST",
-                url: "/api/token",
+                url: "/api/addUser",
                 data: {
-                    email: loginForm.email,
-                    password: loginForm.password,
+                    email: addUserForm.email,
+                },
+                headers: {
+                    Authorization: "Bearer " + props.token,
                 },
             })
                 .then((response) => {
-                    props.setToken(response.data.access_token);
-                    let info = { ...response.data };
-                    delete info.access_token;
-                    setError(false);
+                    setSnackBarMessage(response.data.message);
+                    setAddUserForm({ email: "" });
                     setErrorMessage("");
-                    props.addInfo(info);
+                    setError(false);
                 })
                 .catch((error) => {
                     if (error.response) {
@@ -80,11 +81,10 @@ function Login(props) {
                     }
                 });
         }
-        event.preventDefault();
     }
     const handleChange = (event) => {
         const { value, name } = event.target;
-        setloginForm((prevNote) => ({
+        setAddUserForm((prevNote) => ({
             ...prevNote,
             [name]: value,
         }));
@@ -93,32 +93,21 @@ function Login(props) {
         <Box sx={{ textAlign: "center" }} py={2}>
             <Container maxWidth="sm">
                 <Typography variant="h4" color="text.primary" pb={2}>
-                    Login
+                    Add user
                 </Typography>
                 <form
-                    className="login"
-                    onSubmit={logMeIn}
+                    className="addUserForm"
+                    onSubmit={addUser}
                     style={{ display: "flex", flexDirection: "column" }}
                 >
                     <TextField
                         onChange={handleChange}
                         type="text"
-                        text={loginForm.email}
+                        text={addUserForm.email}
                         name="email"
-                        placeholder="Email"
-                        value={loginForm.email}
-                        error={error}
+                        placeholder="User email"
+                        value={addUserForm.email}
                         sx={{ paddingBottom: "1rem" }}
-                    />
-
-                    <TextField
-                        onChange={handleChange}
-                        type="password"
-                        text={loginForm.password}
-                        name="password"
-                        placeholder="Password"
-                        value={loginForm.password}
-                        error={error}
                     />
                     <Box width="100%" sx={{ margin: "auto" }} py={2}>
                         {errorMessage !== "" ? (
@@ -137,7 +126,7 @@ function Login(props) {
                         )}
                     </Box>
                     <Button variant="outlined" type="submit">
-                        Submit
+                        Add a friend
                     </Button>
                 </form>
             </Container>
@@ -150,4 +139,4 @@ function Login(props) {
         </Box>
     );
 }
-export default Login;
+export default AddUser;

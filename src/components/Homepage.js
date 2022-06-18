@@ -62,8 +62,19 @@ export default function Homepage(props) {
     }, [props.token]);
 
     useEffect(() => {
-        console.log("stories:", stories);
-    }, [stories]);
+        if (
+            !props ||
+            !props.token ||
+            props.token === "" ||
+            props.token === null
+        ) {
+            localStorage.clear();
+            if (props && props.info) {
+                props.setInfo(null);
+            }
+        }
+    }, [props.token]);
+
     return (
         <Box
             sx={{
