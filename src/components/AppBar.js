@@ -28,6 +28,8 @@ import axios from "axios";
 import GroupList from "./GroupList";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import DoneIcon from "@mui/icons-material/Done";
+import CloseIcon from "@mui/icons-material/Close";
 const Search = styled("div")(({ theme }) => ({
     position: "relative",
     borderRadius: theme.shape.borderRadius,
@@ -75,6 +77,7 @@ export default function PrimarySearchAppBar(props) {
     const [notifications, setNotifications] = useState(0);
     const [searchResults, setSearchResults] = useState([]);
     const [unreadMessages, setUnreadMessages] = useState([]);
+    const [friendRequests, setFriendRequests] = useState([]);
     const [popperAnchorEl, setPopperAnchorEl] = useState(null);
     const [searchPopperAnchorEl, setSearchPopperAnchorEl] = useState(null);
     const handleTheme = () => {
@@ -106,6 +109,7 @@ export default function PrimarySearchAppBar(props) {
             })
                 .then((response) => {
                     setUnreadMessages(response.data.messages);
+                    setFriendRequests(response.data.friendRequests);
                     setNotifications(response.data.messages.length);
                 })
                 .catch((error) => {
@@ -157,7 +161,14 @@ export default function PrimarySearchAppBar(props) {
     }, [searchTerm]);
 
     useEffect(() => {
-        getNotifications();
+        if (
+            !notifications ||
+            notifications === null ||
+            notifications === undefined ||
+            notifications.length === 0
+        ) {
+            getNotifications();
+        }
     }, []);
 
     useEffect(() => {
@@ -178,7 +189,7 @@ export default function PrimarySearchAppBar(props) {
             },
         })
             .then((response) => {
-                console.log(response.data);
+                getNotifications();
             })
             .catch((error) => {
                 if (error.response) {
@@ -297,32 +308,32 @@ export default function PrimarySearchAppBar(props) {
                             />
                         </Search>
                     )}
-                    <Link
-                        to="/addUser"
-                        style={{
-                            display: "flex",
-                            textDecoration: "none",
-                            color: "inherit",
-                            width: "100%",
-                        }}
-                    >
-                <IconButton aria-label="addFriend" size="large">
-                    <PersonAddIcon fontSize="inherit" />
-                </IconButton>
+                <Link
+                    to="/addUser"
+                    style={{
+                        display: "flex",
+                        textDecoration: "none",
+                        color: "inherit",
+                        width: "100%",
+                    }}
+                >
+                    <IconButton aria-label="addFriend" size="large">
+                        <PersonAddIcon fontSize="inherit" />
+                    </IconButton>
                 </Link>
 
                 <Link
-                        to="/createGroup"
-                        style={{
-                            display: "flex",
-                            textDecoration: "none",
-                            color: "inherit",
-                            width: "100%",
-                        }}
-                    >
-                <IconButton aria-label="createGroup" size="large">
-                    <GroupAddIcon fontSize="inherit" />
-                </IconButton>
+                    to="/createGroup"
+                    style={{
+                        display: "flex",
+                        textDecoration: "none",
+                        color: "inherit",
+                        width: "100%",
+                    }}
+                >
+                    <IconButton aria-label="createGroup" size="large">
+                        <GroupAddIcon fontSize="inherit" />
+                    </IconButton>
                 </Link>
             </Box>
             <Box
@@ -344,6 +355,39 @@ export default function PrimarySearchAppBar(props) {
 
     const handleProfileMenuOpen = (event) => {
         setAnchorEl(event.currentTarget);
+    };
+    const updateFriendRequest = (id, status) => {
+        if (props.token) {
+            axios({
+                method: "POST",
+                url: "/api/setFriendRequest",
+                data: {
+                    friendshipId: id,
+                    status: status,
+                },
+                headers: {
+                    Authorization: "Bearer " + props.token,
+                },
+            })
+                .then((response) => {
+                    getNotifications();
+                })
+                .catch((error) => {
+                    if (error.response.status !== 422) {
+                        console.log(error.response);
+                        console.log(error.response.status);
+                        console.log(error.response.headers);
+                    }
+                });
+        }
+    };
+
+    const acceptFriendRequest = (id) => {
+        //intermediary step for debugging purposes, not really needed
+        updateFriendRequest(id, true);
+    };
+    const declineFriendRequest = (id) => {
+        updateFriendRequest(id, false);
     };
 
     const handleMenuClose = () => {
@@ -412,7 +456,11 @@ export default function PrimarySearchAppBar(props) {
                             onClick={(e) => {
                                 let parent =
                                     document.getElementById("searchBoxDrawer");
-                                if (!parent || !parent === e.target || !parent.contains(e.target)) {
+                                if (
+                                    !parent ||
+                                    !parent === e.target ||
+                                    !parent.contains(e.target)
+                                ) {
                                     //very hacky but seems to work...? Normal drawer behaviour can't differenciate between what's inside of the drawer and what's outside, so I just check which elements i click on through their parent to make sure not to close the drawer in some instances
                                     toggleDrawer(!openDrawer);
                                 }
@@ -464,6 +512,7 @@ export default function PrimarySearchAppBar(props) {
                                                 overflow: "auto",
                                             }}
                                         >
+                                            {/* TODO: set search results in the sidebar! */}
                                             {!searchResults ||
                                             searchResults === undefined ||
                                             searchResults === null ||
@@ -752,10 +801,14 @@ export default function PrimarySearchAppBar(props) {
                                         overflow: "auto",
                                     }}
                                 >
-                                    {!unreadMessages ||
-                                    unreadMessages === undefined ||
-                                    unreadMessages === null ||
-                                    unreadMessages.length === 0 ? (
+                                    {(!unreadMessages ||
+                                        unreadMessages === undefined ||
+                                        unreadMessages === null ||
+                                        unreadMessages.length === 0) &&
+                                    (!friendRequests ||
+                                        friendRequests === undefined ||
+                                        friendRequests === null ||
+                                        friendRequests.length === 0) ? (
                                         <Box sx={{ textAlign: "center" }}>
                                             <Typography variant="h5">
                                                 No new notifications
@@ -765,7 +818,9 @@ export default function PrimarySearchAppBar(props) {
                                         <>
                                             <Box
                                                 mb={2}
-                                                sx={{ textAlign: "right" }}
+                                                sx={{
+                                                    textAlign: "right",
+                                                }}
                                             >
                                                 <Button
                                                     variant="text"
@@ -774,80 +829,194 @@ export default function PrimarySearchAppBar(props) {
                                                     Mark all as read
                                                 </Button>
                                             </Box>
-                                            <Stack spacing={2}>
-                                                {unreadMessages.map(
-                                                    (e, index) => (
-                                                        <Paper
-                                                            key={index}
-                                                            elevation={4}
-                                                        >
-                                                            <Box p={2}>
-                                                                <Box
-                                                                    sx={{
-                                                                        display:
-                                                                            "flex",
-                                                                        flexDirection:
-                                                                            "row",
-                                                                        alignItems:
-                                                                            "center",
-                                                                    }}
+                                            {friendRequests && (
+                                                <>
+                                                    <Stack spacing={2}>
+                                                        {friendRequests.map(
+                                                            (e, index) => (
+                                                                <Paper
+                                                                    key={index}
+                                                                    elevation={
+                                                                        4
+                                                                    }
                                                                 >
-                                                                    <Avatar
-                                                                        alt={
-                                                                            e.authorFirstName +
-                                                                            "'s Picture"
-                                                                        }
-                                                                        src={
-                                                                            e.authorProfilePicturePath
-                                                                        }
-                                                                    />
                                                                     <Box
+                                                                        p={2}
                                                                         sx={{
                                                                             display:
                                                                                 "flex",
                                                                             flexDirection:
                                                                                 "row",
                                                                             alignItems:
-                                                                                "baseline",
+                                                                                "stretch",
                                                                         }}
                                                                     >
-                                                                        <Typography
-                                                                            variant="h5"
-                                                                            pl={
+                                                                        <Box
+                                                                            sx={{
+                                                                                display:
+                                                                                    "flex",
+                                                                                flexDirection:
+                                                                                    "row",
+                                                                                alignItems:
+                                                                                    "center",
+                                                                            }}
+                                                                        >
+                                                                            <Avatar
+                                                                                alt={
+                                                                                    e.firstName +
+                                                                                    "'s Picture"
+                                                                                }
+                                                                                src={
+                                                                                    e.profilePicturePath
+                                                                                }
+                                                                            />
+                                                                            <Box
+                                                                                sx={{
+                                                                                    display:
+                                                                                        "flex",
+                                                                                    flexDirection:
+                                                                                        "row",
+                                                                                    alignItems:
+                                                                                        "baseline",
+                                                                                }}
+                                                                            >
+                                                                                <Typography
+                                                                                    variant="h5"
+                                                                                    pl={
+                                                                                        2
+                                                                                    }
+                                                                                >
+                                                                                    {e.firstName +
+                                                                                        " " +
+                                                                                        e.lastName}
+                                                                                </Typography>
+                                                                            </Box>
+                                                                            <Box
+                                                                                pt={
+                                                                                    2
+                                                                                }
+                                                                                sx={{
+                                                                                    display:
+                                                                                        "flex",
+                                                                                    flexDirection:
+                                                                                        "row",
+                                                                                    alignItems:
+                                                                                        "stretch",
+                                                                                }}
+                                                                            >
+                                                                                <IconButton
+                                                                                    variant="icon"
+                                                                                    onClick={() => {
+                                                                                        acceptFriendRequest(
+                                                                                            e.id
+                                                                                        );
+                                                                                    }}
+                                                                                >
+                                                                                    <DoneIcon />
+                                                                                </IconButton>
+                                                                                <IconButton
+                                                                                    variant="icon"
+                                                                                    onClick={() => {
+                                                                                        declineFriendRequest(
+                                                                                            e.id
+                                                                                        );
+                                                                                    }}
+                                                                                >
+                                                                                    <CloseIcon />
+                                                                                </IconButton>
+                                                                            </Box>
+                                                                        </Box>
+                                                                    </Box>
+                                                                </Paper>
+                                                            )
+                                                        )}
+                                                    </Stack>
+                                                </>
+                                            )}
+                                            {unreadMessages && (
+                                                <>
+                                                    <Stack spacing={2}>
+                                                        {unreadMessages.map(
+                                                            (e, index) => (
+                                                                <Paper
+                                                                    key={index}
+                                                                    elevation={
+                                                                        4
+                                                                    }
+                                                                >
+                                                                    <Box p={2}>
+                                                                        <Box
+                                                                            sx={{
+                                                                                display:
+                                                                                    "flex",
+                                                                                flexDirection:
+                                                                                    "row",
+                                                                                alignItems:
+                                                                                    "center",
+                                                                            }}
+                                                                        >
+                                                                            <Avatar
+                                                                                alt={
+                                                                                    e.authorFirstName +
+                                                                                    "'s Picture"
+                                                                                }
+                                                                                src={
+                                                                                    e.authorProfilePicturePath
+                                                                                }
+                                                                            />
+                                                                            <Box
+                                                                                sx={{
+                                                                                    display:
+                                                                                        "flex",
+                                                                                    flexDirection:
+                                                                                        "row",
+                                                                                    alignItems:
+                                                                                        "baseline",
+                                                                                }}
+                                                                            >
+                                                                                <Typography
+                                                                                    variant="h5"
+                                                                                    pl={
+                                                                                        2
+                                                                                    }
+                                                                                >
+                                                                                    {
+                                                                                        e.authorFirstName
+                                                                                    }
+                                                                                </Typography>
+                                                                                <Typography
+                                                                                    variant="p"
+                                                                                    px={
+                                                                                        1
+                                                                                    }
+                                                                                >
+                                                                                    in
+                                                                                </Typography>
+                                                                                <Typography variant="body1">
+                                                                                    {
+                                                                                        e.groupName
+                                                                                    }
+                                                                                </Typography>
+                                                                            </Box>
+                                                                        </Box>
+                                                                        <Box
+                                                                            pt={
                                                                                 2
                                                                             }
                                                                         >
-                                                                            {
-                                                                                e.authorFirstName
-                                                                            }
-                                                                        </Typography>
-                                                                        <Typography
-                                                                            variant="p"
-                                                                            px={
-                                                                                1
-                                                                            }
-                                                                        >
-                                                                            in
-                                                                        </Typography>
-                                                                        <Typography variant="body1">
-                                                                            {
-                                                                                e.groupName
-                                                                            }
-                                                                        </Typography>
+                                                                            <Typography variant="p">
+                                                                                {
+                                                                                    e.content
+                                                                                }
+                                                                            </Typography>
+                                                                        </Box>
                                                                     </Box>
-                                                                </Box>
-                                                                <Box pt={2}>
-                                                                    <Typography variant="p">
-                                                                        {
-                                                                            e.content
-                                                                        }
-                                                                    </Typography>
-                                                                </Box>
-                                                            </Box>
-                                                        </Paper>
-                                                    )
-                                                )}
-                                            </Stack>
+                                                                </Paper>
+                                                            )
+                                                        )}
+                                                    </Stack>
+                                                </>
+                                            )}
                                         </>
                                     )}
                                 </Box>

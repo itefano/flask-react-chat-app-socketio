@@ -4,7 +4,7 @@ from drop_all import dropdb
 from random import randrange
 from database import db_session
 from faker import Faker
-import models
+from models import *
 import bcrypt
 from pathlib import Path
 import os
@@ -59,7 +59,7 @@ def generate_users(amount):
             salt = bcrypt.gensalt()
             password = fake.password()
             f.write(emails[i]+': '+password+'\n')
-            users.append(models.User(
+            users.append(User(
                 firstName=names[i][0],
                 lastName=names[i][1],
                 email=emails[i],
@@ -68,7 +68,7 @@ def generate_users(amount):
                 isAdmin=isAdmin,
                 profilePicturePath=fake.image_url(),
             ))
-            user_salts.append(models.UserSalt(
+            user_salts.append(UserSalt(
                 email=emails[i],
                 salt=salt
             ))
@@ -85,11 +85,11 @@ def generate_groups(s, amount):
     printProgressBar(0, amount, prefix='Generating ~'+str(7*amount)+' groups...',
                      suffix='', length=50)
     for i in range(amount):
-        admin = s.query(models.User).get(i+1)
+        admin = s.query(User).get(i+1)
         groupAmt = randrange(5)+5
         for ii in range(groupAmt):  # ~7.5 groups created per person
             participants = [admin.id]
-            friends = s.query(models.Friend).filter_by(userId=admin.id).all()
+            friends = s.query(Friend).filter_by(userId=admin.id).all()
             # the use of min here avoids an infinite loop in the case where the amount of total users is too low (like ~10 ppl)
             groupSize = randrange(len(friends))+1
             if groupSize == 2:
@@ -106,7 +106,7 @@ def generate_groups(s, amount):
                 while uid in participants:
                     uid = friends[randrange(len(friends))].friendId
                 participants.append(uid)
-                users.append(s.query(models.User).get(uid))
+                users.append(s.query(User).get(uid))
             admins = [admin]
             addedAdmin = [admin.id]
             for n in users:
@@ -114,7 +114,7 @@ def generate_groups(s, amount):
                 if r == 0 and n.id not in addedAdmin:
                     admins.append(n)
                     addedAdmin.append(n.id)
-            groups.append(models.Group(
+            groups.append(Group(
                 name=groupName,
                 picturePath=fake.image_url(),
                 creator=admin.id,
@@ -142,15 +142,17 @@ def generate_friends(s, amount):
             randomFriends.append(randomFriend)
             # checks whether a friend has already been added by another friend to avoid duplicates
             if randomFriend not in friendDict.get(i+1):
-                friends.append(models.Friend(
+                friends.append(Friend(
                     userId=i+1,
-                    friendId=randomFriend
+                    friendId=randomFriend,
+                    request_pending = False
                 ))
                 friendDict[i+1].append(randomFriend)
             if not friendDict.get(randomFriend) or i+1 not in friendDict.get(randomFriend):
-                friends.append(models.Friend(
+                friends.append(Friend(
                     userId=randomFriend,
-                    friendId=i+1
+                    friendId=i+1,
+                    request_pending = False
                 ))  # reciprocity of the first friend
                 if not friendDict.get(randomFriend):
                     friendDict[randomFriend] = []
@@ -162,7 +164,7 @@ def generate_friends(s, amount):
 
 def generate_messages(s, amount):
     messages = []
-    groups = s.query(models.Group).all()
+    groups = s.query(Group).all()
     printProgressBar(0, len(groups), prefix='Generating ~'+str(int(9.5 *
                      len(groups)))+' messages...', suffix='', length=50)
     for i in range(len(groups)):
@@ -170,11 +172,11 @@ def generate_messages(s, amount):
             ppath = None
             group = groups[i]
             # hacky, but saves time
-            users = s.query(models.Group).get(i+1).users
+            users = s.query(Group).get(i+1).users
             author = users[randrange(len(users))]
             if randrange(10) == 0:
                 ppath = fake.image_url()
-            messages.append(models.Message(
+            messages.append(Message(
                 title=" ".join(fake.words(randrange(6)+1)),
                 content=fake.text(max_nb_chars=randrange(250) + 5),
                 picturePath=ppath,
@@ -187,8 +189,8 @@ def generate_messages(s, amount):
 
 def generate_notifications(s):
     messages_seen = []
-    messages = s.query(models.Message).all()
-    groups = s.query(models.Group).all()
+    messages = s.query(Message).all()
+    groups = s.query(Group).all()
     printProgressBar(0, len(groups), prefix='Generating ~' +
                      str(int(7*len(messages)))+' notifications...', suffix='', length=50)
     k = 0
@@ -203,7 +205,7 @@ def generate_notifications(s):
                 seen = False
             for u in groups[i].users:
                 kk += 1
-                messages_seen.append(models.Message_Seen(
+                messages_seen.append(Message_Seen(
                     userId=u.id,
                     messageId=m.id,
                     seen=seen
@@ -220,7 +222,7 @@ def generate_stories(amount):
     for i in range(amount):
         authorId = i+1
         for j in range(randrange(6)):  # 10 stories per user
-            stories.append(models.Story(
+            stories.append(Story(
                 title=" ".join(fake.words(randrange(6)+1)),
                 description=fake.text(max_nb_chars=randrange(250) +
                                       5),

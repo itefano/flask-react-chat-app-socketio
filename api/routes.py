@@ -10,8 +10,9 @@ from models import *
 from sqlalchemy import desc
 import bcrypt
 from datetime import datetime
+import os
 load_dotenv()
-
+TESTING = os.getenv('TESTING')
 routes = Blueprint('example_blueprint', __name__)
 
 
@@ -37,7 +38,10 @@ def list_contacts():
         s.close()
     except Exception as e:
         s.close()
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         return {"error": "Something went wrong"}, 500
     return jsonify(res)
 
@@ -57,7 +61,10 @@ def check_room():
         s.close()
     except Exception as e:
         s.close()
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         return {"error": "Something went wrong"}, 500
     if not q:
         return {"error": "User doesn't have access to this room"}, 401
@@ -79,7 +86,10 @@ def my_profile():  # to be completed later
         s.close()
     except Exception as e:
         s.close()
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         return {"error": "Session desynchronized"}, 401
     return jsonify({"firstName": user.firstName, "lastName": user.lastName, "email": user.email, "profilePicturePath": user.profilePicturePath})
 
@@ -90,7 +100,10 @@ def get_info():
     try:
         user = get_user(get_jwt_identity())
     except Exception as e:
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         return {"error": "Something went wrong"}, 500
     if not user:
         return {"error": "User not found"}, 404
@@ -114,7 +127,7 @@ def create_token():
         if not user:
             return {"msg": "Wrong email or password"}, 401
         access_token = create_access_token(identity=user.id)
-        notifications = user.get_notification_amount(user.id)
+        notifications = user.get_notification_amount()
         response = {"access_token": access_token,
                     "firstName": user.firstName,
                     "lastName": user.lastName,
@@ -122,7 +135,10 @@ def create_token():
                     "notifications": notifications}
     except Exception as e:
         s.close()
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         return {"msg": "Something went wrong"}, 500
     return response
 
@@ -156,7 +172,10 @@ def list_groups():
         s.close()
     except Exception as e:
         s.close()
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         return {"msg": "Something went wrong"}, 500
     return jsonify(res)
 
@@ -215,7 +234,10 @@ def list_messages():
         s.close()
     except Exception as e:
         s.close()
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         return {"error": "Something went wrong"}, 500
     return jsonify(res)
 
@@ -228,7 +250,12 @@ def list_unread_messages():
         # vérifie que l'user est bien dans un groupe
         totalUnreadMessages = s.query(Message_Seen, Message, User).filter_by(userId=get_jwt_identity(), seen=False).join(
             Message, Message_Seen.messageId == Message.id).join(User, User.id == Message.author).all()
-        friendRequests = s.query(Friend_Request).join(Friends, Friends.id == Friend_Request.friendship).filter_by(friendship).all()
+        friendRequests = s.query(Friend).filter_by(friendId=get_jwt_identity(), request_pending=True).all()
+        friendRequestsTotal = []
+        for fr in friendRequests:
+            u = s.query(User).get(fr.userId)
+            friendRequestsTotal.append(
+                {"firstName": u.firstName, "lastName": u.lastName, "email": u.email, "profilePicturePath": u.profilePicturePath, "id": fr.id})
         unreadMessages = []
         for m in totalUnreadMessages:
             group = s.query(Group).get(m[1].groupId)
@@ -243,13 +270,15 @@ def list_unread_messages():
                  "groupPicturePath": group.picturePath,
                  "timestamp": m[1].time_created
                  })
-
         s.close()
     except Exception as e:
         s.close()
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         return {"error": "Something went wrong"}, 500
-    return {"messages": unreadMessages, "friendRequests":friendRequests}
+    return {"messages": unreadMessages, "friendRequests":friendRequestsTotal}
 
 
 @routes.route('/markallasread', methods=['GET'])
@@ -265,7 +294,10 @@ def mark_all_as_read():
         s.commit()
     except Exception as e:
         s.close()
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         return {"error": "Something went wrong"}, 500
     s.close()
     return {"success": True}
@@ -295,7 +327,10 @@ def contact_group():
                 id=contact.id)).filter(Group.users.any(id=get_jwt_identity())).all()
     except Exception as e:
         s.close()
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         return {"error": "Something went wrong"}, 500
     res = []  # 🤮
     for e in contact_groups:
@@ -319,7 +354,10 @@ def get_story(slug):
             return {"error": "Story does not exist"}, 404
     except Exception as e:
         s.close()
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         return {"error": "Something went wrong"}, 500
     s.close()
     return {"story": story.serialize}
@@ -368,7 +406,10 @@ def create_group():
         s.commit()
     except Exception as e:
         s.close()
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         return {"error": "Something went wrong"}, 500
     s.close()
     return {"success": True}
@@ -430,7 +471,7 @@ def search():
 
 
 # ================== CREATES ====================
-
+# TODO: actually sort the routes, you lazy fuck
 @routes.route('/signup', methods=['POST'])
 def create_user():
     try:
@@ -461,7 +502,10 @@ def create_user():
         s.commit()
         s.close()
     except Exception as e:
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         s.close()
         return {"error": "User creation could not proceed. Something went wrong on our end."}, 500
     return {"success": True}
@@ -483,14 +527,40 @@ def addUser():
             return {"error": "User not found"}, 404
         if userToAdd in user.friends:
             return {"error": "User already in friends list"}, 403
-        friendship = Friend(userId=user.id, friendId=userToAdd.id)
-        friendRequest = Friend_Requests(friendship=friendship)
+        friendship = Friend(userId=user.id, friendId=userToAdd.id, request_pending=True)
         s.add(friendship)
-        s.add(friendRequest)
         s.commit()
         s.close()
     except Exception as e:
-        print(e)
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
         s.close()
         return {"error": "Something went wrong"}, 500
     return {"message":"User was successfully added. They will get a request that they will have to accept before you can start communicating with them."}
+
+@routes.route('/setFriendRequest', methods=['POST'])
+@jwt_required()
+def setFriendRequest():
+    try:
+        s = db_session()
+        friendShipId = request.json.get("friendshipId", None)
+        status = request.json.get("status", None)
+        if friendShipId != None and status != None:
+            friendship = s.query(Friend).get(friendShipId)
+            friendship.request_pending = False
+            if status:
+                reciprocal_friendship = Friend(userId=get_jwt_identity(), friendId=friendship.userId, request_pending=False)
+                s.add(reciprocal_friendship)
+            s.commit()
+        else:
+            raise Exception("An unexpected error occurred. Please reload the page and try again.")
+    except Exception as e:
+        if not TESTING:
+            print(e)
+        else:
+            raise(e)
+        s.close()
+        return {"error": "Something went wrong"}, 500
+    return {"success": True}

@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 load_dotenv()
 from flask_cors import CORS
 from routes import routes
-
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*",
@@ -18,6 +17,7 @@ from sockets import socketio
 
 app.config["JWT_SECRET_KEY"] = os.getenv('JWT_SECRET_KEY')
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
+app.config['TESTING'] = os.getenv('TESTING')
 jwt = JWTManager(app)
 
 
