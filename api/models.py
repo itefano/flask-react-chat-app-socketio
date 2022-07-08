@@ -49,6 +49,7 @@ class Group(Base):
         return {
             'id': self.id,
             'name': self.name,
+            'participants' : [e.firstName for e in self.users],
             'picturePath': self.picturePath,
         }
 

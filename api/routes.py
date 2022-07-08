@@ -12,7 +12,7 @@ import bcrypt
 from datetime import datetime
 import os
 load_dotenv()
-TESTING = os.getenv('TESTING')
+TESTING = os.getenv('TESTING') # I have zero explanation as to why I did it this way
 routes = Blueprint('example_blueprint', __name__)
 
 
@@ -443,6 +443,7 @@ def search():
                 User.email.ilike("%{}%".format(search_term))).all()
         groupNames = s.query(Group).join(User).filter(Group.users.any(id=get_jwt_identity())).filter(
             Group.name.ilike("%{}%".format(search_term))).all()
+        # TODO: search by user names inside groups
         res = dict()
         res["users"] = []
         res['isFirstLastName'] = False
