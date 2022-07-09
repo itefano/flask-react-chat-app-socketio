@@ -17,7 +17,7 @@ export default function GroupList(props) {
     const skeletons = [
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     ];
-    const openSearchPopper = props.openSearchPopper; //too lazy to remake it, I just replaced the names after transferring the sub-component
+    const openSearch = props.openSearch; //too lazy to remake it, I just replaced the names after transferring the sub-component
     const searchResults = props.searchResults;
     const searchTerm = props.searchTerm;
 
@@ -47,10 +47,25 @@ export default function GroupList(props) {
     return (
         <Box>
             <List disablePadding>
-                {openSearchPopper &&
+                {openSearch &&
                     searchResults.groupNames &&
                     searchResults.groupNames.map((e, index) => {
-                        let groupName = e.name;
+                        console.log(e);
+                        let groupName;
+                        if (e.name)
+                        {
+                            groupName = e.name;
+                        }
+                        else{
+                            for (let i = 0; i<e.participants.length; i++)
+                            {
+                                if (e.firstName!==props.info.firstName || e.lastName!==props.info.lastName)
+                                {
+                                    groupName = e.firstName+" "+e.lastName;
+                                    break;
+                                }
+                            }
+                        }
                         let currentSearchTerm = searchTerm.trim();
                         let searchTermSplit = currentSearchTerm.split(" ");
                         for (let i = 0; i < searchTermSplit.length; i++) {
@@ -82,7 +97,7 @@ export default function GroupList(props) {
                                     "(?![^</]*>|[^</>]*</)",
                                 "gi"
                             );
-                            let sliceIndexMin = groupName.search(searchPattern);
+                            let sliceIndexMin = participants.search(searchPattern);
                             let sliceIndexMax =
                                 sliceIndexMin + searchTermSplit[i].length;
                             participants = participants.replace(
@@ -113,7 +128,7 @@ export default function GroupList(props) {
                                 >
                                     <Link
                                         to="/chat"
-                                        state={{ groupId: e.groupId }}
+                                        state={{ groupId: e.id }}
                                         style={{
                                             display: "flex",
                                             textDecoration: "none",
@@ -121,52 +136,38 @@ export default function GroupList(props) {
                                             width: "100%",
                                         }}
                                     >
-                                        <Box p={2}>
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    flexDirection: "row",
-                                                    alignItems: "center",
-                                                }}
-                                            >
-                                                <Avatar
-                                                    alt={e.name + "'s Picture"}
-                                                    src={e.picturePath}
-                                                />
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        flexDirection: "row",
-                                                        alignItems: "baseline",
-                                                    }}
-                                                >
-                                                    <Typography
-                                                        variant="h5"
-                                                        pl={2}
-                                                        dangerouslySetInnerHTML={{
-                                                            __html: groupName,
-                                                        }}
-                                                    ></Typography>
-                                                </Box>
-                                            </Box>
-                                            <Box pt={2}>
+                                        <Stack p={2} direction="row">
+                                            <Avatar
+                                                alt={e.name + "'s Picture"}
+                                                src={e.picturePath}
+                                            />
+                                            <Box>
                                                 <Typography
                                                     pl={2}
-                                                    variant="p"
+                                                    variant="h5"
+                                                    sx={{
+                                                        fontWeight: "light",
+                                                    }}
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: groupName,
+                                                    }}
+                                                ></Typography>
+                                                <Typography
+                                                    pl={2}
+                                                    variant="body1"
+                                                    color="text.secondary"
                                                     dangerouslySetInnerHTML={{
                                                         __html: participants,
                                                     }}
-                                                    color="text.secondary"
-                                                >
-                                                </Typography>
+                                                ></Typography>
                                             </Box>
-                                        </Box>
+                                        </Stack>
                                     </Link>
                                 </Paper>
                             </ListItem>
                         );
                     })}
-                {openSearchPopper ? (
+                {openSearch ? (
                     searchResults.users &&
                     searchResults.users.map((e, index) => {
                         let firstNameLastName = e.firstName + " " + e.lastName;
@@ -343,11 +344,7 @@ export default function GroupList(props) {
                                                             fontWeight: "bold",
                                                         }}
                                                     >
-                                                        {group.name.replace(
-                                                            /\b\w/,
-                                                            (c) =>
-                                                                c.toUpperCase()
-                                                        )}
+                                                        {group.name}
                                                     </Typography>
                                                     <Typography
                                                         pl={2}

@@ -7,12 +7,13 @@ from flask_jwt_extended import create_access_token, get_jwt_identity, \
     unset_jwt_cookies, jwt_required, verify_jwt_in_request
 from dotenv import load_dotenv
 from models import *
-from sqlalchemy import desc
+from sqlalchemy import desc, or_, and_
 import bcrypt
 from datetime import datetime
 import os
 load_dotenv()
-TESTING = os.getenv('TESTING') # I have zero explanation as to why I did it this way
+# I have zero explanation as to why I did it this way
+TESTING = os.getenv('TESTING')
 routes = Blueprint('example_blueprint', __name__)
 
 
@@ -149,7 +150,7 @@ def list_groups():
     try:
         s = db_session()
         q = s.query(Group).filter(
-            Group.users.any(id=get_jwt_identity())).all()
+            Group.users.any(id=get_jwt_identity())).order_by(desc(Group.id)).all()
         res = []
         for e in q:
             users = [u for u in e.users]
@@ -168,7 +169,7 @@ def list_groups():
             else:
                 name = e.name
             res.append(
-                {"name": name, "id": e.id, "picturePath": e.picturePath, "users_names": [u.firstName for u in users]})
+                {"name": name, "id": e.id, "picturePath": e.picturePath, "users_names": [u.firstName+" "+u.lastName for u in users]})
         s.close()
     except Exception as e:
         s.close()
@@ -250,7 +251,8 @@ def list_unread_messages():
         # vérifie que l'user est bien dans un groupe
         totalUnreadMessages = s.query(Message_Seen, Message, User).filter_by(userId=get_jwt_identity(), seen=False).join(
             Message, Message_Seen.messageId == Message.id).join(User, User.id == Message.author).all()
-        friendRequests = s.query(Friend).filter_by(friendId=get_jwt_identity(), request_pending=True).all()
+        friendRequests = s.query(Friend).filter_by(
+            friendId=get_jwt_identity(), request_pending=True).all()
         friendRequestsTotal = []
         for fr in friendRequests:
             u = s.query(User).get(fr.userId)
@@ -278,7 +280,7 @@ def list_unread_messages():
         else:
             raise(e)
         return {"error": "Something went wrong"}, 500
-    return {"messages": unreadMessages, "friendRequests":friendRequestsTotal}
+    return {"messages": unreadMessages, "friendRequests": friendRequestsTotal}
 
 
 @routes.route('/markallasread', methods=['GET'])
@@ -374,7 +376,6 @@ def get_stories():
             # stories = s.query(Story).filter(Story.author != userId, Story.time_created >= today).order_by(Story.author.desc(), Story.time_created.desc()).limit(100).all()
             stories = s.query(Story).filter(Story.author != userId).order_by(Story.author.desc(
             ), Story.time_created.desc()).limit(100).all()  # no filters by date for testing purposes because i'm really lazy
-            print('stories for', userId, stories)
             res = [e.serialize for e in stories]
         else:
             stories = s.query(Story).order_by(
@@ -401,7 +402,7 @@ def create_group():
         picturePath = request.json.get("picturePath", None)
         users = request.json.get("users", None)
         group = Group(name=name, picturePath=picturePath,
-                             users=users+[user], admins=[users])
+                      users=users+[user], admins=[users])
         s.add(group)
         s.commit()
     except Exception as e:
@@ -422,7 +423,7 @@ def search():
         s = db_session()
         user = get_user(get_jwt_identity())
         firstLastNames, lastFirstNames, firstNames, lastNames, emails = [], [], [], [], []
-        search_term = request.args.get("search_term", None)
+        search_term = request.args.get("search_term", None).strip()
         if ' ' in search_term:  # in case they search for firstname and lastname
             for i in range(len(search_term.split(' '))):
                 # takes the first n words as first names
@@ -430,20 +431,37 @@ def search():
                 # takes the first n words as first names
                 lastName = ' '.join(search_term.split(' ')[i:])
                 firstLastNames.extend(s.query(User).join(Friend, Friend.friendId == User.id).filter(Friend.userId == user.id).filter(User.firstName.ilike(
-                    "%{}%".format(firstName))).filter(User.lastName.ilike("%{}%".format(lastName))).all())  # unholy abomination
+                    "%{}%".format(firstName))).filter(User.lastName.ilike("%{}%".format(lastName))).order_by(desc(User.id)).all())  # unholy abomination
                 # all queries are built similarily : look for all users that are friends with the current connected user (and not necessary the other way around) bc I'm too lazy to fix it
                 lastFirstNames.extend(s.query(User).join(Friend, Friend.friendId == User.id).filter(Friend.userId == user.id).filter(User.lastName.ilike("%{}%".format(
-                    firstName))).filter(User.firstName.ilike("%{}%".format(lastName))).all())
+                    firstName))).filter(User.firstName.ilike("%{}%".format(lastName))).order_by(desc(User.id)).all())
         else:
             firstNames = s.query(User).join(Friend, Friend.friendId == User.id).filter(Friend.userId == user.id).filter(
-                User.firstName.ilike("%{}%".format(search_term))).all()  # TODO : add filter for user
+                User.firstName.ilike("%{}%".format(search_term))).order_by(desc(User.id)).all()
             lastNames = s.query(User).join(Friend, Friend.friendId == User.id).filter(Friend.userId == user.id).filter(
-                User.lastName.ilike("%{}%".format(search_term))).all()
+                User.lastName.ilike("%{}%".format(search_term))).order_by(desc(User.id)).all()
             emails = s.query(User).join(Friend, Friend.friendId == User.id).filter(Friend.userId == user.id).filter(
-                User.email.ilike("%{}%".format(search_term))).all()
+                User.email.ilike("%{}%".format(search_term))).order_by(desc(User.id)).all()
         groupNames = s.query(Group).join(User).filter(Group.users.any(id=get_jwt_identity())).filter(
-            Group.name.ilike("%{}%".format(search_term))).all()
-        # TODO: search by user names inside groups
+            Group.name.ilike("%{}%".format(search_term))).order_by(desc(Group.id)).all()
+        if " " in search_term:
+            search_terms = search_term.split(" ")
+        else:
+            search_terms = [search_term]
+        allGroupUserNames = []
+        for e in search_terms:
+            allGroupUserNames.append(s.query(Group).join(User).filter(Group.users.any(id=get_jwt_identity())).filter(
+                or_(
+                    Group.users.any(
+                        User.firstName.ilike("%{}%".format(search_term))),
+                    Group.users.any(
+                        User.lastName.ilike("%{}%".format(search_term)))
+                )).order_by(desc(Group.id)).all())
+        for groupUserNames in allGroupUserNames:
+            for grp in groupUserNames:
+                # we ignore groups with no name bc they imply 1 to 1 convo and we already find those through the user filter
+                if groupUserNames not in groupNames and grp.name and grp.name != "":
+                    groupNames.append(grp)
         res = dict()
         res["users"] = []
         res['isFirstLastName'] = False
@@ -457,7 +475,11 @@ def search():
                         if e['email'] == r.email:
                             isIn = True
                     if not isIn:
-                        res['users'].append(r.serialize)
+                        groupForUser = s.query(Group).filter(Group.name==None).filter(
+                            and_(Group.users.any(id=get_jwt_identity()), Group.users.any(id=r.id))).first()
+                        minires = r.serialize
+                        minires['groupId'] = groupForUser.id
+                        res['users'].append(minires)
         if groupNames:
             res["groupNames"] = [e.serialize for e in groupNames]
         s.close()
@@ -473,7 +495,7 @@ def search():
 
 # ================== CREATES ====================
 # TODO: actually sort the routes, you lazy fuck
-@routes.route('/signup', methods=['POST'])
+@ routes.route('/signup', methods=['POST'])
 def create_user():
     try:
         s = db_session()
@@ -497,7 +519,7 @@ def create_user():
             password1, 'utf-8'), salt=salt)
         userSalt = UserSalt(email=email, salt=salt)
         user = User(firstName=firstName, lastName=lastName, email=email, password=password,
-                           gender=gender, isAdmin=isAdmin, profilePicturePath=profilePicturePath)
+                    gender=gender, isAdmin=isAdmin, profilePicturePath=profilePicturePath)
         s.add(userSalt)
         s.add(user)
         s.commit()
@@ -512,8 +534,8 @@ def create_user():
     return {"success": True}
 
 
-@routes.route('/addUser', methods=['POST'])
-@jwt_required()
+@ routes.route('/addUser', methods=['POST'])
+@ jwt_required()
 def addUser():
     try:
         s = db_session()
@@ -528,8 +550,13 @@ def addUser():
             return {"error": "User not found"}, 404
         if userToAdd in user.friends:
             return {"error": "User already in friends list"}, 403
-        friendship = Friend(userId=user.id, friendId=userToAdd.id, request_pending=True)
+        friendship = Friend(
+            userId=user.id, friendId=userToAdd.id, request_pending=True)
         s.add(friendship)
+        group = Group(name=None, picturePath=None, creator=None,
+                      admins=[user, userToAdd], users=[user, userToAdd])
+        print(group)
+        s.add(group)
         s.commit()
         s.close()
     except Exception as e:
@@ -539,10 +566,11 @@ def addUser():
             raise(e)
         s.close()
         return {"error": "Something went wrong"}, 500
-    return {"message":"User was successfully added. They will get a request that they will have to accept before you can start communicating with them."}
+    return {"message": "User was successfully added. They will get a request that they will have to accept before you can start communicating with them."}
 
-@routes.route('/setFriendRequest', methods=['POST'])
-@jwt_required()
+
+@ routes.route('/setFriendRequest', methods=['POST'])
+@ jwt_required()
 def setFriendRequest():
     try:
         s = db_session()
@@ -552,11 +580,13 @@ def setFriendRequest():
             friendship = s.query(Friend).get(friendShipId)
             friendship.request_pending = False
             if status:
-                reciprocal_friendship = Friend(userId=get_jwt_identity(), friendId=friendship.userId, request_pending=False)
+                reciprocal_friendship = Friend(userId=get_jwt_identity(
+                ), friendId=friendship.userId, request_pending=False)
                 s.add(reciprocal_friendship)
             s.commit()
         else:
-            raise Exception("An unexpected error occurred. Please reload the page and try again.")
+            raise Exception(
+                "An unexpected error occurred. Please reload the page and try again.")
     except Exception as e:
         if not TESTING:
             print(e)

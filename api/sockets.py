@@ -29,7 +29,7 @@ def join_group(jsonresponse):
             return {"errorMessage": "User does not have access to this group. How the hell did you get here?"}, 404
         else:
             join_room(groupId)
-            send("joined group", {"groupId": groupId},
+            emit("joined group", {"groupId": groupId},
                  namespace="/chat", room=groupId, broadcast=True)
             s.close()
             return {"success": True}

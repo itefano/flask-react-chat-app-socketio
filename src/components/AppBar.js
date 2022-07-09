@@ -20,6 +20,7 @@ import {
     Button,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import HomeIcon from "@mui/icons-material/Home";
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import NotificationsIcon from "@mui/icons-material/Notifications";
@@ -74,27 +75,27 @@ export default function PrimarySearchAppBar(props) {
     let navigate = useNavigate();
     const [checked, setChecked] = useState(true);
     const [openDrawer, setOpenDrawer] = useState(false);
-    const [notifications, setNotifications] = useState(0);
+    const [notifications, setNotifications] = useState(0); // TODO: add notifications "read" by click, and redirect to group
     const [searchResults, setSearchResults] = useState([]);
     const [unreadMessages, setUnreadMessages] = useState([]);
     const [friendRequests, setFriendRequests] = useState([]);
     const [popperAnchorEl, setPopperAnchorEl] = useState(null);
-    const [searchPopperAnchorEl, setSearchPopperAnchorEl] = useState(null);
+    const [searchAnchorEl, setSearchAnchorEl] = useState(null);
     const handleTheme = () => {
         setChecked(!checked);
         props.handleTheme();
     };
-    const [openSearchPopper, setOpenSearchPopper] = useState(false);
+    const [openSearch, setOpenSearch] = useState(false);
     const [openPopper, setOpenPopper] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
 
     const handleSearch = (event) => {
         setSearchTerm(event.target.value);
         if (event.target.value === "") {
-            setOpenSearchPopper(false);
+            setOpenSearch(false);
         } else {
-            setSearchPopperAnchorEl(event.currentTarget);
-            setOpenSearchPopper(true);
+            setSearchAnchorEl(event.currentTarget);
+            setOpenSearch(true);
         }
     };
 
@@ -129,7 +130,7 @@ export default function PrimarySearchAppBar(props) {
         setOpenPopper((previousOpen) => !previousOpen);
     };
     const canBeOpen = openPopper && Boolean(popperAnchorEl);
-    const canBeOpenSearch = openSearchPopper && Boolean(searchPopperAnchorEl);
+    const canBeOpenSearch = openSearch && Boolean(searchAnchorEl);
     const id = canBeOpen ? "transition-popper" : undefined;
     const idSearch = canBeOpenSearch ? "transition-popper" : undefined;
 
@@ -293,7 +294,7 @@ export default function PrimarySearchAppBar(props) {
                         <Search
                             onChange={handleSearch}
                             value={searchTerm}
-                            onBlur={handleSearchMenuClose}
+                            // onBlur={handleSearchMenuClose}
                             aria-describedby={"search" + idSearch}
                             id="searchBoxDrawer"
                         >
@@ -305,6 +306,7 @@ export default function PrimarySearchAppBar(props) {
                                 inputProps={{
                                     "aria-label": "search" + idSearch,
                                 }}
+                                sx={{ height: "100%" }}
                             />
                         </Search>
                     )}
@@ -342,7 +344,13 @@ export default function PrimarySearchAppBar(props) {
                 // }}
                 sx={{ width: "100%" }}
             >
-                <GroupList token={props.token} openSearchPopper={openSearchPopper} searchResults={searchResults} searchTerm={searchTerm}/>
+                <GroupList
+                    token={props.token}
+                    openSearch={openSearch}
+                    searchResults={searchResults}
+                    searchTerm={searchTerm}
+                    info={props.info}
+                />
             </Box>
         </Paper>
     );
@@ -394,9 +402,10 @@ export default function PrimarySearchAppBar(props) {
         setAnchorEl(null);
     };
 
-    const handleSearchMenuClose = () => {
-        setOpenSearchPopper(false);
-    };
+    // const handleSearchMenuClose = () => {
+    //      setOpenSearch(false); 
+
+    // };
 
     const menuId = "primary-search-account-menu";
     const renderMenu = props.token &&
@@ -482,15 +491,17 @@ export default function PrimarySearchAppBar(props) {
                     )}
                     <Link
                         to="/"
-                        style={{ textDecoration: "none", color: "inherit" }}
+                        style={{ textDecoration: "none", color: "inherit", display:'flex', alignItems:'center' }}
                     >
+                        <HomeIcon />
                         <Typography
                             variant="h6"
                             noWrap
                             component="div"
                             sx={{ display: { xs: "none", sm: "block" } }}
+                            pl={1}
                         >
-                            Blablapp
+                            Unnamed chat app
                         </Typography>
                     </Link>
 

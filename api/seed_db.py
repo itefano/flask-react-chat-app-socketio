@@ -80,8 +80,30 @@ def generate_users(amount):
         raise(e)
 
 
+def generate_one_to_one_groups(s):
+    friendships = s.query(Friend).all()
+    generatedGroups = dict()
+    grouplist = []
+    for i in range(len(friendships)):
+        if not (friendships[i].userId in generatedGroups and friendships[i].friendId in generatedGroups[friendships[i].userId]):
+            usr = s.query(User).get(friendships[i].userId)
+            friend = s.query(User).get(friendships[i].friendId)
+            grouplist.append(Group(name=None, picturePath=None, admins=[usr, friend], users=[usr, friend]))
+            if usr.id in generatedGroups:
+                generatedGroups[usr.id].append(friend.id)
+            else:
+                generatedGroups[usr.id] = [friend.id]
+            
+            if friend.id in generatedGroups:
+                generatedGroups[friend.id].append(usr.id)
+            else:
+                generatedGroups[friend.id] = [usr.id]
+    return grouplist
+            
+
+
 def generate_groups(s, amount):
-    groups = []
+    groups = generate_one_to_one_groups(s)
     printProgressBar(0, amount, prefix='Generating ~'+str(7*amount)+' groups...',
                      suffix='', length=50)
     for i in range(amount):
@@ -91,7 +113,8 @@ def generate_groups(s, amount):
             participants = [admin.id]
             friends = s.query(Friend).filter_by(userId=admin.id).all()
             # the use of min here avoids an infinite loop in the case where the amount of total users is too low (like ~10 ppl)
-            groupSize = randrange(len(friends))+1
+            # no lone 1 to 1 groups as they are unique and generated elsewhere
+            groupSize = randrange(len(friends))+2
             if groupSize == 2:
                 groupName = None
             else:
@@ -101,7 +124,8 @@ def generate_groups(s, amount):
             friendsId = [friend.friendId for friend in friends]
             for k in range(min(groupSize, len(friends))):
                 uid = friends[randrange(len(friends))].friendId
-                if sorted(participants) == sorted(friendsId+[admin.id]):# prevents endless loops in case user has too few friends
+                # prevents endless loops in case user has too few friends
+                if sorted(participants) == sorted(friendsId+[admin.id]):
                     break
                 while uid in participants:
                     uid = friends[randrange(len(friends))].friendId
@@ -145,14 +169,14 @@ def generate_friends(s, amount):
                 friends.append(Friend(
                     userId=i+1,
                     friendId=randomFriend,
-                    request_pending = False
+                    request_pending=False
                 ))
                 friendDict[i+1].append(randomFriend)
             if not friendDict.get(randomFriend) or i+1 not in friendDict.get(randomFriend):
                 friends.append(Friend(
                     userId=randomFriend,
                     friendId=i+1,
-                    request_pending = False
+                    request_pending=False
                 ))  # reciprocity of the first friend
                 if not friendDict.get(randomFriend):
                     friendDict[randomFriend] = []
