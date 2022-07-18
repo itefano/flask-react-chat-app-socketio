@@ -15,6 +15,7 @@ import Chat from "./components/Chat";
 import axios from "axios";
 import Story from "./components/Story";
 import AddUser from "./components/AddUser";
+import CreateGroup from "./components/CreateGroup";
 import SignUp from "./components/SignUp";
 
 function App() {
@@ -172,6 +173,15 @@ function App() {
                                     path="/addUser"
                                     element={
                                         <AddUser
+                                            token={token}
+                                        />
+                                    }
+                                />
+                                <Route
+                                    exact
+                                    path="/createGroup"
+                                    element={
+                                        <CreateGroup
                                             token={token}
                                         />
                                     }

@@ -29,7 +29,7 @@ def logout():
 def list_contacts():
     try:
         s = db_session()
-        user = s.query(User).filter_by(email=get_email()).one()
+        user = s.query(User).filter_by(email=get_email()).one() # idk why I used one() instead of first(). Inconsistency aside, we'll say it's because I like using an alternative version for practice
         q = s.query(Friend).filter_by(userId=user.id).all()
         res = []
         for e in q:
@@ -392,19 +392,38 @@ def get_stories():
     return {"stories": res}
 
 
-@routes.route('/creategroup', methods=['POST'])
+@routes.route('/createGroup', methods=['POST'])
 @jwt_required()
 def create_group():
     try:
         s = db_session()
         user = get_user(get_jwt_identity())
-        name = request.json.get("name", None)
+        emailList = request.json.get("emailList", None)
+        name = request.json.get('groupName', None)
+        if not name or name.strip()=="":
+            return {"error", "Group name unauthorized"}, 400
         picturePath = request.json.get("picturePath", None)
-        users = request.json.get("users", None)
+        users = []
+        for email in emailList:
+            u = s.query(User).filter_by(email=email.strip()).first()
+            if u:
+                users.append(u)
+            else:
+                pass#TODO: send an email to people who are not registered in the app?
+        # users = list(set(users)) # yeet dupes
+        newUsers = []
+        for u in users:# safer way to yeet dupes
+            for e in newUsers:
+                if u.id == e.id or u.id==get_jwt_identity():#can't add yourself, duh
+                    break
+            else:# evil warlock trick
+                newUsers.append(u)
+        newUsers.append(user)
         group = Group(name=name, picturePath=picturePath,
-                      users=users+[user], admins=[users])
+                      users=newUsers, admins=newUsers)
         s.add(group)
         s.commit()
+        lastrowid = group.id
     except Exception as e:
         s.close()
         if not TESTING:
@@ -413,7 +432,7 @@ def create_group():
             raise(e)
         return {"error": "Something went wrong"}, 500
     s.close()
-    return {"success": True}
+    return {"success": True, "roomId":lastrowid}
 
 
 @routes.route('/search', methods=['GET'])
@@ -475,7 +494,7 @@ def search():
                         if e['email'] == r.email:
                             isIn = True
                     if not isIn:
-                        groupForUser = s.query(Group).filter(Group.name==None).filter(
+                        groupForUser = s.query(Group).filter(Group.name == None).filter(
                             and_(Group.users.any(id=get_jwt_identity()), Group.users.any(id=r.id))).first()
                         minires = r.serialize
                         minires['groupId'] = groupForUser.id
@@ -494,7 +513,7 @@ def search():
 
 
 # ================== CREATES ====================
-# TODO: actually sort the routes, you lazy fuck
+# TODO: actually sort the routes
 @ routes.route('/signup', methods=['POST'])
 def create_user():
     try:

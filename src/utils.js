@@ -1,0 +1,3 @@
+export function is_email(input_str) {
+    return /^[a-z0-9.]{1,64}@[a-z0-9.]{1,255}$/i.test(input_str); //stolen from the internet but reworked to work with current adresses (old one said 1,64 for local & 1,64 for domain). How it works: basically it checks for alphanum and/or dots (.) before an '@', then same thing After that. You can note that it doesn't check for a domain extension, which is because 1): if it doesn't exist in backend, no need for it and 2): you should *technically* be able to access emails through an IP adress which does have a dot(.) in it, but not a *single* dot... Anyway, it works, leave me alone.
+}

@@ -9,7 +9,7 @@ import {
     Button,
     Snackbar
 } from "@mui/material";
-import { Navigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 function AddUser(props) {
     const [addUserForm, setAddUserForm] = useState({
@@ -93,7 +93,7 @@ function AddUser(props) {
         <Box sx={{ textAlign: "center" }} py={2}>
             <Container maxWidth="sm">
                 <Typography variant="h4" color="text.primary" pb={2}>
-                    Add user
+                    Add friend
                 </Typography>
                 <form
                     className="addUserForm"
@@ -125,7 +125,7 @@ function AddUser(props) {
                             ""
                         )}
                     </Box>
-                    <Button variant="outlined" type="submit">
+                    <Button variant="contained" type="submit" sx={{fontWeight:'bold'}}>
                         Add a friend
                     </Button>
                 </form>

@@ -39,7 +39,6 @@ export default function Chat(props) {
     }, [location.state.groupId]);
 
     const sendMessage = (e) => {
-        console.log("sending on:", roomId);
         if (
             value !== null &&
             value !== undefined &&
@@ -97,8 +96,9 @@ export default function Chat(props) {
                 Authorization: "Bearer " + props.token,
             },
         });
-        socket.current.on("connect", () => {
-            console.log("connected");
+        socket.current.on("connect", () => {//forgot why this was here
+            // console.log("connected");
+            ;
         });
         if (roomId) {
             socket.current.emit("join", { groupId: roomId });
@@ -112,7 +112,6 @@ export default function Chat(props) {
         //réceptions de messages
         //récupération des messages déjà existants
         if (roomId && roomId !== null && roomId !== undefined) {
-            console.log("getting:", roomId);
             axios({
                 method: "GET",
                 url: "/api/messagelist",

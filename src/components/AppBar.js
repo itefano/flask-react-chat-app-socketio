@@ -31,6 +31,7 @@ import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import DoneIcon from "@mui/icons-material/Done";
 import CloseIcon from "@mui/icons-material/Close";
+
 const Search = styled("div")(({ theme }) => ({
     position: "relative",
     borderRadius: theme.shape.borderRadius,
@@ -72,6 +73,32 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 export default function PrimarySearchAppBar(props) {
+    const getWindowDimensions = () => {
+        const { innerWidth: width, innerHeight: height } = window;
+        return {
+            width,
+            height,
+        };
+    };
+
+    const useWindowDimensions = () => {
+        const [windowDimensions, setWindowDimensions] = useState(
+            getWindowDimensions()
+        );
+
+        useEffect(() => {
+            function handleResize() {
+                setWindowDimensions(getWindowDimensions());
+            }
+
+            window.addEventListener("resize", handleResize);
+            return () => window.removeEventListener("resize", handleResize);
+        }, []);
+
+        return windowDimensions;
+    };
+
+    const { height, width } = useWindowDimensions();
     let navigate = useNavigate();
     const [checked, setChecked] = useState(true);
     const [openDrawer, setOpenDrawer] = useState(false);
@@ -277,16 +304,20 @@ export default function PrimarySearchAppBar(props) {
     // drawer contents :
 
     const drawerContents = () => (
-        <Paper role="presentation" sx={{ width: "400px" }}>
+        <Paper
+            square
+            role="presentation"
+            sx={{ width: "400px", overflow: "hidden" }}
+        >
             {/* <AddFriend/>
             <CreateGroup/> */}
             <Box
                 sx={{
-                    width: "100%",
                     display: "flex",
                     justifyContent: "flex-end",
                     flexDirection: "row",
                 }}
+                position="fixed"
             >
                 {props.token &&
                     props.token !== "" &&
@@ -342,15 +373,27 @@ export default function PrimarySearchAppBar(props) {
                 // onKeyDown={() => {
                 //     toggleDrawer(false);
                 // }}
-                sx={{ width: "100%" }}
+                sx={{
+                    width: "100%",
+                    marginTop: "55px",
+                    overflowY: "scroll",
+                    height: (height - 55).toString()+'px',//hacky af but I mean... it works, right?
+                }}
             >
-                <GroupList
-                    token={props.token}
-                    openSearch={openSearch}
-                    searchResults={searchResults}
-                    searchTerm={searchTerm}
-                    info={props.info}
-                />
+                <Box
+                    // onKeyDown={() => {
+                    //     toggleDrawer(false);
+                    // }}
+                    sx={{ width: "100%" }}
+                >
+                    <GroupList
+                        token={props.token}
+                        openSearch={openSearch}
+                        searchResults={searchResults}
+                        searchTerm={searchTerm}
+                        info={props.info}
+                    />
+                </Box>
             </Box>
         </Paper>
     );
@@ -403,7 +446,7 @@ export default function PrimarySearchAppBar(props) {
     };
 
     // const handleSearchMenuClose = () => {
-    //      setOpenSearch(false); 
+    //      setOpenSearch(false);
 
     // };
 
@@ -481,9 +524,9 @@ export default function PrimarySearchAppBar(props) {
                                 onClose={() => {
                                     toggleDrawer(false);
                                 }}
-                                // onOpen={() => {
-                                //     toggleDrawer(true);
-                                // }}
+                                onOpen={() => {
+                                    // toggleDrawer(true); //broken...?
+                                }}
                             >
                                 {drawerContents()}
                             </SwipeableDrawer>
@@ -491,7 +534,12 @@ export default function PrimarySearchAppBar(props) {
                     )}
                     <Link
                         to="/"
-                        style={{ textDecoration: "none", color: "inherit", display:'flex', alignItems:'center' }}
+                        style={{
+                            textDecoration: "none",
+                            color: "inherit",
+                            display: "flex",
+                            alignItems: "center",
+                        }}
                     >
                         <HomeIcon />
                         <Typography

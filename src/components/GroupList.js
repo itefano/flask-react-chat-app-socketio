@@ -50,7 +50,6 @@ export default function GroupList(props) {
                 {openSearch &&
                     searchResults.groupNames &&
                     searchResults.groupNames.map((e, index) => {
-                        console.log(e);
                         let groupName;
                         if (e.name)
                         {
@@ -119,6 +118,7 @@ export default function GroupList(props) {
                                 key={index}
                             >
                                 <Paper
+                                    square
                                     key={index}
                                     sx={{
                                         width: "100%",
@@ -236,6 +236,7 @@ export default function GroupList(props) {
                                 key={index}
                             >
                                 <Paper
+                                    square
                                     key={index}
                                     sx={{
                                         width: "100%",
@@ -312,6 +313,7 @@ export default function GroupList(props) {
                                     key={i}
                                 >
                                     <Paper
+                                        square
                                         sx={{
                                             width: "100%",
                                             display: "flex",
@@ -378,7 +380,7 @@ export default function GroupList(props) {
                             <ListItem sx={{ padding: "1px" }} key={i}>
                                 <Skeleton
                                     variant="rectangle"
-                                    width={280}
+                                    width="100%"
                                     height={80}
                                 />
                             </ListItem>
