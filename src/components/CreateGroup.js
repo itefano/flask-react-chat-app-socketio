@@ -14,6 +14,7 @@ import {
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import { useLocation, useNavigate } from "react-router-dom";
 import { is_email } from "../utils";
+//TODO: BUGFIX: fix broken sockets (delay too long from time to time)
 //TODO: Group edit & deletion, group exit, custom group admin, friendship remove, message edits, message replies, profile edit, account creation, file sending
 function CreateGroup(props) {
     const [createGroupForm, setAddUserForm] = useState({
