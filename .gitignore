@@ -7,7 +7,7 @@
 /venv
 # testing
 /coverage
-/api/uploads
+/api/uploads/*
 # production
 /build
 
