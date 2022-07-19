@@ -10,7 +10,7 @@ Créez l'environnement virtuel si vous ne l'avez pas déjà fait : `virtualenv v
 
 Lancez l'environement virtuel `source ./venv/bin/activate sur Mac et Linux` (`./venv/Scripts/activate` sur Windows)
 
-Installez les packages python : `pip3 install -r requirements.txt`
+Installez les packages python : `pip3 install -r requirements.txts`
 
 ## Préparation de la db : 
 
@@ -27,3 +27,35 @@ Pour lancer l'environement virtuel `source ./venv/bin/activate sur Mac et Linux`
 Pour lancer le front : `npm start`
 
 Pour lancer l'api : `npm run start-backend` ou bien `cd ./api/ && flask run`
+
+
+## Avancement :
+
+Back-end : ~80%
+Front-end : ~70%
+
+## Features fonctionnelles : 
+
+- Connexion/deconnexion
+- Génération de set d'identification factices
+- Ajout d'amis
+- Chat
+- Création de groupes
+- Réception de fichiers au format image (pas d'envoi pour l'instant)
+- Darkmode
+- Responsive
+- Recherche de groupes & de contact
+- Système de notifications
+- Affichage de stories
+
+
+## Fonctionnalitées futures :
+
+- Création de compte
+- Suppression de groupes et de contacts
+- Edition de groupes
+- Edition du profil
+- Envoi de fichiers multimedia
+- Invitations par email
+- Création de stories
+- Déconnexion automatique en cas de non-réponse du serveur
