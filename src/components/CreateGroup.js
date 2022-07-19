@@ -17,15 +17,11 @@ import { is_email } from "../utils";
 //TODO: BUGFIX: fix broken sockets (delay too long from time to time)
 //TODO: Group edit & deletion, group exit, custom group admin, friendship remove, message edits, message replies, profile edit, account creation, file sending
 function CreateGroup(props) {
-    const [createGroupForm, setAddUserForm] = useState({
-        email: "",
-    });
     const navigate = useNavigate();
     const [snackBarOpen, setSnackBarOpen] = useState(false);
     const [snackBarMessage, setSnackBarMessage] = useState("");
     const [inputValue, setInputValue] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
-    const [error, setError] = useState(false);
     const location = useLocation();
     const [friends, setFriends] = useState([]);
     const [groupName, setGroupName] = useState("");
@@ -82,7 +78,7 @@ function CreateGroup(props) {
                     console.log(error.response.headers);
                 }
             });
-    }, []);
+    }, [props.token]);
     useEffect(() => {
         if (
             location.state &&
@@ -114,7 +110,6 @@ function CreateGroup(props) {
             if (groupName && groupName !== "") {
                 setNameError(false);
                 setErrorMessage("");
-                setError(false);
                 setParticipantsError(false);
                 const data = new FormData();
                 data.append("file", file);
@@ -133,7 +128,6 @@ function CreateGroup(props) {
                     .then((response) => {
                         setSnackBarMessage(response.data.error);
                         setErrorMessage("");
-                        setError(false);
                         if (response.data.success === true) {
                             navigate("/chat", {
                                 state: { groupId: response.data.roomId },
@@ -154,7 +148,6 @@ function CreateGroup(props) {
                                     "Something went wrong. Please try again in a few seconds."
                                 );
                             }
-                            setError(true);
                             if (error.response.status !== 401) {
                                 console.log(error.response);
                                 console.log(error.response.status);
@@ -165,11 +158,9 @@ function CreateGroup(props) {
             } else {
                 setNameError(true);
                 setErrorMessage("Please enter a name for the group!");
-                setError(true);
             }
         } else {
             setParticipantsError(true);
-            setError(true);
             if (groupName && groupName !== "") {
                 setErrorMessage(
                     "Group chats need to have at least two (2) participants."
@@ -358,7 +349,6 @@ function CreateGroup(props) {
                                 variant="filled"
                                 onClose={() => {
                                     setErrorMessage("");
-                                    setError(false);
                                 }}
                             >
                                 {errorMessage}
