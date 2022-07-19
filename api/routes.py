@@ -1,8 +1,7 @@
 from click import option
-from utils import get_email, get_user, isSafe, isEmail
-from flask import Blueprint
+from utils import get_email, get_user, isSafe, isEmail, allowed_file
+from flask import Blueprint, send_from_directory, request, jsonify, current_app
 from database import db_session
-from flask import request, jsonify
 from flask_jwt_extended import create_access_token, get_jwt_identity, \
     unset_jwt_cookies, jwt_required, verify_jwt_in_request
 from dotenv import load_dotenv
@@ -11,6 +10,7 @@ from sqlalchemy import desc, or_, and_
 import bcrypt
 from datetime import datetime
 import os
+from werkzeug.utils import secure_filename
 load_dotenv()
 # I have zero explanation as to why I did it this way
 TESTING = os.getenv('TESTING')
@@ -29,7 +29,8 @@ def logout():
 def list_contacts():
     try:
         s = db_session()
-        user = s.query(User).filter_by(email=get_email()).one() # idk why I used one() instead of first(). Inconsistency aside, we'll say it's because I like using an alternative version for practice
+        # idk why I used one() instead of first(). Inconsistency aside, we'll say it's because I like using an alternative version for practice
+        user = s.query(User).filter_by(email=get_email()).one()
         q = s.query(Friend).filter_by(userId=user.id).all()
         res = []
         for e in q:
@@ -118,7 +119,6 @@ def get_info():
 def create_token():
     email = request.json.get("email", None)
     password = request.json.get("password", None)
-    print(email, password)
     try:
         s = db_session()
         salt = s.query(UserSalt).filter_by(email=email).first().salt
@@ -398,28 +398,36 @@ def create_group():
     try:
         s = db_session()
         user = get_user(get_jwt_identity())
-        emailList = request.json.get("emailList", None)
-        name = request.json.get('groupName', None)
-        if not name or name.strip()=="":
+        emailList = request.form.get("emailList", None)
+        name = request.form.get('groupName', None)
+        if 'file' not in request.files or not request.files['file'] or not allowed_file(request.files['file'].filename, current_app.config['ALLOWED_EXTENSIONS']):
+            url_name = None
+        else:
+            filename = secure_filename(request.files['file'].filename)
+            try:
+                request.files['file'].save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+                url_name = current_app.config['SERVER_LOC']+"api/showfile/"+filename # hacky, just for local management
+            except:
+                return {"error": "Image could not be uploaded properly"}, 500
+        if not name or name.strip() == "":
             return {"error", "Group name unauthorized"}, 400
-        picturePath = request.json.get("picturePath", None)
         users = []
         for email in emailList:
             u = s.query(User).filter_by(email=email.strip()).first()
             if u:
                 users.append(u)
             else:
-                pass#TODO: send an email to people who are not registered in the app?
+                pass  # TODO: send an email to people who are not registered in the app?
         # users = list(set(users)) # yeet dupes
         newUsers = []
-        for u in users:# safer way to yeet dupes
+        for u in users:  # safer way to yeet dupes
             for e in newUsers:
-                if u.id == e.id or u.id==get_jwt_identity():#can't add yourself, duh
+                if u.id == e.id or u.id == get_jwt_identity():  # can't add yourself, duh
                     break
-            else:# evil warlock trick
+            else:  # evil warlock trick
                 newUsers.append(u)
         newUsers.append(user)
-        group = Group(name=name, picturePath=picturePath,
+        group = Group(name=name, picturePath=url_name,
                       users=newUsers, admins=newUsers)
         s.add(group)
         s.commit()
@@ -432,8 +440,12 @@ def create_group():
             raise(e)
         return {"error": "Something went wrong"}, 500
     s.close()
-    return {"success": True, "roomId":lastrowid}
+    return {"success": True, "roomId": lastrowid}
 
+
+@routes.route('/showfile/<path:path>')
+def show_file(path):
+    return send_from_directory('uploads', path)
 
 @routes.route('/search', methods=['GET'])
 @jwt_required()
@@ -514,7 +526,7 @@ def search():
 
 # ================== CREATES ====================
 # TODO: actually sort the routes
-@ routes.route('/signup', methods=['POST'])
+@routes.route('/signup', methods=['POST'])
 def create_user():
     try:
         s = db_session()
@@ -553,8 +565,8 @@ def create_user():
     return {"success": True}
 
 
-@ routes.route('/addUser', methods=['POST'])
-@ jwt_required()
+@routes.route('/addUser', methods=['POST'])
+@jwt_required()
 def addUser():
     try:
         s = db_session()
@@ -588,8 +600,8 @@ def addUser():
     return {"message": "User was successfully added. They will get a request that they will have to accept before you can start communicating with them."}
 
 
-@ routes.route('/setFriendRequest', methods=['POST'])
-@ jwt_required()
+@routes.route('/setFriendRequest', methods=['POST'])
+@jwt_required()
 def setFriendRequest():
     try:
         s = db_session()

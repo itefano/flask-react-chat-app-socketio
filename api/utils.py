@@ -3,6 +3,9 @@ from flask_jwt_extended import get_jwt_identity
 
 import models
 
+def allowed_file(filename, ALLOWED_EXTENSIONS):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def get_user(id):
     s = db_session()

@@ -14,7 +14,7 @@ import {
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import { useLocation, useNavigate } from "react-router-dom";
 import { is_email } from "../utils";
-//TODO: Add group picture, Group edit & deletion, group exit, custom group admin, friendship remove, message edits, message replies, profile edit, account creation, file sending
+//TODO: Group edit & deletion, group exit, custom group admin, friendship remove, message edits, message replies, profile edit, account creation, file sending
 function CreateGroup(props) {
     const [createGroupForm, setAddUserForm] = useState({
         email: "",
@@ -32,6 +32,7 @@ function CreateGroup(props) {
     const [participantsError, setParticipantsError] = useState(false);
     const [participantFieldValues, setParticipantFieldValues] = useState([]); //for the controlled prop display
     const [participantList, setParticipantList] = useState([]); //for the rest
+    const [file, setFile] = useState(null);
     const updateParticipants = (info) => {
         if (typeof info[info.length - 1] === "string") {
             //for custom entered values (emails)
@@ -114,15 +115,18 @@ function CreateGroup(props) {
                 setErrorMessage("");
                 setError(false);
                 setParticipantsError(false);
+                const data = new FormData();
+                data.append("file", file);
+                data.append("emailList", participantList);
+                data.append("groupName", groupName); 
+                
                 axios({
                     method: "POST",
                     url: "/api/createGroup",
-                    data: {
-                        emailList: participantList,
-                        groupName: groupName,
-                    },
+                    data: data,
                     headers: {
-                        Authorization: "Bearer " + props.token,
+                        "Content-Type": "multipart/form-data",
+                        "Authorization": "Bearer " + props.token,
                     },
                 })
                     .then((response) => {
@@ -332,6 +336,7 @@ function CreateGroup(props) {
                                     accept="image/*"
                                     multiple
                                     type="file"
+                                    onChange={(e)=>{setFile(e.target.files[0])}}
                                 />
                             </Button>
                             <IconButton
@@ -339,7 +344,8 @@ function CreateGroup(props) {
                                 aria-label="upload picture"
                                 component="label"
                             >
-                                <input hidden accept="image/*" type="file" />
+                                <input hidden accept="image/*" type="file"
+                                    onChange={(e)=>{setFile(e.target.files[0])}} />
                                 <PhotoCamera />
                             </IconButton>
                         </Box>
