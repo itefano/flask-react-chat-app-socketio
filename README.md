@@ -31,9 +31,13 @@ Pour lancer l'api : `npm run start-backend` ou bien `cd ./api/ && flask run`
 
 ## Avancement :
 
-Back-end :  ████████▁▁ ~80%
+Back-end : 
 
-Front-end : ███████▁▁▁ ~70%
+████████▁▁ ~80%
+
+Front-end : 
+
+███████▁▁▁ ~70%
 
 ## Features fonctionnelles : 
 
