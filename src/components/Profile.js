@@ -7,7 +7,7 @@ import {
     Typography,
     FormGroup,
     Button,
-    Skeleton
+    Skeleton,
 } from "@mui/material";
 import { Box } from "@mui/system";
 
@@ -40,7 +40,7 @@ function Profile(props) {
     return (
         <Paper className="Profile" sx={{ display: "flex" }}>
             <Container maxWidth="sm" sx={{}}>
-                <Typography variant="h1">Your profile : </Typography>
+                <Typography variant="h3">Your profile </Typography>
 
                 {!profileData ? (
                     <>
@@ -94,19 +94,19 @@ function Profile(props) {
                                 }}
                             />
                         </FormGroup>
-                        <img
-                            src={profileData["profilePicturePath"]}
-                            width="300"
-                        />
-                        ;
+                        <Typography>Profile Picture</Typography>
+                        <FormGroup>
+                            <img
+                                src={profileData["profilePicturePath"]}
+                                width="300"
+                            />
+                        </FormGroup>
                     </>
                 )}
-                <Box sx={{ textAlign: "center" }}>
+
+                <Box sx={{ textAlign: "center", pt:3 }}>
                     {" "}
-                    <Button variant="outlined">
-                        {" "}
-                        Enregistrer les modifications{" "}
-                    </Button>
+                    <Button variant="contained"> Confirm Edits </Button>
                 </Box>
             </Container>
         </Paper>

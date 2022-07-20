@@ -39,7 +39,7 @@ Front-end : ~70%
 - Connexion/deconnexion
 - Génération de set d'identification factices
 - Ajout d'amis
-- Chat
+- Chat (malgré une latence apparente)
 - Création de groupes
 - Réception de fichiers au format image (pas d'envoi pour l'instant)
 - Darkmode

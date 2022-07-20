@@ -11,8 +11,10 @@ import {
     InputLabel,
     MenuItem,
     FormControl,
+    IconButton,
 } from "@mui/material";
-import {useNavigate} from "react-router-dom";
+import PhotoCamera from "@mui/icons-material/PhotoCamera";
+import { useNavigate } from "react-router-dom";
 
 export default function SignUp(props) {
     const navigate = useNavigate();
@@ -23,52 +25,81 @@ export default function SignUp(props) {
         firstName: "",
         lastName: "",
         gender: "",
-        profilePicture: "",
     });
     const [errorPassword, setErrorPassword] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
-    const [error, setError] = useState(false);
+    const [file, setFile] = useState(null);
+    const [error, setError] = useState({
+        email: false,
+        firstName: false,
+        lastName: false,
+        password: false,
+        profilePicture: false,
+        gender: false,
+    });
     function logMeIn(event) {
         if (signUpForm.password1 !== signUpForm.password2) {
             setErrorPassword(true);
             setErrorMessage("Passwords don't match.");
         } else {
-            if (signUpForm.email !== "" && signUpForm.password !== "") {
+            if (
+                signUpForm.email !== "" &&
+                signUpForm.password1 !== "" &&
+                signUpForm.password2 !== ""
+            ) {
+                const formData = new FormData();
+                for (const [k, v] of Object.entries(signUpForm)) {
+                    if (v && v.length > 0) {
+                        formData.append(k, v);
+                    }
+                }
+                formData.append("file", file);
                 axios({
                     method: "POST",
                     url: "/api/signup",
-                    data: {
-                        email: signUpForm.email,
-                        firstName: signUpForm.firstName,
-                        password1: signUpForm.password1,
-                        password2: signUpForm.password2,
-                        lastName: signUpForm.lastName,
-                        gender: signUpForm.gender,
-                        profilePicture: signUpForm.profilePicture,
+                    data: formData,
+                    headers: {
+                        "Content-Type": "multipart/form-data",
                     },
                 })
                     .then((response) => {
-                        navigate('/login', { state: { successMsg:'Account created successfully!' }});
+                        navigate("/login", {
+                            state: {
+                                successMsg: "Account created successfully!",
+                            },
+                        });
                     })
-                    .catch((error) => {
-                        if (error.response) {
+                    .catch((err) => {
+                        if (err.response) {
                             if (
-                                error.response.data.msg &&
-                                error.response.data.msg !== "" &&
-                                error.response.data.msg !== null &&
-                                error.response.data.msg !== undefined
+                                err.response.data.error &&
+                                err.response.data.error !== "" &&
+                                err.response.data.error !== null &&
+                                err.response.data.error !== undefined
                             ) {
-                                setErrorMessage(error.response.data.msg);
+                                setErrorMessage(err.response.data.error);
                             } else {
                                 setErrorMessage(
                                     "Something went wrong. Please try again in a few seconds."
                                 );
                             }
-                            setError(true);
-                            if (error.response.status !== 401) {
-                                console.log(error.response);
-                                console.log(error.response.status);
-                                console.log(error.response.headers);
+                            setError((prevState)=>{
+                                const nState = {...prevState};
+                                for (const k of Object.keys(nState)) {
+                                    if (k === err.response.data.errorToSet)
+                                    {
+                                        nState[k] = true;
+                                    }
+                                    else {
+                                        nState[k] = false;
+                                    }
+                                }
+                                return nState;
+                            });
+                            if (err.response.status !== 401) {
+                                console.log(err.response);
+                                console.log(err.response.status);
+                                console.log(err.response.headers);
                             }
                         }
                     });
@@ -87,7 +118,7 @@ export default function SignUp(props) {
         <Box sx={{ textAlign: "center" }} py={2}>
             <Container maxWidth="sm">
                 <Typography variant="h4" color="text.primary" pb={2}>
-                    Login
+                    Sign up
                 </Typography>
                 <form
                     className="login"
@@ -99,29 +130,33 @@ export default function SignUp(props) {
                         type="text"
                         text={signUpForm.email}
                         name="email"
-                        placeholder="Email"
+                        label="Email"
+                        placeholder="Ex: email@domain.com"
                         value={signUpForm.email}
-                        error={error}
+                        error={error.email}
                         sx={{ paddingBottom: "1rem" }}
                     />
 
                     <TextField
                         onChange={handleChange}
+                        label="Password"
                         type="password"
                         text={signUpForm.password1}
                         name="password1"
                         placeholder="Password"
                         value={signUpForm.password1}
-                        error={errorPassword}
+                        error={error.password}
+                        sx={{ paddingBottom: "1rem" }}
                     />
                     <TextField
                         onChange={handleChange}
+                        label="Confirm password"
                         type="password"
                         text={signUpForm.password2}
                         name="password2"
                         placeholder="Confirm Password"
                         value={signUpForm.password2}
-                        error={errorPassword}
+                        error={error.password}
                         sx={{ paddingBottom: "1rem" }}
                     />
 
@@ -129,10 +164,11 @@ export default function SignUp(props) {
                         onChange={handleChange}
                         type="text"
                         text={signUpForm.firstName}
+                        label="First Name"
                         name="firstName"
-                        placeholder="First Name"
+                        placeholder="John"
                         value={signUpForm.firstName}
-                        error={error}
+                        error={error.firstName}
                         sx={{ paddingBottom: "1rem" }}
                     />
 
@@ -140,40 +176,95 @@ export default function SignUp(props) {
                         onChange={handleChange}
                         type="text"
                         text={signUpForm.lastName}
+                        label="Last Name"
                         name="lastName"
-                        placeholder="Last Name"
+                        placeholder="Doe"
                         value={signUpForm.lastName}
-                        error={error}
+                        error={error.lastName}
                         sx={{ paddingBottom: "1rem" }}
                     />
-                    <FormControl fullWidth>
-                        <InputLabel id="genderSelect-label">Gender</InputLabel>
-                        <Select
-                            labelId="genderSelect-label"
-                            id="genderSelect"
-                            value={signUpForm.gender}
-                            label="Gender"
-                            name="gender"
-                            onChange={handleChange}
-                            sx={{textAlign:"left"}}
-                        >
-                            <MenuItem value="Female">Female</MenuItem>
-                            <MenuItem value="Male">Male</MenuItem>
-                            <MenuItem value="Non-binary">Non-binary</MenuItem>
-                            <MenuItem value="Other">Other</MenuItem>
-                            <MenuItem value="Unknown">
-                                Prefer not to say
-                            </MenuItem>
-                        </Select>
-                    </FormControl>
-                    <Box width="100%" sx={{ margin: "auto" }} py={2}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                        }}
+                    >
+                        <Box width="60%">
+                            <FormControl fullWidth>
+                                <InputLabel id="genderSelect-label">
+                                    Gender
+                                </InputLabel>
+                                <Select
+                                    labelId="genderSelect-label"
+                                    id="genderSelect"
+                                    value={signUpForm.gender}
+                                    label="Gender"
+                                    error={error.gender}
+                                    name="gender"
+                                    onChange={handleChange}
+                                    sx={{ textAlign: "left" }}
+                                >
+                                    <MenuItem value="Female">Female</MenuItem>
+                                    <MenuItem value="Male">Male</MenuItem>
+                                    <MenuItem value="Non-binary">
+                                        Non-binary
+                                    </MenuItem>
+                                    <MenuItem value="Other">Other</MenuItem>
+                                    <MenuItem value="Unknown">
+                                        Prefer not to say
+                                    </MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+
+                        <Box pl={2}>
+                            <Button
+                                variant="outlined"
+                                color={
+                                    error.profilePicture ? "error" : "primary"
+                                }
+                                component="label"
+                            >
+                                <Typography variant="p">
+                                    Profile Picture
+                                </Typography>
+                                <input
+                                    hidden
+                                    accept="image/*"
+                                    multiple
+                                    type="file"
+                                    onChange={(e) => {
+                                        setFile(e.target.files[0]);
+                                    }}
+                                />
+                            </Button>
+                            <IconButton
+                                color={
+                                    error.profilePicture ? "error" : "primary"
+                                }
+                                aria-label="upload picture"
+                                component="label"
+                            >
+                                <input
+                                    hidden
+                                    accept="image/*"
+                                    type="file"
+                                    onChange={(e) => {
+                                        setFile(e.target.files[0]);
+                                    }}
+                                />
+                                <PhotoCamera />
+                            </IconButton>
+                        </Box>
+                    </Box>
+                    <Box width="100%" sx={{ margin: "auto" }} py={1}>
                         {errorMessage !== "" ? (
                             <Alert
                                 severity="error"
                                 variant="filled"
                                 onClose={() => {
                                     setErrorMessage("");
-                                    setError(false);
                                 }}
                             >
                                 {errorMessage}
@@ -182,8 +273,8 @@ export default function SignUp(props) {
                             ""
                         )}
                     </Box>
-                    <Button variant="outlined" type="submit">
-                        Submit
+                    <Button variant="contained" type="submit">
+                        Sign up
                     </Button>
                 </form>
             </Container>

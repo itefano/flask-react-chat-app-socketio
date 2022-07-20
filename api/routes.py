@@ -121,12 +121,15 @@ def create_token():
     password = request.json.get("password", None)
     try:
         s = db_session()
-        salt = s.query(UserSalt).filter_by(email=email).first().salt
+        userTry = salt = s.query(UserSalt).filter_by(email=email).first()
+        if not userTry:
+            return {"msg": "Wrong email"}, 401
+        salt = userTry.salt
         # to edit to account for password hashing
         user = s.query(User).filter_by(
             email=email, password=bcrypt.hashpw(password=str.encode(password, 'utf-8'), salt=salt)).first()
         if not user:
-            return {"msg": "Wrong email or password"}, 401
+            return {"msg": "Wrong password"}, 401
         access_token = create_access_token(identity=user.id)
         notifications = user.get_notification_amount()
         response = {"access_token": access_token,
@@ -530,27 +533,43 @@ def search():
 def create_user():
     try:
         s = db_session()
-        firstName = request.json.get("firstName", None)
-        lastName = request.json.get("lastName", None)
-        email = request.json.get("email", None)
-
-        password1 = request.json.get("password1", None)
-        password2 = request.json.get("password2", None)
+        firstName = request.form.get("firstName", None)
+        lastName = request.form.get("lastName", None)
+        email = request.form.get("email", None)
+        userExists = s.query(User).filter_by(email=email).first()
+        if userExists:
+            return {"error": "This email address is already in use", "errorToSet" : "email"}, 403
+        if not firstName or len(firstName.strip())==0 :
+            return {"error": "First name is invalid", "errorToSet" : "firstName"}, 403
+        if not lastName or len(lastName.strip())==0 :
+            return {"error": "Last name is invalid", "errorToSet" : "lastName"}, 403
+        if 'file' not in request.files or not request.files['file'] or not allowed_file(request.files['file'].filename, current_app.config['ALLOWED_EXTENSIONS']):
+            url_name = None
+        else:
+            filename = secure_filename(request.files['file'].filename)
+            try:
+                request.files['file'].save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+                url_name = current_app.config['SERVER_LOC']+"api/showfile/"+filename # hacky, just for local management
+            except:
+                return {"error": "Image could not be uploaded properly", "errorToSet": "Image"}, 500
+        password1 = request.form.get("password1", None)
+        password2 = request.form.get("password2", None)
         if password1 != password2:
             return {"error": "Passwords don't match!"}, 403
-        gender = request.json.get("gender", None)
+        gender = request.form.get("gender", None)
+        if gender and gender not in ["Female", "Male", "Non-binary", "Other", "Prefer not to say"] :
+            return {"error": "Gender collection here is only used for demographic statistical studies.Please use one of the genders listed in the field. If none fits your current gender, chose other.", "errorToSet" : "gender"}, 403
+            
         isAdmin = False
-        profilePicturePath = request.json.get('profilePicturePath', None)
         if not isSafe(password1) or not email or not isEmail(email):
             s.close()
-            # TODO: Front-End check first.
-            return {"error": "Password isn't safe"}
+            return {"error": "Password isn't safe", "errorToSet" : "password"}, 403
         salt = bcrypt.gensalt()
         password = bcrypt.hashpw(password=str.encode(
             password1, 'utf-8'), salt=salt)
         userSalt = UserSalt(email=email, salt=salt)
-        user = User(firstName=firstName, lastName=lastName, email=email, password=password,
-                    gender=gender, isAdmin=isAdmin, profilePicturePath=profilePicturePath)
+        user = User(firstName=firstName.strip(), lastName=lastName.strip(), email=email, password=password,
+                    gender=gender, isAdmin=isAdmin, profilePicturePath=url_name)
         s.add(userSalt)
         s.add(user)
         s.commit()
