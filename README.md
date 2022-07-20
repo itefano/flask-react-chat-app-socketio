@@ -37,6 +37,7 @@ Front-end : ~70%
 ## Features fonctionnelles : 
 
 - Connexion/deconnexion
+- Création de compte
 - Génération de set d'identification factices
 - Ajout d'amis
 - Chat (malgré une latence apparente)
@@ -51,7 +52,6 @@ Front-end : ~70%
 
 ## Fonctionnalitées futures :
 
-- Création de compte
 - Suppression de groupes et de contacts
 - Edition de groupes
 - Edition du profil
