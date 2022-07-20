@@ -58,4 +58,5 @@ Front-end : ~70%
 - Envoi de fichiers multimedia
 - Invitations par email
 - Création de stories
+- Déconnexion/reconnexion automatique des sockets
 - Déconnexion automatique en cas de non-réponse du serveur
