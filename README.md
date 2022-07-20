@@ -12,7 +12,7 @@ Lancez l'environement virtuel `source ./venv/bin/activate sur Mac et Linux` (`./
 
 Installez les packages python : `pip3 install -r requirements.txts`
 
-## Préparation de la db : 
+## Préparation de la db (PostgreSQL): 
 
 Création de la db (via les models) : `python3 ./api/init_db.py`
 
