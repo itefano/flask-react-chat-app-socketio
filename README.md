@@ -77,11 +77,11 @@ Front-end:
 ---
 
 
-## [Français :fr:] Description
+# [Français :fr:] React-Flask (Socketio) - Appli de chat instantanée
+
+## Description
 
 > Ce projet est une simple appli de chat instantanée sans but particulier. J'essaye d'en apprendre un peu plus sur React, Flask, SQLAlchemy et SocketIO. Je travaillerai sur l'appli au fil de l'eau quand j'en aurais l'envie, mais n'hésitez pas à me faire du feedback **constructif** là où vous en verrez le besoin.
-
-# React-Flask (Socketio) - Appli de chat instantanée
 
 ## Étapes d'installation :
 
