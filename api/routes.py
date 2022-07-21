@@ -411,7 +411,6 @@ def search():
             for i in range(len(search_term.split(' '))):
                 # takes the first n words as first names
                 firstName = ' '.join(search_term.split(' ')[:i])
-                # takes the first n words as first names
                 lastName = ' '.join(search_term.split(' ')[i:])
                 firstLastNames.extend(s.query(User).join(Friend, Friend.friendId == User.id).filter(Friend.userId == user.id).filter(User.firstName.ilike(
                     "%{}%".format(firstName))).filter(User.lastName.ilike("%{}%".format(lastName))).order_by(desc(User.id)).all())  # unholy abomination
@@ -507,7 +506,7 @@ def create_user():
             return {"error": "Passwords don't match!"}, 403
         gender = request.form.get("gender", None)
         if gender and gender not in ["Female", "Male", "Non-binary", "Other", "Prefer not to say"] :
-            return {"error": "Gender collection here is only used for demographic statistical studies.Please use one of the genders listed in the field. If none fits your current gender, chose other.", "errorToSet" : "gender"}, 403
+            return {"error": "Gender collection here is only used for demographic statistical studies. Please use one of the genders listed in the field. If none fits your current gender, chose \"Other\".", "errorToSet" : "gender"}, 403 # you might be wondering why I'm using \" instead of ` so much, well the truth is that-
             
         isAdmin = False
         if not isSafe(password1) or not email or not isEmail(email):
