@@ -23,7 +23,7 @@ function Profile(props) {
         })
             .then((response) => {
                 const res = response.data;
-                // res.access_token && props.setToken(res.access_token);
+                // res.access_token && props.setToken(res.access_token); //why was this here again...?
                 setProfileData(res);
             })
             .catch((error) => {

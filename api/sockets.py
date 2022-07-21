@@ -13,7 +13,7 @@ def client_ack():
     print('message was gotten')
 
 def message_received():
-    # renvoie une notification au back end en cas de réception de message
+    # sends a notification to the back-end whenever a message is recieved. Idk why.
     print('message was received!!!')
 
 @socketio.on("join", namespace="/chat")
@@ -23,7 +23,7 @@ def join_group(jsonresponse):
     if groupId:
         s = db_session()
         users = [e.id for e in models.Group.query.get(
-            jsonresponse['groupId']).users]# vérifie que l'user est bien dans un groupe
+            jsonresponse['groupId']).users]# checks that the user does indeed belong to a group
         if (get_user(get_jwt_identity()).id not in users):
             s.close()
             return {"errorMessage": "User does not have access to this group. How the hell did you get here?"}, 404
@@ -41,7 +41,6 @@ def leave_group(jsonresponse):
     groupId = jsonresponse.get("groupId")
     if groupId:
         s = db_session()
-        # vérifie que l'user est bien dans un groupe
         users = [e.id for e in models.Group.query.get(
             jsonresponse['groupId']).users]
         if (get_user(get_jwt_identity()) in users):

@@ -30,6 +30,7 @@ export default function Homepage(props) {
                 })
                     .then((response) => {
                         setStories(response.data); //TODO: group stories by user to make singletons
+                        //seems like I forgot what I meant in the above comment in the meantime. Eh, I'll re-figure it out eventually.
                     })
                     .catch((error) => {
                         setStories([]);

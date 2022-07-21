@@ -54,7 +54,7 @@ export default function Chat(props) {
     const [editGroupOpen, setEditGroupOpen] = useState(false);
     const [userId, setUserId] = useState(null);
     const location = useLocation();
-    const socket = useRef(null); //l'utilisation d'une ref permet de garder la connexion ouverte lors d'un re-render de composants
+    const socket = useRef(null); //use of ref allows us to re-render components while keeping the connexion active
     const [groupInfo, setGroupInfo] = useState(null);
     const [messages, setMessages] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
@@ -235,8 +235,7 @@ export default function Chat(props) {
     }, [roomId, props.token]);
 
     useEffect(() => {
-        //réceptions de messages
-        //récupération des messages déjà existants
+        //message reception
         if (
             roomId &&
             roomId !== null &&
@@ -269,7 +268,7 @@ export default function Chat(props) {
                 });
 
             return () => {
-                socket.current.disconnect(); //not sure which one of these two I should be using
+                socket.current.disconnect(); //not sure which one I should be using
                 props.setRoom(null);
             };
         }
@@ -347,7 +346,8 @@ export default function Chat(props) {
                                 color: "primary.main",
                             }}
                         >
-                            {messages !== null && //on vérifie qu'il y a bien des message
+                            {messages !== null && //we check whether we actually have messages here
+                            //forgot why this comment was there. I'd have done this no matter what. What did I mean by that? WHY AM I SO MYSTERIOUS?
                             messages !== undefined &&
                             messages.length > 0
                                 ? mapMessages(messages).map(

@@ -48,7 +48,7 @@ export default function Groups(props) {
     }, [roomId]);
 
     useEffect(() => {
-        //récupération de la liste des groupes
+        //gets list of groups
         props.setRoom(null);
         axios({
             method: "GET",
