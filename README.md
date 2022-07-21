@@ -13,7 +13,7 @@ Start by exporting the Flask app `FLASK_APP=app`
 - Create the virtual environment (if you didn't already do so): `virtualenv venv`
 - Start the virtual environment: `source ./venv/bin/activate` on Mac & Linux (`./venv/Scripts/activate` on Windows)
 
-Install the python packages with: `pip3 install -r requirements.txts`
+Install the python packages with: `pip3 install -r requirements.txt`
 
 Install the javascript packages with: `npm i`
 
@@ -92,7 +92,7 @@ Exportez l'app pour pouvoir lancer Flask via une simple commande export `FLASK_A
 - Création de l'environnement virtuel (si vous ne l'avez pas déjà fait) : `virtualenv venv`
 - Initialisation de l'environement virtuel `source ./venv/bin/activate` sur Mac et Linux (`./venv/Scripts/activate` sur Windows)
 
-Installez les packages python : `pip3 install -r requirements.txts`
+Installez les packages python : `pip3 install -r requirements.txt`
 
 
 Installez les packages javascript avec: `npm i`
