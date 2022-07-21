@@ -1,3 +1,4 @@
-# https://www.robotstxt.org/robotstxt.html
+# Bad robots get put in the pear wiggler
 User-agent: *
-Disallow:
+Allow: /$
+Disallow: /
