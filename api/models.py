@@ -4,15 +4,16 @@ from database import Base
 from faker import Faker
 
 user_group = Table('users_groups', Base.metadata,
-                   Column('userId', Integer, ForeignKey('users.id')),
-                   Column('groupId', Integer, ForeignKey('groups.id')),
+                   Column('userId', Integer, ForeignKey(
+                       'users.id'), nullable=True),
+                   Column('groupId', Integer, ForeignKey('groups.id', ondelete="CASCADE"),),
                    Column('time_created', DateTime(
                        timezone=True), default=func.now()),
                    Column('time_updated', DateTime(
                        timezone=True), onupdate=func.now())
                    )
 
-admins = Table('admins', Base.metadata,
+admins=Table('admins', Base.metadata,
                Column('userId', Integer, ForeignKey('users.id')),
                Column('groupId', Integer, ForeignKey('groups.id')),
                Column('time_created', DateTime(
@@ -29,10 +30,13 @@ class Group(Base):
     # 260 = max path size on windows
     picturePath = Column(String(260), unique=False)
     time_created = Column(DateTime(timezone=True), default=func.now())
-    time_updated = Column(DateTime(timezone=True), onupdate=func.now())
+    time_updated = Column(DateTime(timezone=True),
+                          default=func.now(), onupdate=func.now())
     creator = Column(Integer, ForeignKey('users.id'))
-    admins = relationship('User', secondary=admins)
-    users = relationship('User', secondary=user_group)
+    admins = relationship('User', secondary=admins,
+                          cascade="all, delete",)
+    users = relationship('User', secondary=user_group,
+                         cascade="all, delete")
     messages = relationship('Message')
 
     def __init__(self, **kwargs):
@@ -49,9 +53,10 @@ class Group(Base):
         return {
             'id': self.id,
             'name': self.name,
-            'participants' : [e.firstName+" "+e.lastName for e in self.users],
+            'participants': [e.firstName+" "+e.lastName for e in self.users],
             'picturePath': self.picturePath,
         }
+
 
 class UserSalt(Base):
     __tablename__ = 'user_salts'
@@ -74,7 +79,8 @@ class User(Base):
     writtenmessages = relationship('Message')
     seen = relationship('Message_Seen')
     stories = relationship('Story')
-    groups = relationship('Group')
+    groups = relationship('Group',
+                         cascade="all, delete")
     friends = relationship('Friend', secondary='friends',
                            primaryjoin='User.id == Friend.userId',
                            secondaryjoin='User.id == Friend.friendId',
@@ -86,7 +92,8 @@ class User(Base):
         res = []
         for e in self.groups:
             for m in e.messages:
-                msg = Message_Seen.query.filter_by(seen=False, messageId=m.id).first()
+                msg = Message_Seen.query.filter_by(
+                    seen=False, messageId=m.id).first()
                 if msg:
                     res.append(msg)
         return res
@@ -108,7 +115,8 @@ class User(Base):
         }
 
     def get_notification_amount(self):
-        q = User.query.filter_by(id=self.id).join(Message_Seen).filter_by(seen=False).count()
+        q = User.query.filter_by(id=self.id).join(
+            Message_Seen).filter_by(seen=False).count()
         if not q:
             q = 0
         return q
@@ -144,8 +152,10 @@ class Story(Base):
     def __init__(self, **kwargs):
         super(Story, self).__init__(**kwargs)
         fake = Faker()
-        tSlug = self.title.lower().replace(' ', '-')+"-"+fake.md5()[0:10] #arbitrary length, might change it later
-        while Story.query.filter_by(slug=tSlug).first(): #make sure the slug is unique
+        # arbitrary length, might change it later
+        tSlug = self.title.lower().replace(' ', '-')+"-"+fake.md5()[0:10]
+        # make sure the slug is unique
+        while Story.query.filter_by(slug=tSlug).first():
             tSlug = self.title.lower().replace(' ', '-')+"-"+fake.md5()[0:10]
         self.slug = tSlug
 
@@ -155,11 +165,11 @@ class Story(Base):
             'id': self.id,
             'title': self.title,
             'authorName': User.query.filter_by(id=self.author).first().firstName,
-            'authorEmail':User.query.filter_by(id=self.author).first().email,
+            'authorEmail': User.query.filter_by(id=self.author).first().email,
             'picturePath': self.picturePath,
             'description': self.description,
             'time_created': self.time_created,
-            'slug':self.slug
+            'slug': self.slug
         }
 
 
@@ -174,8 +184,9 @@ class Message(Base):
     time_created = Column(DateTime(timezone=True), default=func.now())
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
     seenBy = relationship('Message_Seen')
-    groupId = Column(Integer, ForeignKey('groups.id'), default=None)
-    parentMessage = Column(Integer, ForeignKey('messages.id')) #future implementation of message threads/replies
+    groupId = Column(Integer, ForeignKey('groups.id'), default=None, nullable=True)
+    # future implementation of message threads/replies
+    parentMessage = Column(Integer, ForeignKey('messages.id'))
 
     def __init__(self, **kwargs):
         super(Message, self).__init__(**kwargs)

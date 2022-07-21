@@ -41,7 +41,7 @@ def list_contacts():
     except Exception as e:
         s.close()
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         return {"error": "Something went wrong"}, 500
@@ -64,7 +64,7 @@ def check_room():
     except Exception as e:
         s.close()
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         return {"error": "Something went wrong"}, 500
@@ -89,7 +89,7 @@ def my_profile():  # to be completed later
     except Exception as e:
         s.close()
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         return {"error": "Session desynchronized"}, 401
@@ -103,7 +103,7 @@ def get_info():
         user = get_user(get_jwt_identity())
     except Exception as e:
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         return {"error": "Something went wrong"}, 500
@@ -140,7 +140,7 @@ def create_token():
     except Exception as e:
         s.close()
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         return {"msg": "Something went wrong"}, 500
@@ -177,7 +177,7 @@ def list_groups():
     except Exception as e:
         s.close()
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         return {"msg": "Something went wrong"}, 500
@@ -191,6 +191,8 @@ def list_messages():
     try:
         s = db_session()
         group = s.query(Group).get(groupId)
+        if not group:
+            return {"error":"How did you get here?"}, 403
         # vérifie que l'user est bien dans un groupe
         users = [e for e in s.query(Group).get(groupId).users]
         if (get_jwt_identity() not in [e.id for e in users]):
@@ -232,14 +234,14 @@ def list_messages():
                     "email": sender.email
                 },
                 "timestamp": m.time_created})
-        groupInfo = {"name": name, "picturePath": group.picturePath}
+        groupInfo = {"name": name, "picturePath": group.picturePath, "admins": [a.id for a in group.admins], "users":[u.firstName for u in group.users]}
         res = {"messages": messageList, "groupInfo": groupInfo,
-               "currentUser": get_email()}
+               "currentUser": get_email(), "currentUserId":get_jwt_identity()}
         s.close()
     except Exception as e:
         s.close()
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         return {"error": "Something went wrong"}, 500
@@ -253,7 +255,7 @@ def list_unread_messages():
         s = db_session()
         # vérifie que l'user est bien dans un groupe
         totalUnreadMessages = s.query(Message_Seen, Message, User).filter_by(userId=get_jwt_identity(), seen=False).join(
-            Message, Message_Seen.messageId == Message.id).join(User, User.id == Message.author).all()
+            Message, Message_Seen.messageId == Message.id).join(User, User.id == Message.author).order_by(Message.time_created.desc()).all()
         friendRequests = s.query(Friend).filter_by(
             friendId=get_jwt_identity(), request_pending=True).all()
         friendRequestsTotal = []
@@ -279,7 +281,7 @@ def list_unread_messages():
     except Exception as e:
         s.close()
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         return {"error": "Something went wrong"}, 500
@@ -300,7 +302,7 @@ def mark_all_as_read():
     except Exception as e:
         s.close()
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         return {"error": "Something went wrong"}, 500
@@ -333,7 +335,7 @@ def contact_group():
     except Exception as e:
         s.close()
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         return {"error": "Something went wrong"}, 500
@@ -360,7 +362,7 @@ def get_story(slug):
     except Exception as e:
         s.close()
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         return {"error": "Something went wrong"}, 500
@@ -395,64 +397,15 @@ def get_stories():
     return {"stories": res}
 
 
-@routes.route('/createGroup', methods=['POST'])
-@jwt_required()
-def create_group():
-    try:
-        s = db_session()
-        user = get_user(get_jwt_identity())
-        emailList = request.form.get("emailList", None)
-        name = request.form.get('groupName', None)
-        if 'file' not in request.files or not request.files['file'] or not allowed_file(request.files['file'].filename, current_app.config['ALLOWED_EXTENSIONS']):
-            url_name = None
-        else:
-            filename = secure_filename(request.files['file'].filename)
-            try:
-                request.files['file'].save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-                url_name = current_app.config['SERVER_LOC']+"api/showfile/"+filename # hacky, just for local management
-            except:
-                return {"error": "Image could not be uploaded properly"}, 500
-        if not name or name.strip() == "":
-            return {"error", "Group name unauthorized"}, 400
-        users = []
-        for email in emailList:
-            u = s.query(User).filter_by(email=email.strip()).first()
-            if u:
-                users.append(u)
-            else:
-                pass  # TODO: send an email to people who are not registered in the app?
-        # users = list(set(users)) # yeet dupes
-        newUsers = []
-        for u in users:  # safer way to yeet dupes
-            for e in newUsers:
-                if u.id == e.id or u.id == get_jwt_identity():  # can't add yourself, duh
-                    break
-            else:  # evil warlock trick
-                newUsers.append(u)
-        newUsers.append(user)
-        group = Group(name=name, picturePath=url_name,
-                      users=newUsers, admins=newUsers)
-        s.add(group)
-        s.commit()
-        lastrowid = group.id
-    except Exception as e:
-        s.close()
-        if not TESTING:
-            print(e)
-        else:
-            raise(e)
-        return {"error": "Something went wrong"}, 500
-    s.close()
-    return {"success": True, "roomId": lastrowid}
 
-
-@routes.route('/showfile/<path:path>')
+@routes.route('/showfile/<path:path>', methods=['GET'])
 def show_file(path):
     return send_from_directory('uploads', path)
 
 @routes.route('/search', methods=['GET'])
 @jwt_required()
 def search():
+    print('searchterm:', request.args.get("search_term", None).strip())
     try:
         s = db_session()
         user = get_user(get_jwt_identity())
@@ -478,6 +431,7 @@ def search():
                 User.email.ilike("%{}%".format(search_term))).order_by(desc(User.id)).all()
         groupNames = s.query(Group).join(User).filter(Group.users.any(id=get_jwt_identity())).filter(
             Group.name.ilike("%{}%".format(search_term))).order_by(desc(Group.id)).all()
+        print(groupNames)
         if " " in search_term:
             search_terms = search_term.split(" ")
         else:
@@ -527,8 +481,7 @@ def search():
     return {"results": res}
 
 
-# ================== CREATES ====================
-# TODO: actually sort the routes
+# ================== POST ====================
 @routes.route('/signup', methods=['POST'])
 def create_user():
     try:
@@ -576,7 +529,7 @@ def create_user():
         s.close()
     except Exception as e:
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         s.close()
@@ -611,7 +564,7 @@ def addUser():
         s.close()
     except Exception as e:
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         s.close()
@@ -639,9 +592,129 @@ def setFriendRequest():
                 "An unexpected error occurred. Please reload the page and try again.")
     except Exception as e:
         if not TESTING:
-            print(e)
+            pass
         else:
             raise(e)
         s.close()
         return {"error": "Something went wrong"}, 500
+    return {"success": True}
+
+@routes.route('/createGroup', methods=['POST'])
+@jwt_required()
+def create_group():
+    try:
+        s = db_session()
+        user = get_user(get_jwt_identity())
+        emailList = request.form.get("emailList", None).split(",")
+        if len(emailList)>3:
+            return {"error", "Not enough viable members in the group"}, 400
+        name = request.form.get('groupName', None)
+        if 'file' not in request.files or not request.files['file'] or not allowed_file(request.files['file'].filename, current_app.config['ALLOWED_EXTENSIONS']):
+            url_name = None
+        else:
+            filename = secure_filename(request.files['file'].filename)
+            try:
+                request.files['file'].save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+                url_name = current_app.config['SERVER_LOC']+"api/showfile/"+filename # hacky, just for local management
+            except:
+                return {"error": "Image could not be uploaded properly"}, 500
+        if not name or name.strip() == "":
+            return {"error", "Group name unauthorized"}, 400
+        users = []
+        for email in emailList:
+            u = s.query(User).filter_by(email=email.strip()).first()
+            if u:
+                users.append(u)
+            else:
+                pass  # TODO: send an email to people who are not registered in the app?
+        # users = list(set(users)) # yeet dupes
+        newUsers = []
+        for u in users:  # safer way to yeet dupes
+            for e in newUsers:
+                if u.id == e.id or u.id == get_jwt_identity():  # can't add yourself, duh
+                    break
+            else:  # evil warlock trick
+                newUsers.append(u)
+        newUsers.append(user)
+        group = Group(name=name, picturePath=url_name,
+                      users=newUsers, admins=[user], creator=user.id)
+        s.add(group)
+        s.commit()
+        lastrowid = group.id
+    except Exception as e:
+        s.close()
+        if not TESTING:
+            pass
+        else:
+            raise(e)
+        return {"error": "Something went wrong"}, 500
+    s.close()
+    return {"success": True, "roomId": lastrowid}
+
+# =================== PUT =====================
+
+
+# ================== PATCH ====================
+
+@routes.route('/leaveGroup', methods=['PATCH'])
+@jwt_required()
+def leave_group():
+    try:
+        s = db_session()
+        user = get_user(get_jwt_identity())
+        groupId = request.json.get('groupId', None)
+        group = s.query(Group).filter_by(id=groupId).filter( 
+            Group.users.any(id=get_jwt_identity())).first()
+        if not group:
+            return {"error":"You can't access this ressource."}, 403
+        group.users.remove(user)
+        try: #don't exactly know how to make a simple if for that
+            group.admins.remove(user)
+        except:
+            pass
+        s.commit()
+    except Exception as e:
+        s.close()
+        if not TESTING:
+            pass
+        else:
+            raise(e)
+        return {"error": "Something went wrong"}, 500
+    s.close()
+    return {"success": True}
+
+# ================== DELETE ====================
+
+@routes.route('/deleteGroup', methods=['DELETE'])
+@jwt_required()
+def delete_group():
+    print('trying to delete?')
+    try:
+        s = db_session()
+        user = get_user(get_jwt_identity())
+        groupId = request.json.get('groupId', None)
+        group = s.query(Group).filter( 
+            Group.admins.any(id=get_jwt_identity())).filter_by(id=groupId).first()
+        if len(group.users)<3:
+            return {"error": "Can't delete 1 on 1 conversations."}, 403 # design choice
+        if not group:
+            return {"error":"You can't access this ressource."}, 403
+        try:
+            group.users = [] #seems like cascade isn't working properly here...?
+            group.admins = [] #same thing
+            s.delete(group)
+        except Exception as e:
+            print("fuck")
+            raise (e)
+            return {"error": "Something went wrong during deletion. Try reloading the page."}, 500
+        s.commit()
+        print('DELETED')
+    except Exception as e:
+        s.close()
+        if not TESTING:
+            pass
+        else:
+            raise(e)
+        return {"error": "Something went wrong"}, 500
+    s.close()
     return {"success": True}

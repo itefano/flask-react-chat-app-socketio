@@ -13,7 +13,7 @@ import { Box } from "@mui/system";
 
 function Profile(props) {
     const [profileData, setProfileData] = useState(null);
-    function getData() {
+    useEffect(() => {
         axios({
             method: "GET",
             url: "/api/profile",
@@ -33,82 +33,109 @@ function Profile(props) {
                     console.log(error.response.headers);
                 }
             });
-    }
-    useEffect(() => {
-        getData();
-    }, []);
+    }, [props.token]);
     return (
         <Paper className="Profile" sx={{ display: "flex" }}>
-            <Container maxWidth="sm" sx={{}}>
-                <Typography variant="h3">Your profile </Typography>
+            <Box pt={2} width="100%">
+                <Container maxWidth="sm">
+                    <Typography
+                        variant="h4"
+                        color="text.primary"
+                        pb={2}
+                        sx={{ textAlign: "center" }}
+                    >
+                        Your Profile
+                    </Typography>
 
-                {!profileData ? (
-                    <>
-                        <Skeleton />
-                        <Skeleton variant="rectangular" height={70} />
-                        <Skeleton />
-                        <Skeleton variant="rectangular" height={70} />
-                        <Skeleton />
-                        <Skeleton variant="rectangular" height={70} />
-                        <Skeleton
-                            variant="rectangular"
-                            height={150}
-                            width={300}
-                        />
-                    </>
-                ) : (
-                    <>
-                        <FormGroup>
-                            <Typography>Email</Typography>
-                            <TextField
-                                value={profileData["email"]}
-                                onChange={(e) => {
-                                    setProfileData({
-                                        ...profileData,
-                                        email: e.target.value,
-                                    });
-                                }}
+                    {!profileData ? (
+                        <>
+                            <Skeleton />
+                            <Skeleton
+                                variant="rectangular"
+                                height={70}
+                                pt={2}
                             />
-                        </FormGroup>
-                        <FormGroup>
-                            <Typography>First Name</Typography>
-                            <TextField
-                                value={profileData["firstName"]}
-                                onChange={(e) => {
-                                    setProfileData({
-                                        ...profileData,
-                                        firstName: e.target.value,
-                                    });
-                                }}
+                            <Skeleton />
+                            <Skeleton
+                                variant="rectangular"
+                                height={70}
+                                pt={2}
                             />
-                        </FormGroup>
-                        <FormGroup>
-                            <Typography>Last Name</Typography>
-                            <TextField
-                                value={profileData["lastName"]}
-                                onChange={(e) => {
-                                    setProfileData({
-                                        ...profileData,
-                                        lastName: e.target.value,
-                                    });
-                                }}
+                            <Skeleton />
+                            <Skeleton
+                                variant="rectangular"
+                                height={70}
+                                pt={2}
                             />
-                        </FormGroup>
-                        <Typography>Profile Picture</Typography>
-                        <FormGroup>
-                            <img
-                                src={profileData["profilePicturePath"]}
-                                width="300"
+                            <Skeleton
+                                variant="rectangular"
+                                height={150}
+                                width={300}
                             />
-                        </FormGroup>
-                    </>
-                )}
+                        </>
+                    ) : (
+                        <>
+                            <Box pt={2}>
+                                <FormGroup>
+                                    <Typography>Email</Typography>
+                                    <TextField
+                                        value={profileData["email"]}
+                                        onChange={(e) => {
+                                            setProfileData({
+                                                ...profileData,
+                                                email: e.target.value,
+                                            });
+                                        }}
+                                    />
+                                </FormGroup>
+                            </Box>
+                            <Box pt={2}>
+                                <FormGroup>
+                                    <Typography>First Name</Typography>
+                                    <TextField
+                                        value={profileData["firstName"]}
+                                        onChange={(e) => {
+                                            setProfileData({
+                                                ...profileData,
+                                                firstName: e.target.value,
+                                            });
+                                        }}
+                                    />
+                                </FormGroup>
+                            </Box>
+                            <Box pt={2}>
+                                <FormGroup>
+                                    <Typography>Last Name</Typography>
+                                    <TextField
+                                        value={profileData["lastName"]}
+                                        onChange={(e) => {
+                                            setProfileData({
+                                                ...profileData,
+                                                lastName: e.target.value,
+                                            });
+                                        }}
+                                    />
+                                </FormGroup>
+                                <Box pt={2}>
+                                    <Typography>Profile Picture</Typography>
+                                </Box>
+                                <FormGroup>
+                                    <img
+                                        src={profileData["profilePicturePath"]}
+                                        alt={profileData["firstName"]+"'s Picture"}
+                                        width="300"
+                                    />
+                                </FormGroup>
+                            </Box>
+                        </>
+                    )}
 
-                <Box sx={{ textAlign: "center", pt:3 }}>
-                    {" "}
-                    <Button variant="contained"> Confirm Edits </Button>
-                </Box>
-            </Container>
+                    <Box sx={{ textAlign: "center", pt: 3 }}>
+                        {" "}
+                        <Button variant="contained"> Confirm Edits </Button>
+                    </Box>
+                </Container>
+            </Box>
         </Paper>
     );
 }

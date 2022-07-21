@@ -10,12 +10,13 @@ import {
     Snackbar,
     Autocomplete,
     IconButton,
+    Paper,
 } from "@mui/material";
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import { useLocation, useNavigate } from "react-router-dom";
 import { is_email } from "../utils";
 //TODO: BUGFIX: fix broken sockets (delay too long from time to time)
-//TODO: Group edit & deletion, group exit, custom group admin, friendship remove, message edits, message replies, profile edit, account creation, file sending
+//TODO: Group edit, add/remove group admins, friendship remove, message edits, message replies, profile edit, file sending
 function CreateGroup(props) {
     const navigate = useNavigate();
     const [snackBarOpen, setSnackBarOpen] = useState(false);
@@ -114,15 +115,15 @@ function CreateGroup(props) {
                 const data = new FormData();
                 data.append("file", file);
                 data.append("emailList", participantList);
-                data.append("groupName", groupName); 
-                
+                data.append("groupName", groupName);
+
                 axios({
                     method: "POST",
                     url: "/api/createGroup",
                     data: data,
                     headers: {
                         "Content-Type": "multipart/form-data",
-                        "Authorization": "Bearer " + props.token,
+                        Authorization: "Bearer " + props.token,
                     },
                 })
                     .then((response) => {
@@ -172,196 +173,210 @@ function CreateGroup(props) {
         }
     };
     return (
-        <Box sx={{ textAlign: "center" }} py={2}>
-            <Container maxWidth="sm">
-                <Typography variant="h4" color="text.primary" pb={2}>
-                    Create a Group
-                </Typography>
-                <form
-                    className="createGroupForm"
-                    onSubmit={createGroup}
-                    style={{ display: "flex", flexDirection: "column" }}
-                >
-                    <Box>
-                        {friends && friends.length > 0 ? (
-                            <Autocomplete
-                                multiple
-                                id="tags-standard"
-                                options={friends}
-                                value={participantFieldValues}
-                                inputValue={inputValue}
-                                freeSolo
-                                onInputChange={(e, nv) => {
-                                    setInputValue(nv);
-                                }}
-                                onChange={(e, nv) => {
-                                    updateParticipants(nv);
-                                }}
-                                isOptionEqualToValue={(option, value) => {
-                                    if (
-                                        option.firstName +
-                                            " " +
-                                            option.lastName ===
-                                        value
-                                    ) {
-                                        return value;
-                                    }
-                                }}
-                                getOptionLabel={(option) => {
-                                    if (
-                                        option &&
-                                        option !== undefined &&
-                                        option !== null &&
-                                        option !== ""
-                                    ) {
-                                        if (typeof option === "string") {
-                                            //for custom entered values (emails)
-                                            return option;
-                                        } else {
-                                            return (
-                                                option.firstName +
-                                                " " +
-                                                option.lastName
-                                            );
-                                        }
-                                    }
-                                }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        variant="standard"
-                                        error={participantsError}
-                                        label="Participants"
-                                        placeholder="Add by name or new email adress"
-                                    />
-                                )}
-                            />
-                        ) : (
-                            <Autocomplete
-                                multiple
-                                id="tags-standard"
-                                options={[]}
-                                value={participantFieldValues}
-                                inputValue={inputValue}
-                                freeSolo
-                                onInputChange={(e, nv) => {
-                                    setInputValue(nv);
-                                }}
-                                onChange={(e, nv) => {
-                                    updateParticipants(nv);
-                                }}
-                                isOptionEqualToValue={(option, value) => {
-                                    if (
-                                        option.firstName +
-                                            " " +
-                                            option.lastName ===
-                                        value
-                                    ) {
-                                        return value;
-                                    }
-                                }}
-                                getOptionLabel={(option) => {
-                                    if (
-                                        option &&
-                                        option !== undefined &&
-                                        option !== null &&
-                                        option !== ""
-                                    ) {
-                                        if (typeof option === "string") {
-                                            //for custom entered values (emails)
-                                            return option;
-                                        } else {
-                                            return (
-                                                option.firstName +
-                                                " " +
-                                                option.lastName
-                                            );
-                                        }
-                                    }
-                                }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        variant="standard"
-                                        error={participantsError}
-                                        label="Participants"
-                                        placeholder="Add by name or new email adress"
-                                    />
-                                )}
-                            />
-                        )}
-                    </Box>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                        }}
+        <Paper sx={{ textAlign: "center", height: "100%" }} py={2}>
+            <Box pt={2}>
+                <Container maxWidth="sm">
+                    <Typography variant="h4" color="text.primary" pb={2}>
+                        Create a Group
+                    </Typography>
+                    <form
+                        className="createGroupForm"
+                        onSubmit={createGroup}
+                        style={{ display: "flex", flexDirection: "column" }}
                     >
-                        <Box width="60%">
-                            <TextField
-                                px={2}
-                                onChange={(e) => {
-                                    setGroupName(e.target.value);
-                                }}
-                                sx={{ width: "100%" }}
-                                type="text"
-                                error={nameError}
-                                text={groupName}
-                                variant="standard"
-                                label="Name of the group"
-                                name="groupName"
-                                placeholder="Ex: Wednesday's Party, Family Chat, Tina's Birthday Gift Pool..."
-                                value={groupName}
-                            />
-                        </Box>
-                        <Box sx={{ pl: 2, pt: 2 }}>
-                            <Button
-                                variant="outlined"
-                                color="primary"
-                                component="label"
-                            >
-                                <Typography variant="p">
-                                    Group Picture
-                                </Typography>
-                                <input
-                                    hidden
-                                    accept="image/*"
+                        <Box>
+                            {friends && friends.length > 0 ? (
+                                <Autocomplete
                                     multiple
-                                    type="file"
-                                    onChange={(e)=>{setFile(e.target.files[0])}}
+                                    id="tags-standard"
+                                    options={friends}
+                                    value={participantFieldValues}
+                                    inputValue={inputValue}
+                                    freeSolo
+                                    onInputChange={(e, nv) => {
+                                        setInputValue(nv);
+                                    }}
+                                    onChange={(e, nv) => {
+                                        updateParticipants(nv);
+                                    }}
+                                    isOptionEqualToValue={(option, value) => {
+                                        if (
+                                            option.firstName +
+                                                " " +
+                                                option.lastName ===
+                                            value
+                                        ) {
+                                            return value;
+                                        }
+                                    }}
+                                    getOptionLabel={(option) => {
+                                        if (
+                                            option &&
+                                            option !== undefined &&
+                                            option !== null &&
+                                            option !== ""
+                                        ) {
+                                            if (typeof option === "string") {
+                                                //for custom entered values (emails)
+                                                return option;
+                                            } else {
+                                                return (
+                                                    option.firstName +
+                                                    " " +
+                                                    option.lastName
+                                                );
+                                            }
+                                        }
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            variant="standard"
+                                            error={participantsError}
+                                            label="Participants"
+                                            placeholder="Add by name or new email adress"
+                                        />
+                                    )}
                                 />
-                            </Button>
-                            <IconButton
-                                color="primary"
-                                aria-label="upload picture"
-                                component="label"
-                            >
-                                <input hidden accept="image/*" type="file"
-                                    onChange={(e)=>{setFile(e.target.files[0])}} />
-                                <PhotoCamera />
-                            </IconButton>
+                            ) : (
+                                <Autocomplete
+                                    multiple
+                                    id="tags-standard"
+                                    options={[]}
+                                    value={participantFieldValues}
+                                    inputValue={inputValue}
+                                    freeSolo
+                                    onInputChange={(e, nv) => {
+                                        setInputValue(nv);
+                                    }}
+                                    onChange={(e, nv) => {
+                                        updateParticipants(nv);
+                                    }}
+                                    isOptionEqualToValue={(option, value) => {
+                                        if (
+                                            option.firstName +
+                                                " " +
+                                                option.lastName ===
+                                            value
+                                        ) {
+                                            return value;
+                                        }
+                                    }}
+                                    getOptionLabel={(option) => {
+                                        if (
+                                            option &&
+                                            option !== undefined &&
+                                            option !== null &&
+                                            option !== ""
+                                        ) {
+                                            if (typeof option === "string") {
+                                                //for custom entered values (emails)
+                                                return option;
+                                            } else {
+                                                return (
+                                                    option.firstName +
+                                                    " " +
+                                                    option.lastName
+                                                );
+                                            }
+                                        }
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            variant="standard"
+                                            error={participantsError}
+                                            label="Participants"
+                                            placeholder="Add by name or new email adress"
+                                        />
+                                    )}
+                                />
+                            )}
                         </Box>
-                    </Box>
-                    <Box width="100%" sx={{ margin: "auto" }} pb={2}>
-                        {errorMessage !== "" ? (
-                            <Alert
-                                severity="error"
-                                variant="filled"
-                                onClose={() => {
-                                    setErrorMessage("");
-                                }}
-                            >
-                                {errorMessage}
-                            </Alert>
-                        ) : (
-                            ""
-                        )}
-                    </Box>
-                    <Button variant="contained" type="submit" sx={{fontWeight:'bold'}}>
-                        Create group
-                    </Button>
-                </form>
-            </Container>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                            }}
+                        >
+                            <Box width="60%">
+                                <TextField
+                                    px={2}
+                                    onChange={(e) => {
+                                        setGroupName(e.target.value);
+                                    }}
+                                    sx={{ width: "100%" }}
+                                    type="text"
+                                    error={nameError}
+                                    text={groupName}
+                                    variant="standard"
+                                    label="Name of the group"
+                                    name="groupName"
+                                    placeholder="Ex: Wednesday's Party, Family Chat, Tina's Birthday Gift Pool..."
+                                    value={groupName}
+                                />
+                            </Box>
+                            <Box sx={{ pl: 2, pt: 2 }}>
+                                <Button
+                                    variant="outlined"
+                                    color="primary"
+                                    component="label"
+                                >
+                                    <Typography variant="p">
+                                        Group Picture
+                                    </Typography>
+                                    <input
+                                        hidden
+                                        accept="image/*"
+                                        multiple
+                                        type="file"
+                                        onChange={(e) => {
+                                            setFile(e.target.files[0]);
+                                        }}
+                                    />
+                                </Button>
+                                <IconButton
+                                    color="primary"
+                                    aria-label="upload picture"
+                                    component="label"
+                                >
+                                    <input
+                                        hidden
+                                        accept="image/*"
+                                        type="file"
+                                        onChange={(e) => {
+                                            setFile(e.target.files[0]);
+                                        }}
+                                    />
+                                    <PhotoCamera />
+                                </IconButton>
+                            </Box>
+                        </Box>
+                        <Box width="100%" sx={{ margin: "auto" }} pb={2}>
+                            {errorMessage !== "" ? (
+                                <Alert
+                                    severity="error"
+                                    variant="filled"
+                                    onClose={() => {
+                                        setErrorMessage("");
+                                    }}
+                                >
+                                    {errorMessage}
+                                </Alert>
+                            ) : (
+                                ""
+                            )}
+                        </Box>
+                        <Button
+                            variant="contained"
+                            type="submit"
+                            sx={{ fontWeight: "bold" }}
+                        >
+                            Create group
+                        </Button>
+                    </form>
+                </Container>
+            </Box>
             <Snackbar
                 open={snackBarOpen}
                 autoHideDuration={6000}
@@ -375,7 +390,7 @@ function CreateGroup(props) {
                     {snackBarMessage}
                 </Alert>
             </Snackbar>
-        </Box>
+        </Paper>
     );
 }
 export default CreateGroup;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { styled, alpha } from "@mui/material/styles";
 import {
     Switch,
@@ -98,7 +98,7 @@ export default function PrimarySearchAppBar(props) {
         return windowDimensions;
     };
 
-    const { height, width } = useWindowDimensions();
+    const { height } = useWindowDimensions(); //not using width here
     let navigate = useNavigate();
     const [checked, setChecked] = useState(true);
     const [openDrawer, setOpenDrawer] = useState(false);
@@ -126,7 +126,8 @@ export default function PrimarySearchAppBar(props) {
         }
     };
 
-    const getNotifications = () => {
+    const getNotifications = useCallback(() => {
+        //memoizing the notifications to avoid endless loop of reloading without having to do an ugly warning ignore in the useEffect hook that gets the notifications on page load
         if (props.token) {
             axios({
                 method: "GET",
@@ -148,13 +149,16 @@ export default function PrimarySearchAppBar(props) {
                     }
                 });
         }
-    };
-    const handleCloseSearch = () => {
-        setOpenPopper(false);
-    };
+    }, [props.token]);
     const seeNotifications = (e) => {
         setPopperAnchorEl(e.currentTarget);
-        setOpenPopper((previousOpen) => !previousOpen);
+        setOpenPopper((previousOpen) => {
+            if (previousOpen) {
+                setSearchTerm("");
+                setOpenSearch(false);
+            }
+            return !previousOpen;
+        });
     };
     const canBeOpen = openPopper && Boolean(popperAnchorEl);
     const canBeOpenSearch = openSearch && Boolean(searchAnchorEl);
@@ -186,7 +190,7 @@ export default function PrimarySearchAppBar(props) {
                     }
                 });
         }
-    }, [searchTerm]);
+    }, [searchTerm, props.token]);
 
     useEffect(() => {
         if (
@@ -197,7 +201,7 @@ export default function PrimarySearchAppBar(props) {
         ) {
             getNotifications();
         }
-    }, []);
+    }, [notifications, getNotifications]);
 
     useEffect(() => {
         if (
@@ -279,6 +283,10 @@ export default function PrimarySearchAppBar(props) {
     }));
     const [anchorEl, setAnchorEl] = useState(null);
     const toggleDrawer = (newOpen) => {
+        if (!newOpen) {
+            setSearchTerm("");
+            setOpenSearch(false);
+        }
         setOpenDrawer(newOpen);
     };
     const isMenuOpen = Boolean(anchorEl);
@@ -377,7 +385,7 @@ export default function PrimarySearchAppBar(props) {
                     width: "100%",
                     marginTop: "55px",
                     overflowY: "scroll",
-                    height: (height - 55).toString()+'px',//hacky af but I mean... it works, right?
+                    height: (height - 55).toString() + "px", //hacky af but I mean... it works, right?
                 }}
             >
                 <Box
@@ -491,7 +499,7 @@ export default function PrimarySearchAppBar(props) {
         );
 
     return (
-        <Box sx={{ flexGrow: 1 }}>
+        <Box>
             <AppBar position="static">
                 <Toolbar>
                     {!props.token ||
@@ -575,7 +583,6 @@ export default function PrimarySearchAppBar(props) {
                                 }
                                 color="inherit"
                                 onClick={seeNotifications}
-                                onBlur={handleCloseSearch}
                             >
                                 {notifications > 0 ? (
                                     <Badge
@@ -813,19 +820,29 @@ export default function PrimarySearchAppBar(props) {
                                                                                         e.authorFirstName
                                                                                     }
                                                                                 </Typography>
-                                                                                <Typography
-                                                                                    variant="p"
-                                                                                    px={
-                                                                                        1
-                                                                                    }
-                                                                                >
-                                                                                    in
-                                                                                </Typography>
-                                                                                <Typography variant="body1">
-                                                                                    {
-                                                                                        e.groupName
-                                                                                    }
-                                                                                </Typography>
+                                                                                {e.groupName &&
+                                                                                e
+                                                                                    .groupName
+                                                                                    .length >
+                                                                                    0 ? (
+                                                                                    <>
+                                                                                        <Typography
+                                                                                            variant="p"
+                                                                                            px={
+                                                                                                1
+                                                                                            }
+                                                                                        >
+                                                                                            in
+                                                                                        </Typography>
+                                                                                        <Typography variant="body1">
+                                                                                            {
+                                                                                                e.groupName
+                                                                                            }
+                                                                                        </Typography>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    ""
+                                                                                )}
                                                                             </Box>
                                                                         </Box>
                                                                         <Box

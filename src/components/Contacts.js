@@ -65,13 +65,13 @@ export default function Contacts(props) {
                     console.log(error);
                 });
         }
-    }, [roomId]);
+    }, [roomId, props]);
 
     useEffect(() => {
         if (roomId && props.room === roomId) {
             navigate("/chat/");
         }
-    }, [props.room]);
+    }, [props.room, navigate, roomId]);
 
     useEffect(() => {
         axios({
@@ -92,7 +92,7 @@ export default function Contacts(props) {
                     console.log(error.response.headers);
                 }
             });
-    }, []);
+    }, [props.token]);
     return (
         <Container maxWidth="sm" sx={{ textAlign: "center" }}>
             <Typography variant="h4" color="text.primary" py={2}>
@@ -156,10 +156,6 @@ export default function Contacts(props) {
                                                                   href="#"
                                                                   underline="none"
                                                                   onClick={() => {
-                                                                      console.log(
-                                                                          "setting",
-                                                                          group.id
-                                                                      );
                                                                       setRoomId(
                                                                           group.id
                                                                       );

@@ -77,7 +77,7 @@ function App() {
                     }
                 });
         }
-    }, [info]);
+    }, [info, removeToken, token]);
 
     useEffect(() => {
         if (
@@ -88,7 +88,7 @@ function App() {
         ) {
             setInfo(JSON.parse(localStorage.getItem("info")));
         }
-    }, []);
+    }, [info]);
 
     const handleTheme = () => {
         if (theme.palette.mode === "light") {
@@ -103,7 +103,7 @@ function App() {
                 className="App"
                 sx={{
                     bgcolor: "background.default",
-                    height: "100vh",
+                    height: "100%",
                     display: "flex",
                     flexDirection: "column",
                 }}
