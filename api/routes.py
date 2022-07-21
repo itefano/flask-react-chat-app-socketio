@@ -125,7 +125,6 @@ def create_token():
         if not userTry:
             return {"msg": "Wrong email"}, 401
         salt = userTry.salt
-        # to edit to account for password hashing
         user = s.query(User).filter_by(
             email=email, password=bcrypt.hashpw(password=str.encode(password, 'utf-8'), salt=salt)).first()
         if not user:
