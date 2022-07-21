@@ -88,7 +88,7 @@ export default function GroupList(props) {
                             );
                         }
                         let participants = e.participants.join(", ");
-
+                        // participants = participants.replace("<strong>", "").replace("</strong>", "");
                         for (let i = 0; i < searchTermSplit.length; i++) {
                             let searchPattern = new RegExp(
                                 "(?![^<]*>|[^<>]*</)" +

@@ -232,7 +232,7 @@ def list_messages():
                     "email": sender.email
                 },
                 "timestamp": m.time_created})
-        groupInfo = {"name": name, "picturePath": group.picturePath, "admins": [a.id for a in group.admins], "users":[u.firstName for u in group.users]}
+        groupInfo = {"name": name, "picturePath": group.picturePath, "admins": [a.id for a in group.admins], "users":[{"id":u.id, "firstName":u.firstName, "lastName":u.lastName} for u in group.users]}
         res = {"messages": messageList, "groupInfo": groupInfo,
                "currentUser": get_email(), "currentUserId":get_jwt_identity()}
         s.close()
@@ -251,8 +251,8 @@ def list_messages():
 def list_unread_messages():
     try:
         s = db_session()
-        totalUnreadMessages = s.query(Message_Seen, Message, User).filter_by(userId=get_jwt_identity(), seen=False).join(
-            Message, Message_Seen.messageId == Message.id).join(User, User.id == Message.author).join(Group, Group.id==Message.groupId).filter(Group.users.any(id=get_jwt_identity())).order_by(Message.time_created.desc()).all()
+        totalUnreadMessages = s.query(Message_Seen, Message, User).filter(Message_Seen.userId==get_jwt_identity(), Message_Seen.seen==False).join(
+            Message, Message_Seen.messageId == Message.id).filter(Message.author != get_jwt_identity()).join(User, User.id == Message.author).join(Group, Group.id==Message.groupId).filter(Group.users.any(id=get_jwt_identity())).order_by(Message.time_created.desc()).all()
         friendRequests = s.query(Friend).filter_by(
             friendId=get_jwt_identity(), request_pending=True).all()
         friendRequestsTotal = []
@@ -261,19 +261,23 @@ def list_unread_messages():
             friendRequestsTotal.append(
                 {"firstName": u.firstName, "lastName": u.lastName, "email": u.email, "profilePicturePath": u.profilePicturePath, "id": fr.id})
         unreadMessages = []
+        groupsShown = []
         for m in totalUnreadMessages:
-            group = s.query(Group).get(m[1].groupId)
-            unreadMessages.append(
-                {"title": m[1].title,
-                 "content": m[1].content,
-                 "authorFirstName": m[2].firstName,
-                 "authorLastName": m[2].lastName,
-                 "authorProfilePicturePath": m[2].profilePicturePath,
-                 "authorEmail": m[2].email,
-                 "groupName": group.name,
-                 "groupPicturePath": group.picturePath,
-                 "timestamp": m[1].time_created
-                 })
+            if m[1].groupId not in groupsShown: # gets rid of multiple messages from a single group bc idk how to do it in sqlalchemy queries
+                group = s.query(Group).get(m[1].groupId)
+                unreadMessages.append(
+                    {"title": m[1].title,
+                    "content": m[1].content,
+                    "authorFirstName": m[2].firstName,
+                    "authorLastName": m[2].lastName,
+                    "authorProfilePicturePath": m[2].profilePicturePath,
+                    "authorEmail": m[2].email,
+                    "groupName": group.name,
+                    "groupPicturePath": group.picturePath,
+                    "timestamp": m[1].time_created,
+                    "groupId" : m[1].groupId
+                    })
+                groupsShown.append(m[1].groupId)
         s.close()
     except Exception as e:
         s.close()
@@ -434,9 +438,9 @@ def search():
             allGroupUserNames.append(s.query(Group).join(User).filter(Group.users.any(id=get_jwt_identity())).filter(
                 or_(
                     Group.users.any(
-                        User.firstName.ilike("%{}%".format(search_term))),
+                        User.firstName.ilike("%{}%".format(e))),
                     Group.users.any(
-                        User.lastName.ilike("%{}%".format(search_term)))
+                        User.lastName.ilike("%{}%".format(e)))
                 )).order_by(desc(Group.id)).all())
         for groupUserNames in allGroupUserNames:
             for grp in groupUserNames:

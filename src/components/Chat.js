@@ -14,6 +14,7 @@ import {
     DialogContentText,
     DialogActions,
     DialogTitle,
+    Autocomplete,
 } from "@mui/material";
 import "./Chat.css";
 import CloseIcon from "@mui/icons-material/Close";
@@ -23,6 +24,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import DeleteIcon from "@mui/icons-material/Delete";
 import io from "socket.io-client";
 import { useLocation, useNavigate } from "react-router-dom";
+import { is_email } from "../utils";
 const ENDPOINT = "http://localhost:5000/chat";
 
 const BootstrapDialogTitle = (props) => {
@@ -49,7 +51,10 @@ const BootstrapDialogTitle = (props) => {
     );
 };
 export default function Chat(props) {
+    const [groupName, setGroupName] = useState("");
     const [leaveGroupOpen, setLeaveGroupOpen] = useState(false);
+    const [inputValue, setInputValue] = useState("");
+    const [friends, setFriends] = useState([]);
     const [deleteGroupOpen, setDeleteGroupOpen] = useState(false);
     const [editGroupOpen, setEditGroupOpen] = useState(false);
     const [userId, setUserId] = useState(null);
@@ -59,9 +64,41 @@ export default function Chat(props) {
     const [messages, setMessages] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [value, setValue] = useState("");
+    const [participantList, setParticipantList] = useState([]);
     const [msgError, setMsgError] = useState(false);
     const [roomId, setRoomId] = useState(null);
+    const [participantFieldValues, setParticipantFieldValues] = useState([]);
     const navigate = useNavigate();
+
+    const updateParticipants = (info) => {
+        //see CreateGroup component for an explanation on this one
+        if (typeof info[info.length - 1] === "string") {
+            if (is_email(info[info.length - 1])) {
+                setParticipantFieldValues([
+                    ...participantFieldValues,
+                    info[info.length - 1],
+                ]);
+                setParticipantList([
+                    ...participantList,
+                    info[info.length - 1].trim(),
+                ]);
+            } else {
+                return false;
+            }
+        } else {
+            setParticipantFieldValues([
+                ...participantFieldValues,
+                info[info.length - 1].firstName +
+                    " " +
+                    info[info.length - 1].lastName,
+            ]);
+            setParticipantList([
+                ...participantList,
+                info[info.length - 1].email.trim(),
+            ]);
+        }
+    };
+
     const handleChange = (event) => {
         setValue(event.target.value);
     };
@@ -232,8 +269,38 @@ export default function Chat(props) {
         socket.current.on("message", (data) => {
             setMessages((messages) => [...messages, data]);
         });
+        axios({
+            method: "GET",
+            url: "/api/contactlist",
+            headers: {
+                Authorization: "Bearer " + props.token,
+            },
+        })
+            .then((response) => {
+                const res = response.data;
+                setFriends(res);
+            })
+            .catch((error) => {
+                if (error.response) {
+                    console.log(error.response);
+                    console.log(error.response.status);
+                    console.log(error.response.headers);
+                }
+            });
     }, [roomId, props.token]);
-
+    useEffect(() => {
+        if (groupInfo && groupInfo.users) {
+            let participantsMinusUser = [];
+            groupInfo.users.forEach((usr) => {
+                for (const [k, v] of Object.entries(usr)) {
+                    if (k && k === "firstName" && v && v.length > 0) {
+                        participantsMinusUser.push(v);
+                    }
+                }
+            });
+            setParticipantFieldValues(participantsMinusUser);
+        }
+    }, [groupInfo]);
     useEffect(() => {
         //message reception
         if (
@@ -254,7 +321,13 @@ export default function Chat(props) {
             })
                 .then((response) => {
                     const res = response.data;
-                    setGroupInfo(res.groupInfo);
+                    let gInfo = { ...res.groupInfo };
+                    let usersArr = gInfo["users"].filter((e) => {
+                        return e.id !== res.currentUserId;
+                    });
+                    gInfo["users"] = usersArr;
+                    setGroupInfo(gInfo);
+                    setGroupName(gInfo.name);
                     setMessages(res.messages);
                     setCurrentUser(res.currentUser);
                     setUserId(res.currentUserId);
@@ -277,26 +350,27 @@ export default function Chat(props) {
     return (
         <>
             <Paper>
-                <Typography variant="h4" color="text.primary">
-                    {groupInfo !== null && groupInfo !== undefined ? (
-                        <Box
-                            sx={{ display: "flex", justifyContent: "center" }}
-                            m={2}
-                        >
-                            <Box mx={2}>
-                                <Avatar
-                                    src={groupInfo.picturePath}
-                                    alt={groupInfo.name + " group picture"}
-                                />
-                            </Box>
+                {groupInfo !== null && groupInfo !== undefined ? (
+                    <Box
+                        sx={{ display: "flex", justifyContent: "center" }}
+                        m={2}
+                    >
+                        <Box mx={2} color="primary">
+                            <Avatar
+                                //TODO: BUGFIX: avatar is invisible...?
+                                src={groupInfo.picturePath}
+                                alt={groupInfo.name + " group picture"}
+                            />
+                        </Box>
+                        <Typography variant="h4" color="text.primary">
                             {groupInfo.name.replace(/\b\w/, (c) =>
                                 c.toUpperCase()
                             )}
-                        </Box>
-                    ) : (
-                        ""
-                    )}
-                </Typography>
+                        </Typography>
+                    </Box>
+                ) : (
+                    ""
+                )}
                 <Box sx={{ width: "xs", textAlign: "right" }} py={2} pr={5}>
                     {groupInfo && groupInfo.admins.includes(userId) ? (
                         <>
@@ -574,9 +648,90 @@ export default function Chat(props) {
                 </BootstrapDialogTitle>
                 <DialogContent>
                     <DialogContentText id="alert-dialog-description">
-                        <Typography variant="p" sx={{ fontWeight: "normal" }}>
-                            To be implemented...
-                        </Typography>
+                        <Box py={1}>
+                            <Typography
+                                variant="span"
+                                sx={{ fontWeight: "normal" }}
+                            >
+                                <TextField
+                                fullWidth
+                                    variant="outlined"
+                                    label="Group name"
+                                    value={groupName}
+                                    onChange={(e) => {
+                                        setGroupName(e.target.value);
+                                    }}
+                                />
+                                <Box pt={2}>
+                                    <Autocomplete
+                                        multiple
+                                        id="tags-standard"
+                                        options={friends}
+                                        value={participantFieldValues}
+                                        inputValue={inputValue}
+                                        freeSolo
+                                        onInputChange={(e, nv) => {
+                                            setInputValue(nv);
+                                        }}
+                                        onChange={(e, nv) => {
+                                            updateParticipants(nv);
+                                        }}
+                                        isOptionEqualToValue={(
+                                            option,
+                                            value
+                                        ) => {
+                                            if (
+                                                option.firstName &&
+                                                option.lastName
+                                            ) {
+                                                if (
+                                                    option.firstName +
+                                                        " " +
+                                                        option.lastName ===
+                                                    value
+                                                ) {
+                                                    return value;
+                                                } else if (
+                                                    option.email === value
+                                                ) {
+                                                    return value;
+                                                }
+                                            }
+                                        }}
+                                        getOptionLabel={(option) => {
+                                            if (
+                                                option &&
+                                                option !== undefined &&
+                                                option !== null &&
+                                                option !== ""
+                                            ) {
+                                                if (
+                                                    typeof option === "string"
+                                                ) {
+                                                    //for custom entered values (emails)
+                                                    return option;
+                                                } else {
+                                                    return (
+                                                        option.firstName +
+                                                        " " +
+                                                        option.lastName
+                                                    );
+                                                }
+                                            }
+                                        }}
+                                        renderInput={(params) => (
+                                            <TextField
+                                            fullWidth
+                                                {...params}
+                                                variant="outlined"
+                                                label="Current participants"
+                                                placeholder="Add by name or new email adress"
+                                            />
+                                        )}
+                                    />
+                                </Box>
+                            </Typography>
+                        </Box>
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
