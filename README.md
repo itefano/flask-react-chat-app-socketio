@@ -25,7 +25,7 @@ Db creation (via models): `python3 ./api/init_db.py`
 
 Db deletion: `python3 ./api/drop_all.py`
 
-Creation+seeding(warning, this will delete all user data. DO NOT USE IN PRODUCTION): `python3 ./api/seed_db.py`
+Creation + seeding (warning, this will delete all user data. **DO NOT USE IN PRODUCTION**): `python3 ./api/seed_db.py`
 
 ## Launching the app:
 
@@ -105,7 +105,7 @@ Création de la db (via les models) : `python3 ./api/init_db.py`
 
 Suppression de la db : `python3 ./api/drop_all.py`
 
-Création + seeding de la db avec de fausses données (attention, ceci supprime toutes les données existantes. Ne pas utiliser en prod !) : `python3 ./api/seed_db.py`
+Création + seeding de la db avec de fausses données (attention, ceci supprime toutes les données existantes. **NE PAS UTILISER EN PROD**) : `python3 ./api/seed_db.py`
 
 ## Lancement de l'app :
 
