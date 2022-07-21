@@ -29,7 +29,7 @@ Creation + seeding (warning, this will delete all user data. **DO NOT USE IN PRO
 
 ## Launching the app:
 
-Reminder, start the virtual environment with `source ./venv/bin/activate` on Mac & Linux (`./venv/Scripts/activate` on Windows)
+Reminder, start the virtual environment with : `source ./venv/bin/activate` on Mac & Linux (`./venv/Scripts/activate` on Windows)
 
 To start ther front-end, use: `npm start`
 
@@ -109,7 +109,7 @@ Création + seeding de la db avec de fausses données (attention, ceci supprime 
 
 ## Lancement de l'app :
 
-Pour lancer l'environement virtuel `source ./venv/bin/activate` sur Mac et Linux (`./venv/Scripts/activate` sur Windows)
+Rappel, pour lancer l'environement virtuel : `source ./venv/bin/activate` sur Mac et Linux (`./venv/Scripts/activate` sur Windows)
 
 Pour lancer le front : `npm start`
 
