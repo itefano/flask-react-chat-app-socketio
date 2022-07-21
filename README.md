@@ -19,7 +19,7 @@ Install the javascript packages with: `npm i`
 
 ## Database setup (PostgreSQL): 
 
-> Note: if you want to start the app as is, you must [install postgreSQL first](https://www.postgresql.org/download/). You can tweak the database language if you wish by editing the `.env` file and replace the dialect and log info with your own stuff.
+> Note: if you want to start the app as is, you must [install postgreSQL first](https://www.postgresql.org/download/). You can tweak the database language if you want by editing the `.env` file and replace the dialect and log info with your own stuff.
 
 Db creation (via models): `python3 ./api/init_db.py`
 
