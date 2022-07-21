@@ -1,4 +1,4 @@
-# Bad robots get put in the pear wiggler
+# Bad robots get put into the pear wiggler
 User-agent: *
 Allow: /$
 Disallow: /

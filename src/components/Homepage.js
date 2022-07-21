@@ -74,7 +74,7 @@ export default function Homepage(props) {
                 props.setInfo(null);
             }
         }
-    }, [props.token]);
+    }, [props]);
 
     return (
         <Box

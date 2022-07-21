@@ -252,7 +252,7 @@ def list_unread_messages():
     try:
         s = db_session()
         totalUnreadMessages = s.query(Message_Seen, Message, User).filter_by(userId=get_jwt_identity(), seen=False).join(
-            Message, Message_Seen.messageId == Message.id).join(User, User.id == Message.author).order_by(Message.time_created.desc()).all()
+            Message, Message_Seen.messageId == Message.id).join(User, User.id == Message.author).join(Group, Group.id==Message.groupId).filter(Group.users.any(id=get_jwt_identity())).order_by(Message.time_created.desc()).all()
         friendRequests = s.query(Friend).filter_by(
             friendId=get_jwt_identity(), request_pending=True).all()
         friendRequestsTotal = []
@@ -401,7 +401,6 @@ def show_file(path):
 @routes.route('/search', methods=['GET'])
 @jwt_required()
 def search():
-    print('searchterm:', request.args.get("search_term", None).strip())
     try:
         s = db_session()
         user = get_user(get_jwt_identity())
@@ -426,7 +425,6 @@ def search():
                 User.email.ilike("%{}%".format(search_term))).order_by(desc(User.id)).all()
         groupNames = s.query(Group).join(User).filter(Group.users.any(id=get_jwt_identity())).filter(
             Group.name.ilike("%{}%".format(search_term))).order_by(desc(Group.id)).all()
-        print(groupNames)
         if " " in search_term:
             search_terms = search_term.split(" ")
         else:

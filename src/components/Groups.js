@@ -26,7 +26,7 @@ export default function Groups(props) {
         if (roomId && props.room === roomId) {
             navigate("/chat/");
         }
-    }, [props.room])
+    })
 
     useEffect(() => {
         if (roomId !== null && roomId !== undefined) {
@@ -45,7 +45,7 @@ export default function Groups(props) {
                     console.log(error);
                 });
         }
-    }, [roomId]);
+    }, [roomId, props]);
 
     useEffect(() => {
         //gets list of groups
@@ -68,7 +68,7 @@ export default function Groups(props) {
                     console.log(error.response.headers);
                 }
             });
-    }, []);
+    }, [props]);
     return (
         <Container maxWidth="sm" sx={{ textAlign: "center" }}>
             <Typography variant="h4" color="text.primary" py={2}>

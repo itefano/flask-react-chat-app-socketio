@@ -26,7 +26,6 @@ export default function SignUp(props) {
         lastName: "",
         gender: "",
     });
-    const [errorPassword, setErrorPassword] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [file, setFile] = useState(null);
     const [error, setError] = useState({
@@ -39,7 +38,6 @@ export default function SignUp(props) {
     });
     function logMeIn(event) {
         if (signUpForm.password1 !== signUpForm.password2) {
-            setErrorPassword(true);
             setErrorMessage("Passwords don't match.");
         } else {
             if (
