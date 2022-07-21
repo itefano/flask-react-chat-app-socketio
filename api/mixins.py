@@ -1,5 +1,5 @@
 """
-Not gonna lie to u chief, I forgot what this file was supposed to be about.
+Not gonna lie to u chief, I forgot what this file was supposed to be about. I don't even plan on implementing authlib.
 """
 
 from authlib.oauth1 import ClientMixin

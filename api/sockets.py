@@ -62,7 +62,7 @@ def message_sent(jsonresponse):
             jsonresponse.get('groupId') and\
             jsonresponse.get('message').isprintable() and not\
             jsonresponse.get('message').isspace() and not\
-            jsonresponse.get('message').startswith('<script>'):  # checks : if there is a message, that the message isn't somehow empty, that the message isn't a script, and that the message isn't a bunch of white spacesspace
+            jsonresponse.get('message').startswith('<script>'):  # checks : if there is a message, that the message isn't somehow empty, that the message isn't a script, and that the message isn't a bunch of whitespaces
         try:
             # gets all users, takes their ID and puts them into a list
             users = [e.id for e in models.Group.query.get(

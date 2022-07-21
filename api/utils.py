@@ -3,9 +3,11 @@ from flask_jwt_extended import get_jwt_identity
 
 import models
 
+
 def allowed_file(filename, ALLOWED_EXTENSIONS):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 def get_user(id):
     s = db_session()
@@ -21,7 +23,7 @@ def get_email():
         if q.email:
             return q.email
     return None  # not needed but pretty
-    
+
 
 def isEmail(email):
     import re
@@ -34,5 +36,5 @@ def isSafe(pwd):
         - If it has at least 8 chars
         - If it is not a string of numbers
     Doesn't check for more bc salting, and also, I'm too lazy"""
-    return len(pwd)>7 and not pwd.isdigit() and any(char.isdigit() for char in pwd)
-
+    # Wait, why is this the only comment using triple quotes...?
+    return len(pwd) > 7 and not pwd.isdigit() and any(char.isdigit() for char in pwd)
