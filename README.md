@@ -46,7 +46,8 @@ Front-end :
 - Génération de set d'identification factices
 - Ajout d'amis
 - Chat (malgré une latence apparente)
-- Création de groupes
+- Création/suppression de groupes
+- Possibilité de quitter un groupe
 - Réception de fichiers au format image (pas d'envoi pour l'instant)
 - Darkmode
 - Responsive
@@ -57,9 +58,10 @@ Front-end :
 
 ## Fonctionnalitées futures :
 
-- Suppression de groupes et de contacts
+- Suppression de contacts
 - Edition de groupes
 - Edition du profil
+- Mise en place d'un système d'administration de groupes
 - Envoi de fichiers multimedia
 - Invitations par email
 - Création de stories
