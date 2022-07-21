@@ -159,7 +159,8 @@ def list_groups():
             name = None
             curr_user = get_user(get_jwt_identity())
             if not e.name or e.name == "":
-                if len(users) < 2:  # if there is only 2 users and that the conversation doesn't have a name, we send the name of the other person to the front. I could be doing that in the front-end, now that I think about it... But you know life is full of mystery and stuff you can't control and- We'll say it's on purpose                    if curr_user.id == users[0].id:
+                if len(users) < 2:  # if there is only 2 users and that the conversation doesn't have a name, we send the name of the other person to the front. I could be doing that in the front-end, now that I think about it... But you know life is full of mystery and stuff you can't control and- We'll say it's on purpose
+                    if curr_user.id == users[0].id:
                         name = users[1].firstName+" "+users[1].lastName
                     else:
                         name = users[0].firstName+" "+users[0].lastName
