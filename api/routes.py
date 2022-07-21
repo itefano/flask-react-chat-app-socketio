@@ -160,12 +160,11 @@ def list_groups():
             name = None
             curr_user = get_user(get_jwt_identity())
             if not e.name or e.name == "":
-                if len(users) < 2:  # s'il n'y a que 2 utilisateurs et que la conversation n'a pas de nom, la conversation prend le nom de l'autre utilisateur
-                    if curr_user.id == users[0].id:
+                if len(users) < 2:  # if there is only 2 users and that the conversation doesn't have a name, we send the name of the other person to the front. I could be doing that in the front-end, now that I think about it... But you know life is full of mystery and stuff you can't control and- We'll say it's on purpose                    if curr_user.id == users[0].id:
                         name = users[1].firstName+" "+users[1].lastName
                     else:
                         name = users[0].firstName+" "+users[0].lastName
-                # si il y a plus de 2 utilisateurs, on ajoute le nom de tout les autres utilisateurs (en ignorant l'utilisateur courant)
+                # If there is more than 2 users, we add all users
                 else:
                     name = ", ".join(
                         [u.firstName+" "+u.lastName for u in users if curr_user.id != u.id])
@@ -193,7 +192,7 @@ def list_messages():
         group = s.query(Group).get(groupId)
         if not group:
             return {"error":"How did you get here?"}, 403
-        # vérifie que l'user est bien dans un groupe
+        # Checks that a user belongs to a group
         users = [e for e in s.query(Group).get(groupId).users]
         if (get_jwt_identity() not in [e.id for e in users]):
             return {"error": "User does not have access to this group"}, 403
@@ -204,12 +203,11 @@ def list_messages():
         usr = s.query(User).get(get_jwt_identity())
         curr_user = get_user(get_jwt_identity())
         if not group.name or group.name == "":
-            if len(users) < 2:  # s'il n'y a que 2 utilisateurs et que la conversation n'a pas de nom, la conversation prend le nom de l'autre utilisateur
+            if len(users) < 2:
                 if curr_user.id == users[0].id:
                     name = users[1].firstName+" "+users[1].lastName
                 else:
                     name = users[0].firstName+" "+users[0].lastName
-            # si il y a plus de 2 utilisateurs, on ajoute le nom de tout les autres utilisateurs (en ignorant l'utilisateur courant)
             else:
                 name = ", ".join(
                     [u.firstName+" "+u.lastName for u in users if curr_user.id != u.id])
@@ -253,7 +251,6 @@ def list_messages():
 def list_unread_messages():
     try:
         s = db_session()
-        # vérifie que l'user est bien dans un groupe
         totalUnreadMessages = s.query(Message_Seen, Message, User).filter_by(userId=get_jwt_identity(), seen=False).join(
             Message, Message_Seen.messageId == Message.id).join(User, User.id == Message.author).order_by(Message.time_created.desc()).all()
         friendRequests = s.query(Friend).filter_by(
@@ -293,7 +290,6 @@ def list_unread_messages():
 def mark_all_as_read():
     try:
         s = db_session()
-        # vérifie que l'user est bien dans un groupe
         totalUnreadMessages = s.query(Message_Seen).filter_by(
             userId=get_jwt_identity(), seen=False).all()
         for m in totalUnreadMessages:
