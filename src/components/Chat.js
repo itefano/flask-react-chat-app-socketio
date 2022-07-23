@@ -15,6 +15,7 @@ import {
     DialogActions,
     DialogTitle,
     Autocomplete,
+    Alert,
 } from "@mui/material";
 import "./Chat.css";
 import CloseIcon from "@mui/icons-material/Close";
@@ -51,6 +52,11 @@ const BootstrapDialogTitle = (props) => {
     );
 };
 export default function Chat(props) {
+    const [fieldErrors, setFieldErrors] = useState({
+        groupName: false,
+        participants: false,
+    });
+    const [errorMessage, setErrorMessage] = useState("");
     const [groupName, setGroupName] = useState("");
     const [leaveGroupOpen, setLeaveGroupOpen] = useState(false);
     const [inputValue, setInputValue] = useState("");
@@ -64,39 +70,23 @@ export default function Chat(props) {
     const [messages, setMessages] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [value, setValue] = useState("");
-    const [participantList, setParticipantList] = useState([]);
     const [msgError, setMsgError] = useState(false);
     const [roomId, setRoomId] = useState(null);
     const [participantFieldValues, setParticipantFieldValues] = useState([]);
     const navigate = useNavigate();
 
     const updateParticipants = (info) => {
-        //see CreateGroup component for an explanation on this one
-        if (typeof info[info.length - 1] === "string") {
-            if (is_email(info[info.length - 1])) {
-                setParticipantFieldValues([
-                    ...participantFieldValues,
-                    info[info.length - 1],
-                ]);
-                setParticipantList([
-                    ...participantList,
-                    info[info.length - 1].trim(),
-                ]);
+        let formattedInfo = [];
+        for (const e of info) {
+            if (typeof e === "string") {
+                if (is_email(e)) {
+                    formattedInfo.push({ email: e });
+                }
             } else {
-                return false;
+                formattedInfo.push(e);
             }
-        } else {
-            setParticipantFieldValues([
-                ...participantFieldValues,
-                info[info.length - 1].firstName +
-                    " " +
-                    info[info.length - 1].lastName,
-            ]);
-            setParticipantList([
-                ...participantList,
-                info[info.length - 1].email.trim(),
-            ]);
         }
+        setParticipantFieldValues(formattedInfo);
     };
 
     const handleChange = (event) => {
@@ -127,14 +117,47 @@ export default function Chat(props) {
             url: "/api/editGroup",
             data: {
                 groupId: roomId,
+                users: participantFieldValues,
+                groupName: groupName,
             },
             headers: {
                 Authorization: "Bearer " + props.token,
             },
         })
-            .then((response) => {})
+            .then((response) => {
+                const res = response.data;
+                let gInfo = { ...res.groupInfo };
+                let usersArr = gInfo["users"].filter((e) => {
+                    return e.email !== props.info.email;
+                });
+                gInfo["users"] = usersArr;
+                setGroupInfo(gInfo);
+
+                setErrorMessage("");
+                setFieldErrors({
+                    groupName: false,
+                    participants: false,
+                });
+            })
             .catch((error) => {
-                if (error.response.status !== 401) {
+                if (error.response.data.errorToSet) {
+                    setFieldErrors((previousValue) => ({
+                        ...previousValue,
+                        [error.response.data.errorToSet]: true,
+                    }));
+                    if (
+                        error.response.data.error &&
+                        error.response.data.error.length > 0
+                    ) {
+                        setErrorMessage(error.response.data.error);
+                    } else {
+                        setErrorMessage("Something went wrong.");
+                    }
+                }
+                if (
+                    error.response.status !== 401 &&
+                    error.response.status !== 403
+                ) {
                     console.log(error.response);
                     console.log(error.response.status);
                     console.log(error.response.headers);
@@ -277,7 +300,7 @@ export default function Chat(props) {
             },
         })
             .then((response) => {
-                const res = response.data;
+                const res = [...response.data];
                 setFriends(res);
             })
             .catch((error) => {
@@ -289,18 +312,16 @@ export default function Chat(props) {
             });
     }, [roomId, props.token]);
     useEffect(() => {
-        if (groupInfo && groupInfo.users) {
+        if (groupInfo && groupInfo.users && props.info) {
             let participantsMinusUser = [];
             groupInfo.users.forEach((usr) => {
-                for (const [k, v] of Object.entries(usr)) {
-                    if (k && k === "firstName" && v && v.length > 0) {
-                        participantsMinusUser.push(v);
-                    }
+                if (usr.email && usr.email !== props.info.email) {
+                    participantsMinusUser.push(usr);
                 }
             });
             setParticipantFieldValues(participantsMinusUser);
         }
-    }, [groupInfo]);
+    }, [groupInfo, props.info]);
     useEffect(() => {
         //message reception
         if (
@@ -323,7 +344,7 @@ export default function Chat(props) {
                     const res = response.data;
                     let gInfo = { ...res.groupInfo };
                     let usersArr = gInfo["users"].filter((e) => {
-                        return e.id !== res.currentUserId;
+                        return e.email !== res.currentUser;
                     });
                     gInfo["users"] = usersArr;
                     setGroupInfo(gInfo);
@@ -349,7 +370,7 @@ export default function Chat(props) {
 
     return (
         <>
-            <Paper>
+            <Paper sx={{ height: "100%" }}>
                 {groupInfo !== null && groupInfo !== undefined ? (
                     <Box
                         sx={{ display: "flex", justifyContent: "center" }}
@@ -374,7 +395,7 @@ export default function Chat(props) {
                 <Box sx={{ width: "xs", textAlign: "right" }} py={2} pr={5}>
                     {groupInfo && groupInfo.admins.includes(userId) ? (
                         <>
-                            {groupInfo && groupInfo.users.length > 2 ? (
+                            {groupInfo && groupName && groupName.length > 0 ? ( //checks whether convos are 1 to 1, in which case they can't be "left" or "deleted". You can only delete the friendship itself.
                                 <IconButton
                                     onClick={() => {
                                         handleDeleteGroupOpen();
@@ -396,7 +417,7 @@ export default function Chat(props) {
                     ) : (
                         ""
                     )}
-                    {groupInfo && groupInfo.users.length > 2 ? (
+                    {groupInfo && groupName && groupName.length > 0 ? (
                         <IconButton
                             onClick={() => {
                                 handleLeaveGroupOpen();
@@ -642,97 +663,96 @@ export default function Chat(props) {
                 onClose={handleEditGroupClose}
                 aria-labelledby="alert-dialog-title"
                 aria-describedby="alert-dialog-description"
+                fullWidth
             >
                 <BootstrapDialogTitle id="alert-dialog-title">
                     {groupInfo ? groupInfo.name : ""}
                 </BootstrapDialogTitle>
                 <DialogContent>
-                    <DialogContentText id="alert-dialog-description">
-                        <Box py={1}>
-                            <Typography
-                                variant="span"
-                                sx={{ fontWeight: "normal" }}
-                            >
-                                <TextField
-                                fullWidth
-                                    variant="outlined"
-                                    label="Group name"
-                                    value={groupName}
-                                    onChange={(e) => {
-                                        setGroupName(e.target.value);
-                                    }}
-                                />
-                                <Box pt={2}>
-                                    <Autocomplete
-                                        multiple
-                                        id="tags-standard"
-                                        options={friends}
-                                        value={participantFieldValues}
-                                        inputValue={inputValue}
-                                        freeSolo
-                                        onInputChange={(e, nv) => {
-                                            setInputValue(nv);
-                                        }}
-                                        onChange={(e, nv) => {
-                                            updateParticipants(nv);
-                                        }}
-                                        isOptionEqualToValue={(
-                                            option,
-                                            value
-                                        ) => {
-                                            if (
-                                                option.firstName &&
+                    <Box py={1}>
+                        <TextField
+                            fullWidth
+                            variant="outlined"
+                            error={fieldErrors["groupName"]}
+                            label="Group name"
+                            value={groupName}
+                            onChange={(e) => {
+                                setGroupName(e.target.value);
+                            }}
+                        />
+                        <Box pt={2}>
+                            <Autocomplete
+                                multiple
+                                id="tags-standard"
+                                options={friends}
+                                value={participantFieldValues}
+                                inputValue={inputValue}
+                                freeSolo
+                                onInputChange={(e, nv) => {
+                                    setInputValue(nv);
+                                }}
+                                onChange={(e, nv) => {
+                                    updateParticipants(nv);
+                                }}
+                                isOptionEqualToValue={(option, value) => {
+                                    if (option.email === value.email) {
+                                        return option;
+                                    }
+                                }}
+                                getOptionLabel={(option) => {
+                                    if (
+                                        option &&
+                                        option !== undefined &&
+                                        option !== null &&
+                                        option !== ""
+                                    ) {
+                                        if (
+                                            !option.firstName ||
+                                            !option.lastName
+                                        ) {
+                                            //for custom entered values (emails)
+                                            return option.email;
+                                        } else {
+                                            return (
+                                                option.firstName +
+                                                " " +
                                                 option.lastName
-                                            ) {
-                                                if (
-                                                    option.firstName +
-                                                        " " +
-                                                        option.lastName ===
-                                                    value
-                                                ) {
-                                                    return value;
-                                                } else if (
-                                                    option.email === value
-                                                ) {
-                                                    return value;
-                                                }
-                                            }
-                                        }}
-                                        getOptionLabel={(option) => {
-                                            if (
-                                                option &&
-                                                option !== undefined &&
-                                                option !== null &&
-                                                option !== ""
-                                            ) {
-                                                if (
-                                                    typeof option === "string"
-                                                ) {
-                                                    //for custom entered values (emails)
-                                                    return option;
-                                                } else {
-                                                    return (
-                                                        option.firstName +
-                                                        " " +
-                                                        option.lastName
-                                                    );
-                                                }
-                                            }
-                                        }}
-                                        renderInput={(params) => (
-                                            <TextField
-                                            fullWidth
-                                                {...params}
-                                                variant="outlined"
-                                                label="Current participants"
-                                                placeholder="Add by name or new email adress"
-                                            />
-                                        )}
+                                            );
+                                        }
+                                    }
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        fullWidth
+                                        {...params}
+                                        error={fieldErrors["participants"]}
+                                        variant="outlined"
+                                        label="Current participants"
+                                        placeholder="Add by name or new email adress"
                                     />
-                                </Box>
-                            </Typography>
+                                )}
+                            />
+                            <Box py={2}>
+                                {errorMessage !== "" ? (
+                                    <Alert
+                                        severity="error"
+                                        variant="filled"
+                                        onClose={() => {
+                                            setErrorMessage("");
+                                            setFieldErrors({
+                                                groupName: false,
+                                                participants: false,
+                                            });
+                                        }}
+                                    >
+                                        {errorMessage}
+                                    </Alert>
+                                ) : (
+                                    ""
+                                )}
+                            </Box>
                         </Box>
-                    </DialogContentText>
+                    </Box>
                 </DialogContent>
                 <DialogActions>
                     <Button

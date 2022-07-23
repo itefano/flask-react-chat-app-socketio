@@ -352,13 +352,15 @@ function CreateGroup(props) {
                                 </IconButton>
                             </Box>
                         </Box>
-                        <Box width="100%" sx={{ margin: "auto" }} pb={2}>
+                        <Box py={2}>
                             {errorMessage !== "" ? (
                                 <Alert
                                     severity="error"
                                     variant="filled"
                                     onClose={() => {
                                         setErrorMessage("");
+                                        setParticipantsError(false);
+                                        setNameError(false);
                                     }}
                                 >
                                     {errorMessage}

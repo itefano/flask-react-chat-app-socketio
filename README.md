@@ -53,7 +53,7 @@ Front-end:
 - Friend system
 - Chat (despite apparent lag, to be fixed later)
 - Creation/deletion of chat groups
-- Leaving a group
+- Group management
 - File display in chat (can't send for the moment)
 - Darkmode
 - Responsive
@@ -65,7 +65,6 @@ Front-end:
 ## Future features:
 
 - Friend removal
-- Group management
 - Profile management
 - Group administration (different than management. Haven't fully decided on what this will be)
 - Multimedia file sharing
@@ -134,7 +133,7 @@ Front-end :
 - Ajout d'amis
 - Chat (malgré une latence apparente)
 - Création/suppression de groupes
-- Possibilité de quitter un groupe
+- Edition des groupes
 - Réception de fichiers au format image (pas d'envoi pour l'instant)
 - Darkmode
 - Responsive
@@ -146,7 +145,6 @@ Front-end :
 ## Fonctionnalitées futures :
 
 - Suppression de contacts
-- Edition de groupes
 - Edition du profil
 - Mise en place d'un système d'administration de groupes
 - Envoi de fichiers multimedia

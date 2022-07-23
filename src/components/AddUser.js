@@ -64,21 +64,16 @@ function AddUser(props) {
                 .catch((error) => {
                     if (error.response) {
                         if (
-                            error.response.data.msg &&
-                            error.response.data.msg !== "" &&
-                            error.response.data.msg !== null &&
-                            error.response.data.msg !== undefined
+                            error.response.data.error &&
+                            error.response.data.error !== "" &&
+                            error.response.data.error !== null &&
+                            error.response.data.error !== undefined
                         ) {
-                            setErrorMessage(error.response.data.msg);
+                            setErrorMessage(error.response.data.error);
                         } else {
                             setErrorMessage(
                                 "Something went wrong. Please try again in a few seconds."
                             );
-                        }
-                        if (error.response.status !== 401) {
-                            console.log(error.response);
-                            console.log(error.response.status);
-                            console.log(error.response.headers);
                         }
                     }
                 });

@@ -42,7 +42,7 @@ export default function GroupList(props) {
                     }
                 });
         }
-    }, [props]);
+    }, [props.token]);
 
     return (
         <Box>

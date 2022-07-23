@@ -38,3 +38,7 @@ def isSafe(pwd):
     Doesn't check for more bc salting, and also, I'm too lazy"""
     # Wait, why is this the only comment using triple quotes...?
     return len(pwd) > 7 and not pwd.isdigit() and any(char.isdigit() for char in pwd)
+
+
+def isValidStr(inputStr):
+    return len(inputStr.strip())>0 and inputStr.isprintable()

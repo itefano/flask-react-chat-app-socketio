@@ -27,12 +27,12 @@ function App() {
     const addInfo = (infos) => {
         setInfo({ ...infos });
     };
-    useEffect(()=>{
-        if (!token || token ==="" || token === null || token === undefined) {
+    useEffect(() => {
+        if (!token || token === "" || token === null || token === undefined) {
             setRoom(null);
             localStorage.clear();
         }
-    }, [token])
+    }, [token]);
     useEffect(() => {
         if (
             info &&
@@ -122,8 +122,11 @@ function App() {
                                     exact
                                     path="/"
                                     element={
-                                        <Homepage info={info} 
-                                        setInfo={setInfo} token={token} />
+                                        <Homepage
+                                            info={info}
+                                            setInfo={setInfo}
+                                            token={token}
+                                        />
                                     }
                                 />
                                 <Route
@@ -171,20 +174,12 @@ function App() {
                                 <Route
                                     exact
                                     path="/addUser"
-                                    element={
-                                        <AddUser
-                                            token={token}
-                                        />
-                                    }
+                                    element={<AddUser token={token} />}
                                 />
                                 <Route
                                     exact
                                     path="/createGroup"
-                                    element={
-                                        <CreateGroup
-                                            token={token}
-                                        />
-                                    }
+                                    element={<CreateGroup token={token} />}
                                 />
                                 <Route
                                     exact
@@ -205,6 +200,7 @@ function App() {
                                             token={token}
                                             room={room}
                                             setRoom={setRoom}
+                                            info={info}
                                         />
                                     }
                                 />

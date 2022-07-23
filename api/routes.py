@@ -1,5 +1,5 @@
 from click import option
-from utils import get_email, get_user, isSafe, isEmail, allowed_file
+from utils import get_email, get_user, isSafe, isEmail, allowed_file, isValidStr
 from flask import Blueprint, send_from_directory, request, jsonify, current_app
 from database import db_session
 from flask_jwt_extended import create_access_token, get_jwt_identity, \
@@ -36,7 +36,7 @@ def list_contacts():
         for e in q:
             friend = s.query(User).get(e.friendId)
             res.append(
-                {"email": friend.email, "firstName": friend.firstName, "lastName": friend.lastName, "profilePicturePath": friend.profilePicturePath})
+                {"id": friend.id, "email": friend.email, "firstName": friend.firstName, "lastName": friend.lastName, "profilePicturePath": friend.profilePicturePath})
         s.close()
     except Exception as e:
         s.close()
@@ -191,7 +191,7 @@ def list_messages():
         s = db_session()
         group = s.query(Group).get(groupId)
         if not group:
-            return {"error":"How did you get here?"}, 403
+            return {"error": "How did you get here?"}, 403
         # Checks that a user belongs to a group
         users = [e for e in s.query(Group).get(groupId).users]
         if (get_jwt_identity() not in [e.id for e in users]):
@@ -232,9 +232,10 @@ def list_messages():
                     "email": sender.email
                 },
                 "timestamp": m.time_created})
-        groupInfo = {"name": name, "picturePath": group.picturePath, "admins": [a.id for a in group.admins], "users":[{"id":u.id, "firstName":u.firstName, "lastName":u.lastName} for u in group.users]}
+        groupInfo = {"name": name, "picturePath": group.picturePath, "admins": [a.id for a in group.admins], "users": [
+            {"email": u.email, "firstName": u.firstName, "lastName": u.lastName} for u in group.users]}
         res = {"messages": messageList, "groupInfo": groupInfo,
-               "currentUser": get_email(), "currentUserId":get_jwt_identity()}
+               "currentUser": get_email(), "currentUserId": get_jwt_identity()}
         s.close()
     except Exception as e:
         s.close()
@@ -251,8 +252,8 @@ def list_messages():
 def list_unread_messages():
     try:
         s = db_session()
-        totalUnreadMessages = s.query(Message_Seen, Message, User).filter(Message_Seen.userId==get_jwt_identity(), Message_Seen.seen==False).join(
-            Message, Message_Seen.messageId == Message.id).filter(Message.author != get_jwt_identity()).join(User, User.id == Message.author).join(Group, Group.id==Message.groupId).filter(Group.users.any(id=get_jwt_identity())).order_by(Message.time_created.desc()).all()
+        totalUnreadMessages = s.query(Message_Seen, Message, User).filter(Message_Seen.userId == get_jwt_identity(), Message_Seen.seen == False).join(
+            Message, Message_Seen.messageId == Message.id).filter(Message.author != get_jwt_identity()).join(User, User.id == Message.author).join(Group, Group.id == Message.groupId).filter(Group.users.any(id=get_jwt_identity())).order_by(Message.time_created.desc()).all()
         friendRequests = s.query(Friend).filter_by(
             friendId=get_jwt_identity(), request_pending=True).all()
         friendRequestsTotal = []
@@ -263,20 +264,21 @@ def list_unread_messages():
         unreadMessages = []
         groupsShown = []
         for m in totalUnreadMessages:
-            if m[1].groupId not in groupsShown: # gets rid of multiple messages from a single group bc idk how to do it in sqlalchemy queries
+            # gets rid of multiple messages from a single group bc idk how to do it in sqlalchemy queries
+            if m[1].groupId not in groupsShown:
                 group = s.query(Group).get(m[1].groupId)
                 unreadMessages.append(
                     {"title": m[1].title,
-                    "content": m[1].content,
-                    "authorFirstName": m[2].firstName,
-                    "authorLastName": m[2].lastName,
-                    "authorProfilePicturePath": m[2].profilePicturePath,
-                    "authorEmail": m[2].email,
-                    "groupName": group.name,
-                    "groupPicturePath": group.picturePath,
-                    "timestamp": m[1].time_created,
-                    "groupId" : m[1].groupId
-                    })
+                     "content": m[1].content,
+                     "authorFirstName": m[2].firstName,
+                     "authorLastName": m[2].lastName,
+                     "authorProfilePicturePath": m[2].profilePicturePath,
+                     "authorEmail": m[2].email,
+                     "groupName": group.name,
+                     "groupPicturePath": group.picturePath,
+                     "timestamp": m[1].time_created,
+                     "groupId": m[1].groupId
+                     })
                 groupsShown.append(m[1].groupId)
         s.close()
     except Exception as e:
@@ -397,10 +399,10 @@ def get_stories():
     return {"stories": res}
 
 
-
 @routes.route('/showfile/<path:path>', methods=['GET'])
 def show_file(path):
     return send_from_directory('uploads', path)
+
 
 @routes.route('/search', methods=['GET'])
 @jwt_required()
@@ -488,18 +490,23 @@ def create_user():
         email = request.form.get("email", None)
         userExists = s.query(User).filter_by(email=email).first()
         if userExists:
-            return {"error": "This email address is already in use", "errorToSet" : "email"}, 403
-        if not firstName or len(firstName.strip())==0 :
-            return {"error": "First name is invalid", "errorToSet" : "firstName"}, 403
-        if not lastName or len(lastName.strip())==0 :
-            return {"error": "Last name is invalid", "errorToSet" : "lastName"}, 403
+            s.close()
+            return {"error": "This email address is already in use", "errorToSet": "email"}, 403
+        if not firstName or not isValidStr(firstName):
+            s.close()
+            return {"error": "First name is invalid", "errorToSet": "firstName"}, 403
+        if not lastName or not isValidStr(lastName):
+            return {"error": "Last name is invalid", "errorToSet": "lastName"}, 403
         if 'file' not in request.files or not request.files['file'] or not allowed_file(request.files['file'].filename, current_app.config['ALLOWED_EXTENSIONS']):
             url_name = None
         else:
             filename = secure_filename(request.files['file'].filename)
             try:
-                request.files['file'].save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-                url_name = current_app.config['SERVER_LOC']+"api/showfile/"+filename # hacky, just for local management
+                request.files['file'].save(os.path.join(
+                    current_app.config['UPLOAD_FOLDER'], filename))
+                # hacky, just for local management
+                url_name = current_app.config['SERVER_LOC'] + \
+                    "api/showfile/"+filename
             except:
                 return {"error": "Image could not be uploaded properly", "errorToSet": "Image"}, 500
         password1 = request.form.get("password1", None)
@@ -507,13 +514,18 @@ def create_user():
         if password1 != password2:
             return {"error": "Passwords don't match!"}, 403
         gender = request.form.get("gender", None)
-        if gender and gender not in ["Female", "Male", "Non-binary", "Other", "Prefer not to say"] :
-            return {"error": "Gender collection here is only used for demographic statistical studies. Please use one of the genders listed in the field. If none fits your current gender, chose \"Other\".", "errorToSet" : "gender"}, 403 # you might be wondering why I'm using \" instead of ` so much, well the truth is that-
-            
+        if gender and gender not in ["Female", "Male", "Non-binary", "Other", "Prefer not to say"]:
+            # you might be wondering why I'm using \" instead of ` so much, well the truth is that-
+            return {"error": "Gender collection here is only used for demographic statistical studies. Please use one of the genders listed in the field. If none fits your current gender, chose \"Other\".", "errorToSet": "gender"}, 403
+
         isAdmin = False
-        if not isSafe(password1) or not email or not isEmail(email):
+        if not email or not isEmail(email):
             s.close()
-            return {"error": "Password isn't safe", "errorToSet" : "password"}, 403
+            return {"error": "Email is invalid", "errorToSet": "email"}, 403
+
+        if not isSafe(password1):
+            s.close()
+            return {"error": "Password isn't safe", "errorToSet": "password"}, 403
         salt = bcrypt.gensalt()
         password = bcrypt.hashpw(password=str.encode(
             password1, 'utf-8'), salt=salt)
@@ -544,7 +556,7 @@ def addUser():
         if not email:
             return {"error": "No email provided"}, 403
         if not isEmail(email) or user.email == email:
-            return {"error": "Invalid email"}, 403
+            return {"error": "Error. Please enter a valid email"}, 403
         userToAdd = s.query(User).filter(User.email == email).first()
         if not userToAdd:
             return {"error": "User not found"}, 404
@@ -596,6 +608,7 @@ def setFriendRequest():
         return {"error": "Something went wrong"}, 500
     return {"success": True}
 
+
 @routes.route('/createGroup', methods=['POST'])
 @jwt_required()
 def create_group():
@@ -603,7 +616,8 @@ def create_group():
         s = db_session()
         user = get_user(get_jwt_identity())
         emailList = request.form.get("emailList", None).split(",")
-        if len(emailList)>3:
+        if len(emailList) > 3:
+            s.close()
             return {"error", "Not enough viable members in the group"}, 400
         name = request.form.get('groupName', None)
         if 'file' not in request.files or not request.files['file'] or not allowed_file(request.files['file'].filename, current_app.config['ALLOWED_EXTENSIONS']):
@@ -611,11 +625,16 @@ def create_group():
         else:
             filename = secure_filename(request.files['file'].filename)
             try:
-                request.files['file'].save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
-                url_name = current_app.config['SERVER_LOC']+"api/showfile/"+filename # hacky, just for local management
+                request.files['file'].save(os.path.join(
+                    current_app.config['UPLOAD_FOLDER'], filename))
+                # hacky, just for local management
+                url_name = current_app.config['SERVER_LOC'] + \
+                    "api/showfile/"+filename
             except:
+                s.close()
                 return {"error": "Image could not be uploaded properly"}, 500
         if not name or name.strip() == "":
+            s.close()
             return {"error", "Group name unauthorized"}, 400
         users = []
         for email in emailList:
@@ -651,6 +670,74 @@ def create_group():
 # =================== PUT =====================
 
 
+@routes.route('/editGroup', methods=['PUT'])
+@jwt_required()
+def edit_group():
+    grpFinal = []
+    try:
+        s = db_session()
+        user = get_user(get_jwt_identity())
+        groupId = request.json.get('groupId', None)
+        users = request.json.get('users', None)
+        users = list(set([e['email'] for e in users]))
+        groupName = request.json.get('groupName', None)
+        if not groupName or not isValidStr(groupName):
+            s.close()
+            return {"error": "Group name is invalid", "errorToSet": "groupName"}, 403
+        if len(users) < 2:
+            s.close()
+            return {"error": "Too few users.", "errorToSet": "participants"}, 403
+        group = s.query(Group).filter_by(id=groupId).filter(
+            Group.admins.any(id=get_jwt_identity())).first()
+        if not group:
+            s.close()
+            return {"error": "You don't have access to this group.", "errorToSet": "participants"}, 403
+        usersChecked = []
+        for uid in users:  # checks users before doing anything stupid
+            if type(uid) is str and not uid.strip().isdecimal():
+                tUser = s.query(User).filter_by(email=uid.strip()).first()
+            else:  # will need to change to account for non-registered users in the future
+                tUser = s.query(User).filter_by(id=uid).first()
+            if not tUser:  # can be deleted safely, as wrong users won't get added
+                s.close()
+                return {"error": "One of the given users is invalid.", "errorToSet": "participants"}, 403
+            if uid != get_jwt_identity():
+                usersChecked.append(tUser)
+
+        newUsers = []
+        listIdClean = []
+        for u in usersChecked:
+            for e in newUsers:
+                if u.id == e.id or u.id == get_jwt_identity():
+                    break
+            else:
+                newUsers.append(u)
+                listIdClean.append(u.id)
+
+        admins = []
+        for a in group.admins:
+            if a.id in listIdClean:
+                admins.append(a)
+        admins.append(user)
+        group.admins = admins
+        newUsers.append(user)
+        group.users = newUsers
+        finalUsers = newUsers
+        group.name = groupName
+        grpFinal = {"name": groupName, "picturePath": group.picturePath, "admins": [a.id for a in group.admins], "users": [
+            {"email": u.email, "firstName": u.firstName, "lastName": u.lastName} for u in group.users]}
+        s.commit()
+    except Exception as e:
+        s.close()
+        if not TESTING:
+            pass
+        else:
+            raise(e)
+        return {"error": "Something went wrong"}, 500
+    s.close()
+    return {"success": True, "groupInfo": grpFinal}
+
+
 # ================== PATCH ====================
 
 @routes.route('/leaveGroup', methods=['PATCH'])
@@ -660,12 +747,13 @@ def leave_group():
         s = db_session()
         user = get_user(get_jwt_identity())
         groupId = request.json.get('groupId', None)
-        group = s.query(Group).filter_by(id=groupId).filter( 
+        group = s.query(Group).filter_by(id=groupId).filter(
             Group.users.any(id=get_jwt_identity())).first()
         if not group:
-            return {"error":"You can't access this ressource."}, 403
+            s.close()
+            return {"error": "You can't access this ressource."}, 403
         group.users.remove(user)
-        try: #don't exactly know how to make a simple if for that
+        try:  # don't exactly know how to make a simple if for that
             group.admins.remove(user)
         except:
             pass
@@ -682,6 +770,7 @@ def leave_group():
 
 # ================== DELETE ====================
 
+
 @routes.route('/deleteGroup', methods=['DELETE'])
 @jwt_required()
 def delete_group():
@@ -690,18 +779,20 @@ def delete_group():
         s = db_session()
         user = get_user(get_jwt_identity())
         groupId = request.json.get('groupId', None)
-        group = s.query(Group).filter( 
+        group = s.query(Group).filter(
             Group.admins.any(id=get_jwt_identity())).filter_by(id=groupId).first()
-        if len(group.users)<3:
-            return {"error": "Can't delete 1 on 1 conversations."}, 403 # design choice
+        if group.name and group.name != "" and len(group.users) != 2:
+            s.close()
+            # design choice
+            return {"error": "Can't delete 1 on 1 conversations."}, 403
         if not group:
-            return {"error":"You can't access this ressource."}, 403
+            s.close()
+            return {"error": "You can't access this ressource."}, 403
         try:
-            group.users = [] #seems like cascade isn't working properly here...?
-            group.admins = [] #same thing
+            group.users = []  # seems like cascade isn't working properly here...?
+            group.admins = []  # same thing
             s.delete(group)
         except Exception as e:
-            print("fuck")
             raise (e)
             return {"error": "Something went wrong during deletion. Try reloading the page."}, 500
         s.commit()
