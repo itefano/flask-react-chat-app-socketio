@@ -16,6 +16,7 @@ import {
     DialogTitle,
     Autocomplete,
     Alert,
+    Chip,
 } from "@mui/material";
 import "./Chat.css";
 import CloseIcon from "@mui/icons-material/Close";
@@ -55,16 +56,19 @@ export default function Chat(props) {
     const [fieldErrors, setFieldErrors] = useState({
         groupName: false,
         participants: false,
+        admins: false,
     });
     const [errorMessage, setErrorMessage] = useState("");
-    const [groupName, setGroupName] = useState("");
     const [leaveGroupOpen, setLeaveGroupOpen] = useState(false);
     const [inputValue, setInputValue] = useState("");
+    const [inputValueAdmins, setInputValueAdmins] = useState("");
+    const [adminsFieldValues, setAdminsFieldValues] = useState([]);
     const [friends, setFriends] = useState([]);
     const [deleteGroupOpen, setDeleteGroupOpen] = useState(false);
     const [editGroupOpen, setEditGroupOpen] = useState(false);
-    const [userId, setUserId] = useState(null);
     const location = useLocation();
+    //TODO: BUGFIX: fix broken sockets (delay too long from time to time)
+
     const socket = useRef(null); //use of ref allows us to re-render components while keeping the connexion active
     const [groupInfo, setGroupInfo] = useState(null);
     const [messages, setMessages] = useState(null);
@@ -72,9 +76,17 @@ export default function Chat(props) {
     const [value, setValue] = useState("");
     const [msgError, setMsgError] = useState(false);
     const [roomId, setRoomId] = useState(null);
-    const [participantFieldValues, setParticipantFieldValues] = useState([]);
+    const [participantsFieldValues, setParticipantsFieldValues] = useState([]);
     const navigate = useNavigate();
 
+    const includes_email = (main_arr, currentValue) => {
+        for (const elem of main_arr) {
+            if (elem.email && elem.email === currentValue) {
+                return true;
+            }
+        }
+        return false;
+    };
     const updateParticipants = (info) => {
         let formattedInfo = [];
         for (const e of info) {
@@ -86,7 +98,28 @@ export default function Chat(props) {
                 formattedInfo.push(e);
             }
         }
-        setParticipantFieldValues(formattedInfo);
+        setParticipantsFieldValues(formattedInfo);
+    };
+    const updateAdminValues = (info) => {
+        let formattedInfo = [];
+        for (const e of info) {
+            if (typeof e === "string") {
+                if (
+                    is_email(e) &&
+                    includes_email(participantsFieldValues, e.email)
+                ) {
+                    formattedInfo.push({ email: e });
+                }
+            } else {
+                if (
+                    e.email &&
+                    includes_email(participantsFieldValues, e.email)
+                ) {
+                    formattedInfo.push(e);
+                }
+            }
+        }
+        setAdminsFieldValues(formattedInfo);
     };
 
     const handleChange = (event) => {
@@ -117,8 +150,9 @@ export default function Chat(props) {
             url: "/api/editGroup",
             data: {
                 groupId: roomId,
-                users: participantFieldValues,
-                groupName: groupName,
+                users: participantsFieldValues,
+                groupName: groupInfo.name,
+                admins: adminsFieldValues,
             },
             headers: {
                 Authorization: "Bearer " + props.token,
@@ -127,17 +161,27 @@ export default function Chat(props) {
             .then((response) => {
                 const res = response.data;
                 let gInfo = { ...res.groupInfo };
+                let me = { ...props.info };
                 let usersArr = gInfo["users"].filter((e) => {
                     return e.email !== props.info.email;
                 });
+                let adminsArr = gInfo["admins"].filter((e) => {
+                    return e.email !== props.info.email;
+                });
                 gInfo["users"] = usersArr;
-                setGroupInfo(gInfo);
+                usersArr.unshift(me);
+                adminsArr.unshift(me);
+                setParticipantsFieldValues(usersArr);
 
+                setGroupInfo(gInfo);
+                setAdminsFieldValues(adminsArr);
                 setErrorMessage("");
                 setFieldErrors({
                     groupName: false,
                     participants: false,
+                    admins: false,
                 });
+                handleEditGroupClose();
             })
             .catch((error) => {
                 if (error.response.data.errorToSet) {
@@ -311,17 +355,7 @@ export default function Chat(props) {
                 }
             });
     }, [roomId, props.token]);
-    useEffect(() => {
-        if (groupInfo && groupInfo.users && props.info) {
-            let participantsMinusUser = [];
-            groupInfo.users.forEach((usr) => {
-                if (usr.email && usr.email !== props.info.email) {
-                    participantsMinusUser.push(usr);
-                }
-            });
-            setParticipantFieldValues(participantsMinusUser);
-        }
-    }, [groupInfo, props.info]);
+
     useEffect(() => {
         //message reception
         if (
@@ -343,15 +377,21 @@ export default function Chat(props) {
                 .then((response) => {
                     const res = response.data;
                     let gInfo = { ...res.groupInfo };
+                    let me = {};
                     let usersArr = gInfo["users"].filter((e) => {
-                        return e.email !== res.currentUser;
-                    });
+                        if (e.email === res.currentUser) {
+                            me = { ...e };
+                            return false;
+                        }
+                        return true;
+                    }); //puts the user first for legibility's sake
+                    usersArr.unshift(me);
                     gInfo["users"] = usersArr;
-                    setGroupInfo(gInfo);
-                    setGroupName(gInfo.name);
+                    setParticipantsFieldValues(gInfo["users"]);
+                    setAdminsFieldValues(gInfo["admins"]);
                     setMessages(res.messages);
                     setCurrentUser(res.currentUser);
-                    setUserId(res.currentUserId);
+                    setGroupInfo({ ...gInfo });
                 })
                 .catch((error) => {
                     if (error.response) {
@@ -371,7 +411,7 @@ export default function Chat(props) {
     return (
         <>
             <Paper sx={{ height: "100%" }}>
-                {groupInfo !== null && groupInfo !== undefined ? (
+                {groupInfo ? (
                     <Box
                         sx={{ display: "flex", justifyContent: "center" }}
                         m={2}
@@ -393,9 +433,12 @@ export default function Chat(props) {
                     ""
                 )}
                 <Box sx={{ width: "xs", textAlign: "right" }} py={2} pr={5}>
-                    {groupInfo && groupInfo.admins.includes(userId) ? (
+                    {groupInfo &&
+                    includes_email(groupInfo.admins, props.info.email) ? (
                         <>
-                            {groupInfo && groupName && groupName.length > 0 ? ( //checks whether convos are 1 to 1, in which case they can't be "left" or "deleted". You can only delete the friendship itself.
+                            {groupInfo &&
+                            groupInfo.name &&
+                            groupInfo.name.length > 0 ? ( //checks whether convos are 1 to 1, in which case they can't be "left" or "deleted". You can only delete the friendship itself.
                                 <IconButton
                                     onClick={() => {
                                         handleDeleteGroupOpen();
@@ -417,7 +460,9 @@ export default function Chat(props) {
                     ) : (
                         ""
                     )}
-                    {groupInfo && groupName && groupName.length > 0 ? (
+                    {groupInfo &&
+                    groupInfo.name &&
+                    groupInfo.name.length > 0 ? (
                         <IconButton
                             onClick={() => {
                                 handleLeaveGroupOpen();
@@ -675,19 +720,40 @@ export default function Chat(props) {
                             variant="outlined"
                             error={fieldErrors["groupName"]}
                             label="Group name"
-                            value={groupName}
+                            value={(groupInfo && groupInfo.name) || ""}
                             onChange={(e) => {
-                                setGroupName(e.target.value);
+                                setGroupInfo((prevValue) => ({
+                                    ...prevValue,
+                                    "name": e.target.value,
+                                }));
                             }}
                         />
                         <Box pt={2}>
                             <Autocomplete
                                 multiple
-                                id="tags-standard"
                                 options={friends}
-                                value={participantFieldValues}
+                                value={participantsFieldValues}
                                 inputValue={inputValue}
                                 freeSolo
+                                renderTags={(tagValue, getTagProps) =>
+                                    tagValue.map((option, index) => (
+                                        <Chip
+                                            label={
+                                                option.email ===
+                                                props.info.email
+                                                    ? "You"
+                                                    : option.firstName +
+                                                      " " +
+                                                      option.lastName
+                                            }
+                                            {...getTagProps({ index })}
+                                            disabled={
+                                                option.email ===
+                                                props.info.email
+                                            }
+                                        />
+                                    ))
+                                }
                                 onInputChange={(e, nv) => {
                                     setInputValue(nv);
                                 }}
@@ -732,8 +798,84 @@ export default function Chat(props) {
                                     />
                                 )}
                             />
-                            <Box py={2}>
-                                {errorMessage !== "" ? (
+                            <Box pt={2}>
+                                <Autocomplete
+                                    multiple
+                                    options={
+                                        groupInfo && groupInfo.users
+                                            ? groupInfo.users
+                                            : []
+                                    }
+                                    value={adminsFieldValues}
+                                    inputValue={inputValueAdmins}
+                                    freeSolo
+                                    onInputChange={(e, nv) => {
+                                        setInputValueAdmins(nv);
+                                    }}
+                                    onChange={(e, nv) => {
+                                        updateAdminValues(nv);
+                                    }}
+                                    renderTags={(tagValue, getTagProps) =>
+                                        tagValue.map((option, index) => (
+                                            <Chip
+                                                label={
+                                                    option.email ===
+                                                    props.info.email
+                                                        ? "You"
+                                                        : option.firstName +
+                                                          " " +
+                                                          option.lastName
+                                                }
+                                                {...getTagProps({ index })}
+                                                disabled={
+                                                    option.email ===
+                                                    props.info.email
+                                                }
+                                            />
+                                        ))
+                                    }
+                                    isOptionEqualToValue={(option, value) => {
+                                        if (option.email === value.email) {
+                                            return option;
+                                        }
+                                    }}
+                                    getOptionLabel={(option) => {
+                                        if (
+                                            option &&
+                                            option !== undefined &&
+                                            option !== null &&
+                                            option !== ""
+                                        ) {
+                                            if (
+                                                !option.firstName ||
+                                                !option.lastName
+                                            ) {
+                                                //for custom entered values (emails)
+                                                return option.email;
+                                            } else {
+                                                return (
+                                                    option.firstName +
+                                                    " " +
+                                                    option.lastName
+                                                );
+                                            }
+                                        }
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            fullWidth
+                                            {...params}
+                                            error={fieldErrors["admins"]}
+                                            variant="outlined"
+                                            label="Current admins"
+                                            placeholder="Add by name or new email adress"
+                                        />
+                                    )}
+                                />
+                            </Box>
+
+                            {errorMessage !== "" ? (
+                                <Box py={2}>
                                     <Alert
                                         severity="error"
                                         variant="filled"
@@ -742,15 +884,16 @@ export default function Chat(props) {
                                             setFieldErrors({
                                                 groupName: false,
                                                 participants: false,
+                                                admins: false,
                                             });
                                         }}
                                     >
                                         {errorMessage}
                                     </Alert>
-                                ) : (
-                                    ""
-                                )}
-                            </Box>
+                                </Box>
+                            ) : (
+                                ""
+                            )}
                         </Box>
                     </Box>
                 </DialogContent>

@@ -231,8 +231,9 @@ def list_messages():
                     "profilePicturePath": sender.profilePicturePath,
                     "email": sender.email
                 },
-                "timestamp": m.time_created})
-        groupInfo = {"name": name, "picturePath": group.picturePath, "admins": [a.id for a in group.admins], "users": [
+                "timestamp": m.time_created})      
+        groupInfo = {"name": name, "picturePath": group.picturePath, "admins": [
+            {"email": u.email, "firstName": u.firstName, "lastName": u.lastName} for u in group.admins], "users": [
             {"email": u.email, "firstName": u.firstName, "lastName": u.lastName} for u in group.users]}
         res = {"messages": messageList, "groupInfo": groupInfo,
                "currentUser": get_email(), "currentUserId": get_jwt_identity()}
@@ -395,7 +396,6 @@ def get_stories():
         raise(e)
         return {"error": "Something went wrong"}, 500
     s.close()
-    # print('results:', {"stories":res})
     return {"stories": res}
 
 
@@ -567,7 +567,6 @@ def addUser():
         s.add(friendship)
         group = Group(name=None, picturePath=None, creator=None,
                       admins=[user, userToAdd], users=[user, userToAdd])
-        print(group)
         s.add(group)
         s.commit()
         s.close()
@@ -679,7 +678,9 @@ def edit_group():
         user = get_user(get_jwt_identity())
         groupId = request.json.get('groupId', None)
         users = request.json.get('users', None)
+        admins = request.json.get('admins', None)
         users = list(set([e['email'] for e in users]))
+        admins = list(set([a['email'] for a in admins]))
         groupName = request.json.get('groupName', None)
         if not groupName or not isValidStr(groupName):
             s.close()
@@ -691,7 +692,7 @@ def edit_group():
             Group.admins.any(id=get_jwt_identity())).first()
         if not group:
             s.close()
-            return {"error": "You don't have access to this group.", "errorToSet": "participants"}, 403
+            return {"error": "You don't have access to this group.", "errorToSet": "admins"}, 403
         usersChecked = []
         for uid in users:  # checks users before doing anything stupid
             if type(uid) is str and not uid.strip().isdecimal():
@@ -703,7 +704,6 @@ def edit_group():
                 return {"error": "One of the given users is invalid.", "errorToSet": "participants"}, 403
             if uid != get_jwt_identity():
                 usersChecked.append(tUser)
-
         newUsers = []
         listIdClean = []
         for u in usersChecked:
@@ -713,18 +713,25 @@ def edit_group():
             else:
                 newUsers.append(u)
                 listIdClean.append(u.id)
+        finalAdmins = []
+        for a in admins:
+            admin = s.query(User).filter_by(email=a).first()
+            if not admin:
+                return {"error": "One of the given admins seems to be invalid", "errorToSet": "admins"}, 403
+            if admin.id != get_jwt_identity():
+                if admin.id in listIdClean:#we safely add the user back to the admins at the end
+                    finalAdmins.append(admin)
+                else:
+                    return {"error": "One of the given admins doesn't belong to the group.", "errorToSet": "admins"}, 403
 
-        admins = []
-        for a in group.admins:
-            if a.id in listIdClean:
-                admins.append(a)
-        admins.append(user)
-        group.admins = admins
+        finalAdmins.append(user)
+        group.admins = finalAdmins
         newUsers.append(user)
         group.users = newUsers
         finalUsers = newUsers
         group.name = groupName
-        grpFinal = {"name": groupName, "picturePath": group.picturePath, "admins": [a.id for a in group.admins], "users": [
+        grpFinal = {"name": group.name, "picturePath": group.picturePath, "admins": [
+            {"email": u.email, "firstName": u.firstName, "lastName": u.lastName} for u in group.admins], "users": [
             {"email": u.email, "firstName": u.firstName, "lastName": u.lastName} for u in group.users]}
         s.commit()
     except Exception as e:
