@@ -15,7 +15,7 @@ import {
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import { useLocation, useNavigate } from "react-router-dom";
 import { is_email } from "../utils";
-//TODO: add/remove group admins, friendship remove, message edits, message replies, profile edit, file sending
+//TODO: friendship remove, message edits, message replies, profile edit, file sending
 function CreateGroup(props) {
     const navigate = useNavigate();
     const [snackBarOpen, setSnackBarOpen] = useState(false);
