@@ -36,7 +36,7 @@ def list_contacts():
         for e in q:
             friend = s.query(User).get(e.friendId)
             res.append(
-                {"id": friend.id, "email": friend.email, "firstName": friend.firstName, "lastName": friend.lastName, "profilePicturePath": friend.profilePicturePath})
+                friend.serialize)
         s.close()
     except Exception as e:
         s.close()
@@ -93,7 +93,7 @@ def my_profile():  # to be completed later
         else:
             raise(e)
         return {"error": "Session desynchronized"}, 401
-    return jsonify({"firstName": user.firstName, "lastName": user.lastName, "email": user.email, "profilePicturePath": user.profilePicturePath})
+    return jsonify(user.serialize)
 
 
 @routes.route('/get_info', methods=["GET"])
@@ -109,9 +109,7 @@ def get_info():
         return {"error": "Something went wrong"}, 500
     if not user:
         return {"error": "User not found"}, 404
-    response = {"firstName": user.firstName,
-                "lastName": user.lastName,
-                "email": user.email}
+    response = jsonify(user.serialize)
     return response
 
 
@@ -121,7 +119,7 @@ def create_token():
     password = request.json.get("password", None)
     try:
         s = db_session()
-        userTry = salt = s.query(UserSalt).filter_by(email=email).first()
+        userTry = s.query(UserSalt).filter_by(email=email).first()
         if not userTry:
             return {"msg": "Wrong email"}, 401
         salt = userTry.salt
@@ -143,7 +141,7 @@ def create_token():
         else:
             raise(e)
         return {"msg": "Something went wrong"}, 500
-    return response
+    return response, 203
 
 
 @routes.route('/grouplist')
@@ -231,10 +229,9 @@ def list_messages():
                     "profilePicturePath": sender.profilePicturePath,
                     "email": sender.email
                 },
-                "timestamp": m.time_created})      
+                "timestamp": m.time_created})
         groupInfo = {"name": name, "picturePath": group.picturePath, "admins": [
-            {"email": u.email, "firstName": u.firstName, "lastName": u.lastName} for u in group.admins], "users": [
-            {"email": u.email, "firstName": u.firstName, "lastName": u.lastName} for u in group.users]}
+            u.serialize for u in group.admins], "users": [u.serialize for u in group.users]}
         res = {"messages": messageList, "groupInfo": groupInfo,
                "currentUser": get_email(), "currentUserId": get_jwt_identity()}
         s.close()
@@ -543,7 +540,7 @@ def create_user():
             raise(e)
         s.close()
         return {"error": "User creation could not proceed. Something went wrong on our end."}, 500
-    return {"success": True}
+    return {"success": True}, 203
 
 
 @routes.route('/addUser', methods=['POST'])
@@ -577,7 +574,7 @@ def addUser():
             raise(e)
         s.close()
         return {"error": "Something went wrong"}, 500
-    return {"message": "User was successfully added. They will get a request that they will have to accept before you can start communicating with them."}
+    return {"message": "User was successfully added. They will get a request that they will have to accept before you can start communicating with them."}, 203
 
 
 @routes.route('/setFriendRequest', methods=['POST'])
@@ -605,7 +602,7 @@ def setFriendRequest():
             raise(e)
         s.close()
         return {"error": "Something went wrong"}, 500
-    return {"success": True}
+    return {"success": True}, 203
 
 
 @routes.route('/createGroup', methods=['POST'])
@@ -664,9 +661,98 @@ def create_group():
             raise(e)
         return {"error": "Something went wrong"}, 500
     s.close()
-    return {"success": True, "roomId": lastrowid}
+    return {"success": True, "roomId": lastrowid}, 203
 
 # =================== PUT =====================
+
+
+@routes.route('/editProfile', methods=['PUT'])
+@jwt_required()
+def edit_profile():
+    user = None
+    try:
+        s = db_session()
+        email = request.form.get("email", None)
+        firstName = request.form.get("firstName", None)
+        lastName = request.form.get("lastName", None)
+
+        password = request.form.get("password", None)
+
+        if not password:
+            s.close()
+            return {"error": "Fill password to save edits.", "errorToSet": "password"}, 403
+
+        gender = request.form.get("gender", None)
+        if gender == "none":
+            gender = None
+        if gender and gender not in ["Female", "Male", "Non-binary", "Other", "Prefer not to say"]:
+            s.close()
+            return {"error": "Gender collection here is only used for demographic statistical studies. Please use one of the genders listed in the field. If none fits your current gender, chose \"Other\".", "errorToSet": "gender", "errorToSet": "gender"}, 403
+
+        if 'file' not in request.files or not request.files['file'] or not allowed_file(request.files['file'].filename, current_app.config['ALLOWED_EXTENSIONS']):
+            url_name = None
+        else:
+            filename = secure_filename(request.files['file'].filename)
+            try:
+                request.files['file'].save(os.path.join(
+                    current_app.config['UPLOAD_FOLDER'], filename))
+                # hacky, just for local management
+                url_name = current_app.config['SERVER_LOC'] + \
+                    "api/showfile/"+filename
+            except:
+                return {"error": "Image could not be uploaded properly", "errorToSet": "Image"}, 500
+
+        user = s.query(User).filter_by(
+            id=get_jwt_identity()).first()
+
+        if user.email == email and user.firstName == firstName and user.lastName == lastName and user.gender == gender and not url_name:
+            s.close()
+            return {"error": "No information was provided."}, 204
+
+        userTry = s.query(UserSalt).filter_by(email=user.email).first()
+        if not userTry:
+            return {"error": "Wrong email, somehow?", "fieldToSet": "email"}, 403
+        salt = userTry.salt
+        userPwd = s.query(User).filter_by(
+            email=user.email, password=bcrypt.hashpw(password=str.encode(password, 'utf-8'), salt=salt)).first()
+
+        if not userPwd:
+            s.close()
+            return {"error": "Password is incorrect.", "errorToSet": "password"}, 403
+
+        if gender:
+            user.gender = gender
+
+        if email:
+            # redundant, I know. But the first call to the salts seems to glitch out somehow?
+            usrHash = s.query(UserSalt).filter_by(email=user.email).first()
+
+            user.email = email
+            usrHash.email = email
+
+        if url_name:
+            user.profilePicturePath = url_name
+
+        if firstName:
+            user.firstName = firstName
+
+        if lastName:
+            user.lastName = lastName
+        s.commit()
+    except Exception as e:
+        s.close()
+        if not TESTING:
+            pass
+        else:
+            raise(e)
+        return {"error": "Something went wrong"}, 500
+    finally:
+        if user:
+            finalUser = user.serialize
+        else:
+            finalUser = s.query(User).get(get_jwt_identity())
+    s.close()
+    return {"success": True, "userInfo": finalUser}
 
 
 @routes.route('/editGroup', methods=['PUT'])
@@ -719,7 +805,7 @@ def edit_group():
             if not admin:
                 return {"error": "One of the given admins seems to be invalid", "errorToSet": "admins"}, 403
             if admin.id != get_jwt_identity():
-                if admin.id in listIdClean:#we safely add the user back to the admins at the end
+                if admin.id in listIdClean:  # we safely add the user back to the admins at the end
                     finalAdmins.append(admin)
                 else:
                     return {"error": "One of the given admins doesn't belong to the group.", "errorToSet": "admins"}, 403
@@ -730,9 +816,8 @@ def edit_group():
         group.users = newUsers
         finalUsers = newUsers
         group.name = groupName
-        grpFinal = {"name": group.name, "picturePath": group.picturePath, "admins": [
-            {"email": u.email, "firstName": u.firstName, "lastName": u.lastName} for u in group.admins], "users": [
-            {"email": u.email, "firstName": u.firstName, "lastName": u.lastName} for u in group.users]}
+        grpFinal = {"name": group.name, "picturePath": group.picturePath, "admins": [u.serialize for u in group.admins], "users": [
+            u.serialize for u in group.users]}
         s.commit()
     except Exception as e:
         s.close()

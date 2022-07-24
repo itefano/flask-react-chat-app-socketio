@@ -81,14 +81,12 @@ export default function SignUp(props) {
                                     "Something went wrong. Please try again in a few seconds."
                                 );
                             }
-                            setError((prevState)=>{
-                                const nState = {...prevState};
+                            setError((prevState) => {
+                                const nState = { ...prevState };
                                 for (const k of Object.keys(nState)) {
-                                    if (k === err.response.data.errorToSet)
-                                    {
+                                    if (k === err.response.data.errorToSet) {
                                         nState[k] = true;
-                                    }
-                                    else {
+                                    } else {
                                         nState[k] = false;
                                     }
                                 }
@@ -256,8 +254,13 @@ export default function SignUp(props) {
                             </IconButton>
                         </Box>
                     </Box>
-                    <Box width="100%" sx={{ margin: "auto" }} py={1}>
-                        {errorMessage !== "" ? (
+                    <Box>
+                        <Button py={1} variant="contained" type="submit">
+                            Sign up
+                        </Button>
+                    </Box>
+                    {errorMessage !== "" ? (
+                        <Box width="100%" sx={{ margin: "auto" }} py={1}>
                             <Alert
                                 severity="error"
                                 variant="filled"
@@ -267,13 +270,10 @@ export default function SignUp(props) {
                             >
                                 {errorMessage}
                             </Alert>
-                        ) : (
-                            ""
-                        )}
-                    </Box>
-                    <Button variant="contained" type="submit">
-                        Sign up
-                    </Button>
+                        </Box>
+                    ) : (
+                        ""
+                    )}
                 </form>
             </Container>
         </Box>

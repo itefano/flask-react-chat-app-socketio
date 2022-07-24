@@ -211,6 +211,7 @@ function App() {
                                         <Profile
                                             token={token}
                                             setToken={setToken}
+                                            setInfo={setInfo}
                                         />
                                     }
                                 />

@@ -607,7 +607,17 @@ export default function PrimarySearchAppBar(props) {
                                     onClick={handleProfileMenuOpen}
                                     color="inherit"
                                 >
-                                    <AccountCircle />
+                                    {props &&
+                                    props.info &&
+                                    props.info.profilePicturePath &&
+                                    props.info.profilePicturePath.length > 0 ? (
+                                        <Avatar
+                                            alt="My picture"
+                                            src={props.info.profilePicturePath}
+                                        />
+                                    ) : (
+                                        <AccountCircle />
+                                    )}
                                 </IconButton>
                             </Box>
                         </>

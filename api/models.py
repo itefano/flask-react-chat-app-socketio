@@ -111,6 +111,7 @@ class User(Base):
             'firstName': self.firstName,
             'lastName': self.lastName,
             'email': self.email,
+            'gender': self.gender,
             'profilePicturePath': self.profilePicturePath,
         }
 

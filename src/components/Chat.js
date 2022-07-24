@@ -223,7 +223,7 @@ export default function Chat(props) {
                 navigate("/");
             })
             .catch((error) => {
-                if (error.response.status !== 401) {
+                if (error.response.status !== 401 && error.response.status!==403) {
                     console.log(error.response);
                     console.log(error.response.status);
                     console.log(error.response.headers);
@@ -246,7 +246,7 @@ export default function Chat(props) {
                 navigate("/");
             })
             .catch((error) => {
-                if (error.response.status !== 401) {
+                if (error.response.status !== 401 && error.response.status !==403) {
                     console.log(error.response);
                     console.log(error.response.status);
                     console.log(error.response.headers);
