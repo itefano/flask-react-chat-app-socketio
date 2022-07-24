@@ -841,7 +841,7 @@ def leave_group():
         groupId = request.json.get('groupId', None)
         group = s.query(Group).filter_by(id=groupId).filter(
             Group.users.any(id=get_jwt_identity())).first()
-        if not group:
+        if not group or len(group.users)<3:
             s.close()
             return {"error": "You can't access this ressource."}, 403
         group.users.remove(user)

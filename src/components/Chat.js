@@ -223,7 +223,10 @@ export default function Chat(props) {
                 navigate("/");
             })
             .catch((error) => {
-                if (error.response.status !== 401 && error.response.status!==403) {
+                if (
+                    error.response.status !== 401 &&
+                    error.response.status !== 403
+                ) {
                     console.log(error.response);
                     console.log(error.response.status);
                     console.log(error.response.headers);
@@ -246,7 +249,10 @@ export default function Chat(props) {
                 navigate("/");
             })
             .catch((error) => {
-                if (error.response.status !== 401 && error.response.status !==403) {
+                if (
+                    error.response.status !== 401 &&
+                    error.response.status !== 403
+                ) {
                     console.log(error.response);
                     console.log(error.response.status);
                     console.log(error.response.headers);
@@ -411,69 +417,86 @@ export default function Chat(props) {
     return (
         <>
             <Paper sx={{ height: "100%" }}>
-                {groupInfo ? (
-                    <Box
-                        sx={{ display: "flex", justifyContent: "center" }}
-                        m={2}
-                    >
-                        <Box mx={2} color="primary">
-                            <Avatar
-                                //TODO: BUGFIX: avatar is invisible...?
-                                src={groupInfo.picturePath}
-                                alt={groupInfo.name + " group picture"}
-                            />
+                <>
+                    {groupInfo ? (
+                        <Box
+                            sx={{ display: "flex", justifyContent: "center" }}
+                            m={2}
+                        >
+                            <Box mx={2} color="primary">
+                                <Avatar
+                                    //TODO: BUGFIX: avatar is invisible...?
+                                    src={groupInfo.picturePath}
+                                    alt={groupInfo.name + " group picture"}
+                                />
+                            </Box>
+                            <Typography variant="h4" color="text.primary">
+                                {groupInfo.name.replace(/\b\w/, (c) =>
+                                    c.toUpperCase()
+                                )}
+                            </Typography>
                         </Box>
-                        <Typography variant="h4" color="text.primary">
-                            {groupInfo.name.replace(/\b\w/, (c) =>
-                                c.toUpperCase()
-                            )}
-                        </Typography>
-                    </Box>
-                ) : (
-                    ""
-                )}
-                <Box sx={{ width: "xs", textAlign: "right" }} py={2} pr={5}>
-                    {groupInfo &&
-                    includes_email(groupInfo.admins, props.info.email) ? (
+                    ) : (
+                        ""
+                    )}
+                </>
+                <>
+                    {groupInfo.users.length > 2 ? (
                         <>
-                            {groupInfo &&
-                            groupInfo.name &&
-                            groupInfo.name.length > 0 ? ( //checks whether convos are 1 to 1, in which case they can't be "left" or "deleted". You can only delete the friendship itself.
-                                <IconButton
-                                    onClick={() => {
-                                        handleDeleteGroupOpen();
-                                    }}
-                                >
-                                    <DeleteIcon color="error" />
-                                </IconButton>
-                            ) : (
-                                ""
-                            )}
-                            <IconButton
-                                onClick={() => {
-                                    handleEditGroupOpen();
-                                }}
+                            <Box
+                                sx={{ width: "xs", textAlign: "right" }}
+                                py={2}
+                                pr={5}
                             >
-                                <SettingsIcon color="success" />
-                            </IconButton>
+                                {groupInfo &&
+                                includes_email(
+                                    groupInfo.admins,
+                                    props.info.email
+                                ) ? (
+                                    <>
+                                        {groupInfo &&
+                                        groupInfo.name &&
+                                        groupInfo.name.length > 0 ? ( //checks whether convos are 1 to 1, in which case they can't be "left" or "deleted". You can only delete the friendship itself.
+                                            <IconButton
+                                                onClick={() => {
+                                                    handleDeleteGroupOpen();
+                                                }}
+                                            >
+                                                <DeleteIcon color="error" />
+                                            </IconButton>
+                                        ) : (
+                                            ""
+                                        )}
+                                        <IconButton
+                                            onClick={() => {
+                                                handleEditGroupOpen();
+                                            }}
+                                        >
+                                            <SettingsIcon color="success" />
+                                        </IconButton>
+                                    </>
+                                ) : (
+                                    ""
+                                )}
+                                {groupInfo &&
+                                groupInfo.name &&
+                                groupInfo.name.length > 0 ? (
+                                    <IconButton
+                                        onClick={() => {
+                                            handleLeaveGroupOpen();
+                                        }}
+                                    >
+                                        <LogoutIcon color="warning" />
+                                    </IconButton>
+                                ) : (
+                                    ""
+                                )}
+                            </Box>
                         </>
                     ) : (
                         ""
                     )}
-                    {groupInfo &&
-                    groupInfo.name &&
-                    groupInfo.name.length > 0 ? (
-                        <IconButton
-                            onClick={() => {
-                                handleLeaveGroupOpen();
-                            }}
-                        >
-                            <LogoutIcon color="warning" />
-                        </IconButton>
-                    ) : (
-                        ""
-                    )}
-                </Box>
+                </>
                 <Box>
                     <Container>
                         <Paper
@@ -724,7 +747,7 @@ export default function Chat(props) {
                             onChange={(e) => {
                                 setGroupInfo((prevValue) => ({
                                     ...prevValue,
-                                    "name": e.target.value,
+                                    name: e.target.value,
                                 }));
                             }}
                         />
