@@ -20,6 +20,9 @@ Install the javascript packages with: `npm i`
 ## Database setup (PostgreSQL): 
 
 > Note: if you want to start the app as is, you must [install postgreSQL first](https://www.postgresql.org/download/). You can tweak the database language if you want by editing the `.env` file and replace the dialect and log info with your own stuff.
+> Note for Ubuntu & some unix users: psycopg2 seems to be somewhat capricious on some distribs, if you're having issues installing it, try to run `sudo apt-get install libpq-dev python-dev` (or your distribution's equivalent) before you proceed with the install.
+
+First, create the Postgres database (you can also do this from from the psql interface), run: `sudo -u postgres chat_app_db` (Linux) or `createdb -u postgres` (MacOS/Windows).
 
 Db creation (via models): `python3 ./api/init_db.py`
 
@@ -99,6 +102,9 @@ Installez les packages javascript avec: `npm i`
 ## Préparation de la db (PostgreSQL): 
 
 > Note: si vous voulez utiliser l'appli telle quelle, vous devez [installer postgreSQL d'abord](https://www.postgresql.org/download/). Vous pouvez aussi modifier le langage de base de données en éditant le fichier `.env` en remplaçant le dialecte ainsi que les données de connexion.
+> Note concernant les utilisateurs d'unix : sous quelques distributions, le package psycopg2 a du mal à s'installer. Si c'est votre cas, essayez de lancer `sudo apt-get install libpq-dev python-dev` (ou l'équivalent sur votre distribution) puis de relancer l'installation.
+
+Commencez par créer la db postgres (vous pouvez aussi effectuer cette opération depuis l'interface), lancez : `sudo -u postgres chat_app_db` (Linux) ou `createdb -u postgres` (MacOS/Windows).
 
 Création de la db (via les models) : `python3 ./api/init_db.py`
 

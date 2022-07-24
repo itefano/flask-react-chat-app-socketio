@@ -152,8 +152,8 @@ def generate_groups(s, amount):
 
 def generate_friends(s, amount):
     friends = []
-    printProgressBar(0, amount, prefix='Generating '+str(amount)+' friends...',
-                     suffix='', length=50)
+    printProgressBar(0, amount, prefix='Generating ~'+str(amount*19)+' friends...',
+                     suffix='', length=50) # 19 because ~9.5 friends per pple on average, times two for reciprocity
     friendDict = dict()  # keeps track of who's friends with who
     for i in range(amount):
         randomFriends = []

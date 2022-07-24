@@ -1,5 +1,5 @@
 {
-  "name": "blablapp-flask",
+  "name": "flask-react-chat-socketio",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -25,7 +25,7 @@
   "scripts": {
     "start": "react-scripts start",
     "start-backend": "cd api && flask run",
-    "seed-db": "cd api && python seed_db.py",
+    "seed-db": "cd api && python3 seed_db.py",
     "start-all": "concurrently \"npm start\" \"npm run start-backend\"",
     "build": "react-scripts build",
     "test": "react-scripts test",
