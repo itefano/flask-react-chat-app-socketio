@@ -24,11 +24,12 @@ Install the javascript packages with: `npm i`
 
 First, create the Postgres database (you can also do this from from the psql interface), run: `sudo -u postgres chat_app_db` (Linux) or `createdb -u postgres` (MacOS/Windows).
 
-Db creation (via models): `python3 ./api/init_db.py`
+Db creation (via models): `python3 ./api/init_db.py` (`py ./api/init_db.py` on Windows)
 
-Db deletion: `python3 ./api/drop_all.py`
 
-Creation + seeding (warning, this will delete all user data. **DO NOT USE IN PRODUCTION**): `python3 ./api/seed_db.py`
+Db deletion: `python3 ./api/drop_all.py` (`py ./api/drop_all.py` on Windows)
+
+Creation + seeding (warning, this will delete all user data. **DO NOT USE IN PRODUCTION**): `python3 ./api/seed_db.py` (`py ./api/seed_db.py` on Windows)
 
 ## Launching the app:
 
@@ -106,11 +107,11 @@ Installez les packages javascript avec: `npm i`
 
 Commencez par créer la db postgres (vous pouvez aussi effectuer cette opération depuis l'interface), lancez : `sudo -u postgres chat_app_db` (Linux) ou `createdb -u postgres` (MacOS/Windows).
 
-Création de la db (via les models) : `python3 ./api/init_db.py`
+Création de la db (via les models) : `python3 ./api/init_db.py` (`py ./api/init_db.py` sur Windows)
 
-Suppression de la db : `python3 ./api/drop_all.py`
+Suppression de la db : `python3 ./api/drop_all.py` (`py ./api/drop_all.py` sur Windows)
 
-Création + seeding de la db avec de fausses données (attention, ceci supprime toutes les données existantes. **NE PAS UTILISER EN PROD**) : `python3 ./api/seed_db.py`
+Création + seeding de la db avec de fausses données (attention, ceci supprime toutes les données existantes. **NE PAS UTILISER EN PROD**) : `python3 ./api/seed_db.py` (`py ./api/seed_db.py` sur Windows)
 
 ## Lancement de l'app :
 

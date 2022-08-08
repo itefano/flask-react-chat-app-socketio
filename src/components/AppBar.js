@@ -23,6 +23,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import HomeIcon from "@mui/icons-material/Home";
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircle from "@mui/icons-material/AccountCircle";
+import PersonIcon from "@mui/icons-material/Person";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
@@ -99,6 +100,7 @@ export default function PrimarySearchAppBar(props) {
     };
 
     const { height } = useWindowDimensions(); //not using width here
+    const [friendNotifications, setFriendNotifications] = useState(0);// TODO: implement friend notifications
     let navigate = useNavigate();
     const [checked, setChecked] = useState(true);
     const [openDrawer, setOpenDrawer] = useState(false);
@@ -573,6 +575,30 @@ export default function PrimarySearchAppBar(props) {
                     props.token !== null &&
                     props.token !== undefined ? (
                         <>
+                            <IconButton
+                                size="large"
+                                aria-describedby={id}
+                                aria-label={
+                                    "show " +
+                                    friendNotifications +
+                                    " new friend notifications"
+                                }
+                                color="inherit"
+                                onClick={seeNotifications}
+                            >
+                                {friendNotifications > 0 ? (
+                                    <Badge
+                                        badgeContent={friendNotifications}
+                                        color="error"
+                                    >
+                                        <PersonIcon />
+                                    </Badge>
+                                ) : (
+                                    <Badge color="error">
+                                        <PersonIcon />
+                                    </Badge>
+                                )}
+                            </IconButton>
                             <IconButton
                                 size="large"
                                 aria-describedby={id}

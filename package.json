@@ -25,7 +25,6 @@
   "scripts": {
     "start": "react-scripts start",
     "start-backend": "cd api && flask run",
-    "seed-db": "cd api && python3 seed_db.py",
     "start-all": "concurrently \"npm start\" \"npm run start-backend\"",
     "build": "react-scripts build",
     "test": "react-scripts test",

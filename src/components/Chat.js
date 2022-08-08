@@ -425,7 +425,6 @@ export default function Chat(props) {
                         >
                             <Box mx={2} color="primary">
                                 <Avatar
-                                    //TODO: BUGFIX: avatar is invisible...?
                                     src={groupInfo.picturePath}
                                     alt={groupInfo.name + " group picture"}
                                 />
