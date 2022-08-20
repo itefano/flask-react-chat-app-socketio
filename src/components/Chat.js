@@ -440,7 +440,7 @@ export default function Chat(props) {
                     )}
                 </>
                 <>
-                    {groupInfo.users.length > 2 ? (
+                    {groupInfo && groupInfo.users && groupInfo.users.length > 2 ? (
                         <>
                             <Box
                                 sx={{ width: "xs", textAlign: "right" }}

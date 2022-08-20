@@ -13,7 +13,7 @@ from routes import routes
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*",
-                    logger=False, engineio_logger=False)
+                    logger=True, engineio_logger=True)
 from sockets import socketio
 
 app.config['ALLOWED_EXTENSIONS'] = {'pdf', 'png', 'PNG', 'jpg', 'jpeg', 'gif'}
