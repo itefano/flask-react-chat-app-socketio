@@ -293,7 +293,7 @@ function Profile(props) {
                                                     profileData["firstName"] +
                                                     "'s Picture"
                                                 }
-                                                width="300"
+                                                style={{maxHeight:300}}
                                             />
                                         </Box>
                                         <Box>
